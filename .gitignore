@@ -1,7 +1,17 @@
+# OSX
+.DS_Store# OS.DS_Store# OS.DS_Store
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+
+# Elmer files
+*.result
+
+# Fortran files
+*.o
+*.mod
 
 # C extensions
 *.so
@@ -14,7 +24,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+#lib/
 lib64/
 parts/
 sdist/
