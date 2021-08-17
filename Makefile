@@ -3,13 +3,15 @@
 FC=gfortran
 FCFLAGS=-O3 -Wall
 EXE=bin/elmer2nc
-OBJS=bin/main.o bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o
+OBJS=bin/main.o bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o bin/utils_mod.o
 
 
 all: $(EXE)
 
-bin/results_mod.o: bin/variable_mod.o
-bin/main.o: src/elmer2nc/main.f90 bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o
+bin/nodes_mod.o: bin/utils_mod.o
+bin/variable_mod.o: bin/utils_mod.o
+bin/results_mod.o: bin/variable_mod.o bin/utils_mod.o
+bin/main.o: src/elmer2nc/main.f90 bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o bin/utils_mod.o
 
 $(EXE): $(OBJS)
 	$(FC) $(FCFLAGS) $(OBJS) -o $@

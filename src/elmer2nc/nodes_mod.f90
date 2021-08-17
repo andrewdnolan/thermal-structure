@@ -1,23 +1,23 @@
 module nodes
-  use iso_fortran_env
+  use utils
   implicit none
+  private
+  public node_file_t, parse_nodes
 
-  integer, parameter :: dp = real64
-
-  type :: node_file
+  type :: node_file_t
      integer :: nnodes
      integer,       dimension(:), allocatable :: nn, p
      real(kind=dp), dimension(:), allocatable :: x, y, z
   contains
     procedure ::   allocate_arrays
     procedure :: deallocate_arrays
-  end type node_file
+  end type node_file_t
 
 contains
   ! procedures (i.e methods) for node_file type
   subroutine allocate_arrays(self, nnodes)
     integer, intent(in) :: nnodes
-    class(node_file), intent(inout) :: self
+    class(node_file_t), intent(inout) :: self
 
     allocate(self%nn(nnodes))
     allocate(self %p(nnodes))
@@ -28,7 +28,7 @@ contains
   end subroutine allocate_arrays
 
   subroutine deallocate_arrays(self)
-    class(node_file) :: self
+    class(node_file_t) :: self
 
     deallocate(self%nn)
     deallocate(self %p)
@@ -39,25 +39,30 @@ contains
   end subroutine deallocate_arrays
   !------------------------------------------
 
-  subroutine parse(mesh_db, parsed)
+  !-----------------------------------------------------------------------------
+  ! Public function to parse the mesh.header and mesh.nodes files
+  !
+  subroutine parse_nodes(mesh_db, parsed)
+
     implicit none
     integer  :: nnodes
     character(len=15), intent(in) :: mesh_db
-    type(node_file), intent(inout) :: parsed
+    type(node_file_t), intent(inout) :: parsed
 
     ! Read the header file to find the total number of nodes
-    call parse_header(mesh_db, nnodes)
+    call parse_header_file(mesh_db, nnodes)
 
     !Allocate the arrays of the instance of our node_file type
     call parsed%allocate_arrays(nnodes)
 
     ! parse mesh.nodes file and store the data with our derived type
-    call parse_nodes(mesh_db, nnodes, parsed %nn, parsed %p, parsed %x, parsed %y, parsed %z)
+    call parse_node_file(mesh_db, nnodes, parsed %nn, parsed %p, parsed %x, parsed %y, parsed %z)
 
-  end subroutine parse
+    parsed%nnodes=nnodes
+  end subroutine parse_nodes
 
 
-  subroutine parse_nodes(mesh_db, nnodes, nn, p, x, y, z)
+  subroutine parse_node_file(mesh_db, nnodes, nn, p, x, y, z)
 
     implicit none
 
@@ -76,9 +81,9 @@ contains
       read(uid,*) nn(i), p(i), x(i), y(i), z(i)
     end do
     close(uid)
-  end subroutine parse_nodes
+  end subroutine parse_node_file
 
-  subroutine parse_header(mesh_db, nnodes)
+  subroutine parse_header_file(mesh_db, nnodes)
     !---------------------------------------------------------------------------
     ! parse the mesh.header and find the number of nodes
     !---------------------------------------------------------------------------
@@ -97,7 +102,7 @@ contains
     end if
     read(uid, *) nnodes, elements, boundary_elements
     close(uid)
-  end subroutine parse_header
+  end subroutine parse_header_file
 
 
 end module nodes

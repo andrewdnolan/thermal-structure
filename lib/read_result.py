@@ -115,8 +115,8 @@ if __name__ == "__main__":
     ds.coords["z"] = (ds.z * ds.height) + (ds.zbed)
 
     # ## proof that this works!
-    # import matplotlib.pyplot as plt
-    #
+    import matplotlib.pyplot as plt
+
     plt.pcolormesh(ds.x, ds.z.isel(t=0), np.sqrt(ds["velocity 1"].isel(t=0)**2 + ds["velocity 2"].isel(t=0)**2), edgecolor='k', shading="gouraud")
     plt.colorbar()
     plt.tight_layout()

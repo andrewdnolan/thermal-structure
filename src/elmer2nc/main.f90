@@ -1,21 +1,35 @@
 program main
+  use utils
   use nodes
   use result_parser
   implicit none
 
-  type(node_file) :: parsed
+  integer :: Nx, Ny, i
+  type(node_file_t) :: parsed
+  integer, dimension(11,139) :: test3
+  real(kind=dp), dimension(11,139) :: test1, test2
   character(len= *), parameter :: mesh_db  = "./results/mesh/"
 
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  ! Parse the mesh.nodes file
-  !!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  call parse(mesh_db, parsed)
+  ! Parse the mesh.nodes file, which will return the x, y, z values and
+  ! node indexes to be used with variable permutation tables
+  !--------------------------------------------------------------------
+  call parse_nodes(mesh_db, parsed)
 
-  ! write(*,*) parsed%x(100)
-  ! write(*,*)
-  ! write(*,*) shape(parsed%x)
-  ! write(*,*)
 
+  !n_unique =  unique_sort(parsed%x, parsed%nnodes)
+
+  Nx = unique_sort(parsed%x, parsed%nnodes)
+  Ny = unique_sort(parsed%y, parsed%nnodes)
+
+  test1 = (reshape(parsed%x,  shape=(/Ny, Nx/), order=(/2,1/)))
+  test2 = (reshape(parsed%y,  shape=(/Ny, Nx/), order=(/2,1/)))
+  test3 = (reshape(parsed%nn, shape=(/Ny, Nx/), order=(/2,1/)))
+  ! 
+  ! do i = 1, Ny
+  !   write(*,*) test3(1, :)
+  ! end do
+
+  ! write(*,*) Nx, Ny
   ! Deallocate the arrays of the instance of our node_file type
   call parsed%deallocate_arrays()
 
