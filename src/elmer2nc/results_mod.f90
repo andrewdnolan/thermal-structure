@@ -7,7 +7,7 @@ module result_parser
   public parser_results
 
   integer, parameter :: maxlen=16384
-  character(len=maxlen) :: line   = ' '
+  character(len=:), allocatable :: line
 ! no neeed to re-invent the wheel, lets look at what Elmer crowd is doing:
 
 !https://github.com/ElmerCSC/elmerfem/blob/b8b0be7c8a25d8c39b3dc03bc5a57b539b9d272f/fem/src/ModelDescription.F90#L3739
@@ -16,119 +16,205 @@ contains
 
   subroutine parser_results(mesh_db)
     integer :: TotalDOFs, err=0, idx0=23, k, n_line, psize, np, j, &
-    NT, & ! local timestep count
-    var   ! variable index
+    nt,     & ! local timestep count
+    iostat, & ! status of io read
+    stat,   & ! status of io read
+    var       ! variable index
+
+
+    INTEGER :: SavedCount, Timestep
+    REAL(kind=dp):: Time
+
 
     integer, dimension(250) :: t_idx
     integer, dimension(:), allocatable :: p_idx, perm
     character(len=15), intent(in)   :: mesh_db
     type(variable_t), dimension(:), allocatable :: variable_list
 
-    call parse_TotalDOFs(mesh_db, TotalDOFs)
-
-    allocate(variable_list(TotalDOFs), stat=err)
-    if ( err /= 0) print *, "variable_list: Allocation request denied"
-
-    call parse_result_header(mesh_db, variable_list, TotalDOFs)
-
-    call parse_result_NT(mesh_db, 250, t_idx)
+    ! call parse_result_header(mesh_db, variable_list, TotalDOFs)
+    !
+    ! call parse_result_NT(mesh_db, 250, t_idx)
 
     open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
 
+    call ReadTotalDOFs(10, TotalDOFs, Stat)
+    write(*,*) TotalDOFs
+
+    ! allocate(variable_list(TotalDOFs), stat=err)
+    ! if ( err /= 0) print *, "variable_list: Allocation request denied"
+    !
     k = 0
     n_line = 0
     nt = 0
+    Timestep = 0
 
-    do while(k == 0)
-      n_line = n_line + 1
-      read(10, '(a)', iostat=err) line
-      if ( any(n_line == t_idx) ) then
-        nt = nt + 1 ! timestep counter
-        n_line = n_line + 1
-        read(10, '(a)', iostat=err) line
-        ! itterate over the written variables
-        do var = 1, TotalDOFs
-          n_line = n_line + 1
+    !write(*)
+    do while ( nt < 10 )
+      call ReadTime(10,SavedCount,Timestep,Time,Stat)
 
-          !write(*,*) trim(variable_list(var)%name), variable_list(var)%nfield
+      do var=1,TotalDOFs
+        call ReadVariableName( 10, line, stat)
 
-          j = index(line, variable_list(var)%name)
-          if (j /= 0) then
-            n_line = n_line + 1
-            read(10, '(a)', iostat=err) line
-            j = index(line, ':')
+        ! Dummmy Read perm info
+        read(10,*)
+        write(*,*) trim(line)
+        ! Call Read, Perm Table
 
-            read(line(j+1:300), *) psize, np
+        ! Call Read Values
+      end do
+      write(*,*) SavedCount,Timestep,Time
 
-            allocate(perm( np))
-            allocate(p_idx(np))
-
-            do j = 1, np
-              n_line = n_line + 1
-              read(10, *, iostat=err) perm(j), p_idx(j)
-              if (err /= 0) call abort()
-            end do
-
-            do j = 1, np
-              n_line = n_line + 1
-              read(10, *, iostat=err) variable_list(var)%data(perm(j), nt)
-              if (err /= 0) call abort()
-            end do
-
-            do j = 1, 139
-              write(*,*) variable_list(var)%data(j, nt)
-            end do
-          end if
-        end do
-        ! n_line = n_line + 1
-        ! read(10, '(a)', iostat=err) line
-        ! !write(*,*) trim(line)
-        ! n_line = n_line + 1
-        !
-        ! allocate(perm( np))
-        ! allocate(p_idx(np))
-        !
-        ! do j = 1, psize
-        !   n_line = n_line + 1
-        !   read(10, *) perm(j), p_idx(j)
-        ! end do
-        !
-        ! write(*,*) n_line
-        !
-        ! do j = 1, psize
-        !   write(*,*) perm(j), p_idx(j)
-        ! end do
-        ! !write(*,*) parse_perm(line, j)
-        ! k = 1
-        if ( nt >= 1 ) then
-          exit
-        end if
-      end if
+      nt = nt + 1
     end do
+
+    ! do while(k == 0)
+    !   n_line = n_line + 1
+    !   read(10, '(a)', iostat=err) line
+    !   if ( any(n_line == t_idx) ) then
+    !     nt = nt + 1 ! timestep counter
+    !     n_line = n_line + 1
+    !     read(10, '(a)', iostat=err) line
+    !     ! itterate over the written variables
+    !     do var = 1, TotalDOFs
+    !       !n_line = n_line + 1
+    !
+    !       !write(*,*) trim(variable_list(var)%name), variable_list(var)%nfield
+    !
+    !       j = index(line, variable_list(var)%name)
+    !       if (j /= 0) then
+    !         write(*,*) n_line, trim(line)
+    !         n_line = n_line + 1
+    !         read(10, '(a)', iostat=err) line
+    !         j = index(line, ':')
+    !
+    !         read(line(j+1:300), *) psize, np
+    !
+    !         allocate(perm( np))
+    !         allocate(p_idx(np))
+    !
+    !         do j = 1, np
+    !           n_line = n_line + 1
+    !           read(10, *, iostat=err) perm(j), p_idx(j)
+    !           if (err /= 0) call abort()
+    !         end do
+    !
+    !         do j = 1, np
+    !           n_line = n_line + 1
+    !           read(10, *, iostat=err) variable_list(var)%data(perm(j), nt)
+    !           if (err /= 0) call abort()
+    !         end do
+    !
+    !         ! do j = 1, 139
+    !         !   write(*,*) variable_list(var)%data(j, nt)
+    !         ! end do
+    !       end if
+    !     end do
+    !     ! n_line = n_line + 1
+    !     ! read(10, '(a)', iostat=err) line
+    !     ! !write(*,*) trim(line)
+    !     ! n_line = n_line + 1
+    !     !
+    !     ! allocate(perm( np))
+    !     ! allocate(p_idx(np))
+    !     !
+    !     ! do j = 1, psize
+    !     !   n_line = n_line + 1
+    !     !   read(10, *) perm(j), p_idx(j)
+    !     ! end do
+    !     !
+    !     ! write(*,*) n_line
+    !     !
+    !     ! do j = 1, psize
+    !     !   write(*,*) perm(j), p_idx(j)
+    !     ! end do
+    !     ! !write(*,*) parse_perm(line, j)
+    !     ! k = 1
+    !     if ( nt >= 10 ) then
+    !       exit
+    !     end if
+    !   end if
+    ! end do
+
     close(10)
   end subroutine parser_results
 
-  subroutine parse_TotalDOFs(mesh_db, TotalDOFs)
+!-------------------------------------------------------------------------------
+  subroutine ReadTotalDOFs(RestartUnit, TotalDOFs, Stat)
     implicit none
-    integer :: k=0, ierr
-    integer, intent(out) :: TotalDOFs
-    character(len=15), intent(in) :: mesh_db
+    integer,  intent(in) :: RestartUnit   !< Fortran unit number to read from
+    integer, intent(out) :: TotalDOFs     !< Total # of variables in .result file
+    integer, intent(out) :: Stat          !< Status of io read
+!-------------------------------------------------------------------------------
+    integer :: k
 
-    open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
-    ! Read through file until match found
-    do while (k == 0)
-      !
-      read(10, '(a)', iostat=ierr) line
-
+    do while (  ReadRecur(RestartUnit, line) )
       k = index( Line,'Total DOFs:',.TRUE.)
 
       if( k /= 0 ) then
-        read(line(k+11:maxlen), *, iostat=ierr) TotalDOFs
+        read(line(k+11:), *, iostat=Stat) TotalDOFs
+        if ( Stat /= 0) then
+          write(*,'(A)') "Error: "//"Error in ReadDOFs"
+          stop
+        end if
+        rewind(RestartUnit)
         exit
       end if
     end do
-    close(10)
-  end subroutine parse_TotalDOFs
+  end subroutine
+!-------------------------------------------------------------------------------
+
+
+!-------------------------------------------------------------------------------
+! Inspired by ReadTime from ModelDescription.f90 in elmer source
+! Read SavedCount, Timestep and Time.  Stat is set to 0 for success, < 0 for
+! end-of-file, and > 0 for error.
+!-------------------------------------------------------------------------------
+  subroutine ReadTime( RestartUnit,SavedCount,Timestep,Time, Stat)
+    implicit none
+    integer, intent(in)  :: RestartUnit      !< Fortran unit number to read from
+    integer, intent(out) :: Stat             !< Status of io read
+    integer, intent(out) :: SavedCount       !< Saved timestep
+    integer, intent(out) :: Timestep         !< Total timestep
+    real(kind=dp), intent(out):: Time        !< Physical Time
+!-------------------------------------------------------------------------------
+    integer :: iostat
+
+    do while (  ReadRecur(RestartUnit, line) )
+      if (SEQL(line, 'Time:')) then
+        read( line(7:), *, iostat=iostat) SavedCount, Timestep, Time
+        if ( iostat /= 0 ) then
+          write(*,'(A)') "Error: Error in ReadTime!"
+          STOP
+        end if
+        stat = 0
+        return
+      end if
+    end do
+    stat = -1
+  end subroutine ReadTime
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine ReadVariableName( RestartUnit, VarName, Stat )
+    implicit none
+    integer,       intent(in) :: RestartUnit !< Fortran unit number to read from
+    integer,      intent(out) :: Stat        !< Status of io read
+    character(*), intent(out) :: VarName     !< Variable Name
+!-------------------------------------------------------------------------------
+    read(RestartUnit, '(a)', iostat=Stat) VarName
+  end subroutine ReadVariableName
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+  subroutine ReadPermuation( RestartUnit, Perm, GotPerm)
+    implicit none
+    integer,       intent(in) :: RestartUnit     !< Fortran unit number to read from
+    logical,      intent(out) :: GotPerm         !< true is succesfully read perm
+    integer, allocatable, intent(out) :: Perm(:) !< Where to store the perm table
+
+    
+  end subroutine ReadPermuation
+!-------------------------------------------------------------------------------
 
 
   subroutine parse_result_header(mesh_db, variable_list, TotalDOFs)
