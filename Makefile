@@ -17,7 +17,7 @@ $(EXE): $(OBJS)
 	$(FC) $(FCFLAGS) $(OBJS) -o $@
 
 bin/%.o: src/elmer2nc/%.f90
-	gfortran -c $< -o $@ -J bin/
+	gfortran -c $< -o $@ -J bin/ `nf-config --fflags --flibs`
 
 clean:
-	rm $(EXE) *.mod bin/*.o
+	rm $(EXE) bin/*.mod bin/*.o

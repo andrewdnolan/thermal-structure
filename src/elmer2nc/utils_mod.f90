@@ -7,27 +7,6 @@ module utils
 
 contains
 
-
-!------------------------------------------------------------------------------
-!> Compare equality of start of s1 to (in most uses string literal) s2.
-!> From elmer GeneralUtils.90
-!------------------------------------------------------------------------------
-!------------------------------------------------------------------------------
-  PURE FUNCTION SEQL(s1,s2) RESULT(L)
-!------------------------------------------------------------------------------
-    LOGICAL :: L
-    CHARACTER(LEN=*), INTENT(IN) :: s1,s2
-!------------------------------------------------------------------------------
-    INTEGER :: n
-!------------------------------------------------------------------------------
-    L = .FALSE.
-    n = LEN(s2)
-    IF(LEN(s1) < n) RETURN
-    IF (s1(1:n)==s2) L=.TRUE.
-!------------------------------------------------------------------------------
-  END FUNCTION SEQL
-!------------------------------------------------------------------------------
-
 ! read a (logical) kine from FORTRAN unit device. Inspied by "ReadAndTrim"
 ! function from elmer source code (https://github.com/ElmerCSC/elmerfem/blob/6dfb482454dba8245cf35d0e1591927156b6e1ec/fem/src/GeneralUtils.F90#L842)
 !-------------------------------------------------------------------------------
@@ -82,4 +61,67 @@ contains
     n_unique =  size(out_array)
 
   end function unique_sort
+
+
+
+
+!-------------------------------------------------------------------------------
+! ELMER FUNCTIONS DIRECTLY FROM ELMER
+!-------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+!> Compare equality of start of s1 to (in most uses string literal) s2.
+!> From elmer GeneralUtils.90
+!------------------------------------------------------------------------------
+  PURE FUNCTION SEQL(s1,s2) RESULT(L)
+!------------------------------------------------------------------------------
+    LOGICAL :: L
+    CHARACTER(LEN=*), INTENT(IN) :: s1,s2
+!------------------------------------------------------------------------------
+    INTEGER :: n
+!------------------------------------------------------------------------------
+    L = .FALSE.
+    n = LEN(s2)
+    IF(LEN(s1) < n) RETURN
+    IF (s1(1:n)==s2) L=.TRUE.
+!------------------------------------------------------------------------------
+  END FUNCTION SEQL
+!------------------------------------------------------------------------------
+
+
+!------------------------------------------------------------------------------
+  subroutine print( Caller, String, Verbose)
+!------------------------------------------------------------------------------
+    implicit none
+    character(len=*)  :: Caller  !< The function where print is called from
+    character(len=*)  :: String  !< The message to print
+    logical, optional :: Verbose !< Wether the message should be printed or not
+!------------------------------------------------------------------------------
+
+
+  if (.not. present(Verbose)) Verbose=.FALSE.
+
+  if ( Verbose ) then
+    write(*,"(A)") trim(Caller) // ": " // trim(String)
+  else
+    return
+  end if
+
+  end subroutine print
+!------------------------------------------------------------------------------
+
+!------------------------------------------------------------------------------
+  subroutine fatal( Caller, String)
+!------------------------------------------------------------------------------
+    implicit none
+    character(len=*)  :: Caller  !< The function where print is called from
+    character(len=*)  :: String  !< The message to print
+!------------------------------------------------------------------------------
+
+
+  write(*,"(A)") trim(Caller) // ": " // trim(String)
+  stop
+
+  end subroutine fatal
+!------------------------------------------------------------------------------
 end module utils

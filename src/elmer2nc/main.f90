@@ -24,12 +24,10 @@ program main
   test1 = (reshape(parsed%x,  shape=(/Ny, Nx/), order=(/2,1/)))
   test2 = (reshape(parsed%y,  shape=(/Ny, Nx/), order=(/2,1/)))
   test3 = (reshape(parsed%nn, shape=(/Ny, Nx/), order=(/2,1/)))
-  ! 
-  ! do i = 1, Ny
-  !   write(*,*) test3(1, :)
-  ! end do
 
-  ! write(*,*) Nx, Ny
+
+  
+
   ! Deallocate the arrays of the instance of our node_file type
   call parsed%deallocate_arrays()
 

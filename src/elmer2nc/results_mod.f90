@@ -1,5 +1,6 @@
 module result_parser
   use utils
+  use netcdf
   use parse_variable
 
   implicit none
@@ -15,19 +16,23 @@ contains
 
 
   subroutine parser_results(mesh_db)
-    integer :: TotalDOFs, err=0, idx0=23, k, n_line, psize, np, j, &
+    integer :: TotalDOFs, err=0, idx0=23, n_line, psize, np, j, &
+    n,      & ! number of nodes
+    k,      & ! permutation index
     nt,     & ! local timestep count
     iostat, & ! status of io read
     stat,   & ! status of io read
     var       ! variable index
 
+    REAL(kind=dp):: &
+    Time, &     ! Time value
+    Val         ! Val read from .result
 
     INTEGER :: SavedCount, Timestep
-    REAL(kind=dp):: Time
 
-
+    logical :: GotPerm
     integer, dimension(250) :: t_idx
-    integer, dimension(:), allocatable :: p_idx, perm
+    integer, allocatable :: perm(:)
     character(len=15), intent(in)   :: mesh_db
     type(variable_t), dimension(:), allocatable :: variable_list
 
@@ -38,104 +43,48 @@ contains
     open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
 
     call ReadTotalDOFs(10, TotalDOFs, Stat)
-    write(*,*) TotalDOFs
 
-    ! allocate(variable_list(TotalDOFs), stat=err)
-    ! if ( err /= 0) print *, "variable_list: Allocation request denied"
+    allocate(variable_list(TotalDOFs), stat=err)
+    if ( err /= 0) print *, "variable_list: Allocation request denied"
+
+    call ReadResultHeader(10, variable_list, TotalDOFs)
+
+    ! do var=1,TotalDOFs
     !
-    k = 0
-    n_line = 0
-    nt = 0
-    Timestep = 0
+    !   write(*,'(A)') trim(variable_list(var)%name)
+    !   write(*,*)          variable_list(var)%nperm
+    !   write(*,*)          variable_list(var)%nfield
+    !   write(*,*)
+    ! end do
 
-    !write(*)
-    do while ( nt < 10 )
+    do while ( Timestep < 250 )
+
       call ReadTime(10,SavedCount,Timestep,Time,Stat)
+    !  write(*,*) SavedCount,Timestep,Time
 
       do var=1,TotalDOFs
         call ReadVariableName( 10, line, stat)
 
-        ! Dummmy Read perm info
-        read(10,*)
-        write(*,*) trim(line)
-        ! Call Read, Perm Table
+        call ReadPermuation( 10, perm, GotPerm)
 
-        ! Call Read Values
+        n = variable_list(var)%nfield
+
+        do j = 1, n
+
+          call ReadValue( 10, perm, j, k, Val)
+
+          variable_list(var)%data(k,1) = Val
+
+        end do
       end do
-      write(*,*) SavedCount,Timestep,Time
-
-      nt = nt + 1
     end do
 
-    ! do while(k == 0)
-    !   n_line = n_line + 1
-    !   read(10, '(a)', iostat=err) line
-    !   if ( any(n_line == t_idx) ) then
-    !     nt = nt + 1 ! timestep counter
-    !     n_line = n_line + 1
-    !     read(10, '(a)', iostat=err) line
-    !     ! itterate over the written variables
-    !     do var = 1, TotalDOFs
-    !       !n_line = n_line + 1
-    !
-    !       !write(*,*) trim(variable_list(var)%name), variable_list(var)%nfield
-    !
-    !       j = index(line, variable_list(var)%name)
-    !       if (j /= 0) then
-    !         write(*,*) n_line, trim(line)
-    !         n_line = n_line + 1
-    !         read(10, '(a)', iostat=err) line
-    !         j = index(line, ':')
-    !
-    !         read(line(j+1:300), *) psize, np
-    !
-    !         allocate(perm( np))
-    !         allocate(p_idx(np))
-    !
-    !         do j = 1, np
-    !           n_line = n_line + 1
-    !           read(10, *, iostat=err) perm(j), p_idx(j)
-    !           if (err /= 0) call abort()
-    !         end do
-    !
-    !         do j = 1, np
-    !           n_line = n_line + 1
-    !           read(10, *, iostat=err) variable_list(var)%data(perm(j), nt)
-    !           if (err /= 0) call abort()
-    !         end do
-    !
-    !         ! do j = 1, 139
-    !         !   write(*,*) variable_list(var)%data(j, nt)
-    !         ! end do
-    !       end if
-    !     end do
-    !     ! n_line = n_line + 1
-    !     ! read(10, '(a)', iostat=err) line
-    !     ! !write(*,*) trim(line)
-    !     ! n_line = n_line + 1
-    !     !
-    !     ! allocate(perm( np))
-    !     ! allocate(p_idx(np))
-    !     !
-    !     ! do j = 1, psize
-    !     !   n_line = n_line + 1
-    !     !   read(10, *) perm(j), p_idx(j)
-    !     ! end do
-    !     !
-    !     ! write(*,*) n_line
-    !     !
-    !     ! do j = 1, psize
-    !     !   write(*,*) perm(j), p_idx(j)
-    !     ! end do
-    !     ! !write(*,*) parse_perm(line, j)
-    !     ! k = 1
-    !     if ( nt >= 10 ) then
-    !       exit
-    !     end if
-    !   end if
-    ! end do
-
     close(10)
+
+    ! do n = 1, 1592
+    !   write(*,*) variable_list(14)%data(n,1)
+    ! end do
+    ! print "f12.2",   variable_list(10)%data(:,1)
   end subroutine parser_results
 
 !-------------------------------------------------------------------------------
@@ -208,49 +157,124 @@ contains
 !-------------------------------------------------------------------------------
   subroutine ReadPermuation( RestartUnit, Perm, GotPerm)
     implicit none
-    integer,       intent(in) :: RestartUnit     !< Fortran unit number to read from
-    logical,      intent(out) :: GotPerm         !< true is succesfully read perm
-    integer, allocatable, intent(out) :: Perm(:) !< Where to store the perm table
+    integer, intent(in)  :: RestartUnit      !< Fortran unit number to read from
+    logical, intent(out) :: GotPerm          !< true is succesfully read perm
+    integer, allocatable :: Perm(:)          !< Where to store the perm table
+!-------------------------------------------------------------------------------
+    integer :: &
+    nPerm,     & !< Length of permutation table
+    nPositive, & !< Number of postive nodes ?
+    i,         & !< Counter in read Perm loop
+    j, k,      & !< index and node number (resectively) from perm table
+    iostat       !< Status of the variable read
 
-    
+    character(maxlen) :: lines
+    character(*), parameter :: Caller="ReadPermuation"
+
+    ! Read the line defining the permutation info
+    read(RestartUnit, '(A)') line
+    if ( line(7:10) == "NULL" ) then
+      nPerm = 0
+    else if (line(7:18) == "use previous") then
+      nPerm = -1
+    else
+      read(line(7:), *, iostat=iostat) nPerm, nPositive
+      if ( iostat /=0 ) then
+
+        call fatal(Caller, "Error reading sizes in ReadPermuation:  "//trim(line))
+      end if
+    end if
+
+    ! Special cases where permutation is not directly provided
+    if (nPerm < 0) then
+      !TO DO: Need to pass Verbose as variable not hard code it
+      call print(Caller, 'Using pervious permutation table', .FALSE.)
+      GotPerm=.TRUE.
+      return
+    else if (nPerm == 0) then
+      ! TO DO: Need to give some kind of warning about whats going on here
+      write(*, "(A)") "Fuck"
+      return
+    end if
+
+    ! If the Perm vector is already allocated make sure its the correct length
+    if (allocated(Perm)) then
+      if ( size(Perm) < nPerm ) then
+        call print(Caller, 'Permutation vector too small??', .TRUE.)
+        deallocate(Perm)
+      else if ( size(Perm) > nPerm ) then
+        call print(Caller, 'Permutation vector too big??', .TRUE.)
+        deallocate(Perm)
+      end if
+    end if
+
+    ! If Perm vector is not allocated, then allocate
+    if( .not.allocated(Perm) ) allocate(Perm(nPerm))
+
+    ! Initialize the Perm vector, or wipe all pervious data
+    Perm = 0
+
+    !Actually read the permutation table
+    do i = 1, nPositive
+      read(RestartUnit, *, iostat=iostat) j, k
+      if ( iostat /= 0 ) then
+        call fatal(Caller, 'Error reading values in ReadPermuation')
+      end if
+      Perm(j) = k
+    end do
+
+    GotPerm = .TRUE.
   end subroutine ReadPermuation
 !-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+  subroutine ReadValue( RestartUnit, Perm, iNode, iPerm, Val)
+    implicit none
+    integer, intent(in)   :: RestartUnit      !< Fortran unit number to read from
+    integer, intent(in)   :: iNode            !< Node index
+    integer, intent(out)  :: iPerm            !< Permutation index for node
+    integer, allocatable  :: Perm(:)          !< Permutation table to use for var
+    real(dp), intent(out) :: Val              !< Value read from the .result file
+!-------------------------------------------------------------------------------
+    integer :: iostat
+    character(*), parameter :: Caller="ReadValue"
+    iPerm = Perm(iNode)
 
-  subroutine parse_result_header(mesh_db, variable_list, TotalDOFs)
-    integer :: i, ierr=0
-    integer, intent(in) :: TotalDOFs
-    character(len=15), intent(in)   :: mesh_db
+    read(RestartUnit, *, iostat=iostat) Val
+    if (iostat /= 0) then
+      print '("Error at Line ", I0)', iNode
+      call fatal(Caller, "Error in ReadValue for ")
+    end if
+
+  end subroutine ReadValue
+!-------------------------------------------------------------------------------
+
+
+!-------------------------------------------------------------------------------
+  subroutine ReadResultHeader(RestartUnit, variable_list, TotalDOFs)
+!-------------------------------------------------------------------------------
+    implicit none
+    integer, intent(in) :: RestartUnit      !< Fortran unit number to read from
+    integer, intent(in) :: TotalDOFs        !< Total number of variable to be read
+    !< An array of our variable_t class to store variable info in
     type(variable_t), dimension(TotalDOFs), intent(inout) :: variable_list
-
+!-------------------------------------------------------------------------------
+    integer :: i, ierr=0
     character(len=256)    :: solver = ' ', Variable_name = ' '
     integer s, k, nlen, j, nfield, nperm, ndof, m
 
-    open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
-
-
-    ! Pass over the first three lines, since variable info starts on line four
-    do i = 1, 3
-      read(10, '(a)', iostat=ierr) Line
-      if (ierr /= 0) then
-        write(*,*) "parse_result_header could not open file"
-        stop
-      end if
-    end do
-
-    k = 0
     m = 1
-    do while ( k == 0 )
-      read(10, '(a)', iostat=ierr) Line
+    do while ( ReadRecur(RestartUnit, line) )
+      !read(10, '(a)', iostat=ierr) Line
 
       ! get the length of the trimed line
       nlen = len_trim(Line)
       ! Abort when we have reached the end of the variable list
       k = INDEX( Line(1:nlen), 'Total DOFs:',.TRUE.)
-      !write(*,*) trim(Line)
       IF( k /= 0 ) EXIT
 
       ! Find the name of the variable
+      !------------------------------
       j = index( Line(1:nlen),'[')
       if ( j /=0 ) then
         read(Line(0:j-1), *, iostat=ierr) Variable_name
@@ -260,16 +284,20 @@ contains
       end if
 
       ! read the size of filed, size of perm table, and number of dofs per node
+      !------------------------------------------------------------------------
       k = index( Line(1:nlen),']',.TRUE.)
       k = k + index( Line(k:nlen),':')
       s = k + index( Line(k:nlen),':', .TRUE.)
       read(Line(k:s-2), *, iostat=ierr) nfield, nperm, ndof
 
       ! Find the solver the variable is from
+      !-------------------------------------
       k = index( Line(1:nlen),']',.TRUE.)
       k = k + index( Line(k:nlen),':', .TRUE.)
       read(Line(k:nlen), '(A)', iostat=ierr) Solver
 
+      ! Initialize the mth instance of our class in the inout array
+      !------------------------------------------------------------
       if ( ndof == 1 ) then
         variable_list(m)%name   = trim(Variable_name)
         variable_list(m)%solver = trim(Solver)
@@ -277,17 +305,14 @@ contains
         variable_list(m)%nperm  = nperm
         variable_list(m)%nfield = nfield
 
+        !TO DO: Instead of just passing one, this might need to be the number of timesteps
         call variable_list(m)%init_data(1)
         m = m + 1
       end if
-
-      ! set k to zero so loop continues until the case above
-      k=0
     end do
 
-    close(10)
-  end subroutine parse_result_header
-
+  end subroutine ReadResultHeader
+!-------------------------------------------------------------------------------
 
   subroutine parse_result_NT(mesh_db, TNT, t_idx)
     implicit none
