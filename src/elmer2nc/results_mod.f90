@@ -1,11 +1,11 @@
 module result_parser
   use utils
-  use netcdf
+  !use netcdf
   use parse_variable
 
   implicit none
-  private
-  public parser_results
+  ! private
+  ! public parser_results
 
   integer, parameter :: maxlen=16384
   character(len=:), allocatable :: line
@@ -13,79 +13,6 @@ module result_parser
 
 !https://github.com/ElmerCSC/elmerfem/blob/b8b0be7c8a25d8c39b3dc03bc5a57b539b9d272f/fem/src/ModelDescription.F90#L3739
 contains
-
-
-  subroutine parser_results(mesh_db)
-    integer :: TotalDOFs, err=0, idx0=23, n_line, psize, np, j, &
-    n,      & ! number of nodes
-    k,      & ! permutation index
-    nt,     & ! local timestep count
-    iostat, & ! status of io read
-    stat,   & ! status of io read
-    var       ! variable index
-
-    REAL(kind=dp):: &
-    Time, &     ! Time value
-    Val         ! Val read from .result
-
-    INTEGER :: SavedCount, Timestep
-
-    logical :: GotPerm
-    integer, dimension(250) :: t_idx
-    integer, allocatable :: perm(:)
-    character(len=15), intent(in)   :: mesh_db
-    type(variable_t), dimension(:), allocatable :: variable_list
-
-    ! call parse_result_header(mesh_db, variable_list, TotalDOFs)
-    !
-    ! call parse_result_NT(mesh_db, 250, t_idx)
-
-    open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
-
-    call ReadTotalDOFs(10, TotalDOFs, Stat)
-
-    allocate(variable_list(TotalDOFs), stat=err)
-    if ( err /= 0) print *, "variable_list: Allocation request denied"
-
-    call ReadResultHeader(10, variable_list, TotalDOFs)
-
-    ! do var=1,TotalDOFs
-    !
-    !   write(*,'(A)') trim(variable_list(var)%name)
-    !   write(*,*)          variable_list(var)%nperm
-    !   write(*,*)          variable_list(var)%nfield
-    !   write(*,*)
-    ! end do
-
-    do while ( Timestep < 250 )
-
-      call ReadTime(10,SavedCount,Timestep,Time,Stat)
-    !  write(*,*) SavedCount,Timestep,Time
-
-      do var=1,TotalDOFs
-        call ReadVariableName( 10, line, stat)
-
-        call ReadPermuation( 10, perm, GotPerm)
-
-        n = variable_list(var)%nfield
-
-        do j = 1, n
-
-          call ReadValue( 10, perm, j, k, Val)
-
-          variable_list(var)%data(k,1) = Val
-
-        end do
-      end do
-    end do
-
-    close(10)
-
-    ! do n = 1, 1592
-    !   write(*,*) variable_list(14)%data(n,1)
-    ! end do
-    ! print "f12.2",   variable_list(10)%data(:,1)
-  end subroutine parser_results
 
 !-------------------------------------------------------------------------------
   subroutine ReadTotalDOFs(RestartUnit, TotalDOFs, Stat)
@@ -299,14 +226,17 @@ contains
       ! Initialize the mth instance of our class in the inout array
       !------------------------------------------------------------
       if ( ndof == 1 ) then
+        !allocate(variable_list(m), mold=nfield)
+
         variable_list(m)%name   = trim(Variable_name)
         variable_list(m)%solver = trim(Solver)
         variable_list(m)%dofs   = ndof
         variable_list(m)%nperm  = nperm
         variable_list(m)%nfield = nfield
 
-        !TO DO: Instead of just passing one, this might need to be the number of timesteps
-        call variable_list(m)%init_data(1)
+        ! Allocate the values and perm arrays
+        call variable_list(m)%allocate()
+
         m = m + 1
       end if
     end do

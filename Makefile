@@ -14,7 +14,7 @@ bin/results_mod.o: bin/variable_mod.o bin/utils_mod.o
 bin/main.o: src/elmer2nc/main.f90 bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o bin/utils_mod.o
 
 $(EXE): $(OBJS)
-	$(FC) $(FCFLAGS) $(OBJS) -o $@
+	$(FC) $(FCFLAGS) $(OBJS) -o $@ `nf-config --fflags --flibs`
 
 bin/%.o: src/elmer2nc/%.f90
 	gfortran -c $< -o $@ -J bin/ `nf-config --fflags --flibs`
