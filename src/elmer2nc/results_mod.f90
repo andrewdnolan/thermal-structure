@@ -95,7 +95,7 @@ contains
     j, k,      & !< index and node number (resectively) from perm table
     iostat       !< Status of the variable read
 
-    character(maxlen) :: lines
+    !character(maxlen) :: lines
     character(*), parameter :: Caller="ReadPermuation"
 
     ! Read the line defining the permutation info
@@ -115,7 +115,7 @@ contains
     ! Special cases where permutation is not directly provided
     if (nPerm < 0) then
       !TO DO: Need to pass Verbose as variable not hard code it
-      call print(Caller, 'Using pervious permutation table', .FALSE.)
+      call print(Caller, 'Using pervious permutation table', .True.)
       GotPerm=.TRUE.
       return
     else if (nPerm == 0) then
@@ -147,7 +147,8 @@ contains
       if ( iostat /= 0 ) then
         call fatal(Caller, 'Error reading values in ReadPermuation')
       end if
-      Perm(j) = k
+      !Perm(j) = k
+      Perm(i) = j
     end do
 
     GotPerm = .TRUE.
@@ -155,17 +156,17 @@ contains
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine ReadValue( RestartUnit, Perm, iNode, iPerm, Val)
+  subroutine ReadValue( RestartUnit, iNode, Val) !, Perm, iPerm,
     implicit none
     integer, intent(in)   :: RestartUnit      !< Fortran unit number to read from
     integer, intent(in)   :: iNode            !< Node index
-    integer, intent(out)  :: iPerm            !< Permutation index for node
-    integer, allocatable  :: Perm(:)          !< Permutation table to use for var
+    !integer, intent(out)  :: iPerm            !< Permutation index for node
+    !integer, allocatable  :: Perm(:)          !< Permutation table to use for var
     real(dp), intent(out) :: Val              !< Value read from the .result file
 !-------------------------------------------------------------------------------
     integer :: iostat
     character(*), parameter :: Caller="ReadValue"
-    iPerm = Perm(iNode)
+    !iPerm = Perm(iNode)
 
     read(RestartUnit, *, iostat=iostat) Val
     if (iostat /= 0) then
@@ -186,7 +187,7 @@ contains
     !< An array of our variable_t class to store variable info in
     type(variable_t), dimension(TotalDOFs), intent(inout) :: variable_list
 !-------------------------------------------------------------------------------
-    integer :: i, ierr=0
+    integer :: ierr=0
     character(len=256)    :: solver = ' ', Variable_name = ' '
     integer s, k, nlen, j, nfield, nperm, ndof, m
 
@@ -244,24 +245,24 @@ contains
   end subroutine ReadResultHeader
 !-------------------------------------------------------------------------------
 
-  subroutine parse_result_NT(mesh_db, TNT, t_idx)
-    implicit none
-    integer :: k
-    real(kind=dp), dimension(TNT) :: t
-    integer, dimension(TNT) :: idx, ns, nt
-    integer, dimension(TNT), intent(out) :: t_idx
-    integer, intent(in) :: TNT !total number of timesteps
-
-
-    character(len=15), intent(in) :: mesh_db
-    open(20,file=mesh_db//"timesteps.dat", status='old')
-
-
-    do k = 1, 250
-      read(20, *) idx(k), ns(k), nt(k), t(k)
-    end do
-
-    t_idx(:) = idx(:)
-    close(20)
-  end subroutine parse_result_NT
+  ! subroutine parse_result_NT(mesh_db, TNT, t_idx)
+  !   implicit none
+  !   integer :: k
+  !   real(kind=dp), dimension(TNT) :: t
+  !   integer, dimension(TNT) :: idx, ns, nt
+  !   integer, dimension(TNT), intent(out) :: t_idx
+  !   integer, intent(in) :: TNT !total number of timesteps
+  !
+  !
+  !   character(len=15), intent(in) :: mesh_db
+  !   open(20,file=mesh_db//"timesteps.dat", status='old')
+  !
+  !
+  !   do k = 1, 250
+  !     read(20, *) idx(k), ns(k), nt(k), t(k)
+  !   end do
+  !
+  !   t_idx(:) = idx(:)
+  !   close(20)
+  ! end subroutine parse_result_NT
 end module result_parser

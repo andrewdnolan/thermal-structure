@@ -50,32 +50,33 @@ contains
   end subroutine nc_check
 !-------------------------------------------------------------------------------
 
-  function unique_sort(in_array) result(out_array)
-    implicit none
-    integer :: len, i=0,  n_unique, j, alloc_stat
-    real(kind=dp) :: min_val, max_val
-    real(kind=dp) :: in_array(:)
-    real(kind=dp), dimension(:), allocatable :: out_array, unique
-
-    if (allocated(unique)) deallocate(unique)
-
-    allocate(unique(size(in_array)))
-
-    min_val = minval(in_array) - 1.0
-    max_val = maxval(in_array)
-
-    i = 0
-    do while (min_val<max_val)
-      i = i+1
-      min_val = minval(in_array, mask=in_array>min_val)
-      unique(i) = min_val
-    end do
-
-    if (allocated(out_array)) deallocate(out_array)
-    allocate(out_array(i), source=unique(1:i))
-    if (alloc_stat /= 0) call abort()
-
-  end function unique_sort
+  ! !https://www.geeksforgeeks.org/remove-duplicates-sorted-array/
+  ! function unique_sort(in_array) result(out_array)
+  !   implicit none
+  !   integer :: i=0, alloc_stat
+  !   real(kind=dp) :: min_val, max_val
+  !   real(kind=dp) :: in_array(:)
+  !   real(kind=dp), dimension(:), allocatable :: out_array, unique
+  !
+  !   if (allocated(unique)) deallocate(unique)
+  !
+  !   allocate(unique(size(in_array)))
+  !
+  !   min_val = minval(in_array) - 1.0
+  !   max_val = maxval(in_array)
+  !
+  !   i = 0
+  !   do while (min_val<max_val)
+  !     i = i+1
+  !     min_val = minval(in_array, mask=in_array>min_val)
+  !     unique(i) = min_val
+  !   end do
+  !
+  !   if (allocated(out_array)) deallocate(out_array)
+  !   allocate(out_array(i), source=unique(1:i))
+  !   if (alloc_stat /= 0) call abort()
+  !
+  ! end function unique_sort
 
 
 
