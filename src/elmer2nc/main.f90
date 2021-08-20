@@ -12,7 +12,7 @@ program main
              j,          &   ! counter to loop over nodes with
              n,          &   ! number of nodes to loop over
              k,          &   ! permutation index
-             i,         &    ! DUMMY VARIABLE
+             !i,         &    ! DUMMY VARIABLE
              iostat,     &   ! status of io read
              err,        &   ! allocation status
              var,        &   ! variable index
@@ -41,8 +41,9 @@ program main
   real(dp) :: Val,        &   ! Value read from .result file
               Time            ! Current time in years
 
-  real(dp), allocatable :: X(:), & ! unique x values
-                           Y(:)!, & ! unique y values
+  real(dp), allocatable :: X(:),   & ! unique x values
+                           Y(:),   & ! unique y values
+                           temp(:)   ! temporary array to fill in with values from lower dim. fields
                            !Z(:)    ! unique z values
 
   type(node_file_t) :: parsed
@@ -117,12 +118,12 @@ program main
   ! add for loop to itterate over all the variables + x and z, and add them
   ! as NetCDF variables
   ! Also add the solver the variable is from as and attribute for each
-  do var=5,5
+  do var=1,TotalDOFs
     call nc_check( nf90_def_var(ncid, trim(variable_list(var)%name), NF90_REAL, &
                                (/ y_dimid, x_dimid /), variable_list(var)%nc_varid) )
 
-     call nc_check( nf90_def_var(ncid, trim(variable_list(var)%name)//"_perm", NF90_INT, &
-                               (/ y_dimid, x_dimid /), pp_varid) )
+     ! call nc_check( nf90_def_var(ncid, trim(variable_list(var)%name)//"_perm", NF90_INT, &
+     !                           (/ y_dimid, x_dimid /), pp_varid) )
   end do
   ! End define mode.
   call nc_check( nf90_enddef(ncid) )
@@ -158,59 +159,46 @@ program main
 
       n = variable_list(var)%nfield
 
-      !write(*,*) perm
-      !
-      ! write(*,*) "Length of Variable    Vector: ", variable_list(var)%nfield
-      ! write(*,*) "Length of Permutation Vector: ", variable_list(var)%nperm
-      ! write(*,*) "Length of Crrent Permutation Vector: ", size(perm)
-      !
-      ! write(*,*) "Fist Value from Perm", perm(0)
-
       do j = 1, variable_list(var)%nfield
 
-        i =  variable_list(var)%nperm - variable_list(var)%nfield
-        k = Perm(j)
-        ! write(*,*) k
-        ! if ( k == 0 ) then
-        !   write(*,*) "Cycling over "
-        !   cycle
-        ! end if
+        if (GotPerm) k = Perm(j)
 
         call ReadValue( 10, j, Val)
 
-
-        if (var == 5) then
-          write(*,*) j, i+j, perm(i+j), variable_list(var)%perm(j), k, Val
+        if (.not.GotPerm) then
+          write(*,*) "Warnign, somethings gone weird with reading the perutation tale for "//trim(variable_list(var)%name)
+          variable_list(var)%values(j) = Val
+        else if ( variable_list(var)%perm(j) > 0 ) then
+          variable_list(var)%values(variable_list(var)%perm(j)) = Val
+        else
+          write(*,*) 'Uh oh'
+          variable_list(var)%perm(j) = k
+          variable_list(var)%values(k) = Val
         end if
-        ! if ( GotPerm .and. j > variable_list(var)%nfield) then
-        !   write(*,*) "Cycling over ", j
-        !    cycle
-        ! end if
-        !
-        ! if (.not.GotPerm) then
-        !   variable_list(var)%values(j) = Val
-        ! else if ( variable_list(var)%perm(j) > 0 ) then
-        !   variable_list(var)%values(variable_list(var)%perm(j)) = Val
-        ! end if
       end do
 
-    !  write(*,*) "Non-zero count:", count(perm/=0)
+      if (size(variable_list(var)%values) < size(parsed%x)) then
+        !write(*,*) trim(variable_list(var)%name)//" Is a lower dimmmentional filed and needs to be addressed"
+        if (allocated(temp)) deallocate(temp)
+        allocate(temp(size(parsed%x)), stat=err)
+        if (err /= 0) then
+          write(*,*) "Can't get a break man"
+        end if
 
-      if ( var == 5 ) then
-        write(*,*) size(variable_list(var)%values)
+        do j=1,size(variable_list(var)%values)
+          temp(variable_list(var)%perm(j)) = variable_list(var)%values(variable_list(var)%perm(j))
+        end do
+
+        write(*,*) size(temp)
+
+        test1 = (reshape(temp, shape=(/Ny, Nx/), order=(/2,1/)))
+      else
         test1 = (reshape(variable_list(var)%values, shape=(/Ny, Nx/), order=(/2,1/)))
-        test2 = (reshape(variable_list(var)%perm,   shape=(/Ny, Nx/), order=(/2,1/)))
-        call nc_check( nf90_put_var(ncid, variable_list(var)%nc_varid, test1) )
-        call nc_check( nf90_put_var(ncid, pp_varid, test2) )
-
-        ! do k = 1, 1592
-        !   write(*,*) variable_list(var)%perm(k)
-        ! end do
       end if
+      !test1 = (reshape(variable_list(var)%values, shape=(/Ny, Nx/), order=(/2,1/)))
+      !test2 = (reshape(variable_list(var)%perm,   shape=(/Ny, Nx/), order=(/2,1/)))
+      call nc_check( nf90_put_var(ncid, variable_list(var)%nc_varid, test1) )
 
-      ! write(*,*)
-      ! write(*,*) '======================='
-      ! write(*,*)
     end do
   end do
 
@@ -221,32 +209,6 @@ program main
   print *,"*** SUCCESS writing example file sfc_pres_temp.nc!"
 
   close(10)
-  !
-  ! ! Lets write the perm tables of zs and depth to dedug this perutation table problem
-  ! open(12,file="results/zs_perm.dat")
-  ! do j=1, size(variable_list(14)%perm)
-  !   write(12,*) variable_list(14)%perm(j)
-  ! end do
-  ! close(12)
-  !
-  ! open(13,file="results/zs_vals.dat")
-  ! do j=1, size(variable_list(14)%values)
-  !   write(13,*) (variable_list(14)%values(j))
-  ! end do
-  ! close(13)
-  ! ! write(*,*)  trim(variable_list(var-1)%name)
-  ! ! do j = 1, 1512
-  ! !   write(*,*) perm(j), variable_list(var-1)%perm(j)
-  ! ! end do
-  ! test1 = (reshape(variable_list(11)%perm, shape=(/Ny, Nx/),   order=(/2,1/)))
-  ! test2 = (reshape(variable_list(11)%values, shape=(/Ny, Nx/), order=(/2,1/)))
-  !
-  !   do var=1, 1
-  !     do j =1, 139
-  !     write(*,*) variable_list(11)%perm(var), variable_list(11)%values(var)
-  !   end do
-  !   !write(*,*) variable_list(15)%perm(j), variable_list(15)%values(variable_list(15)%perm(j))
-  ! end do
 
   ! Deallocate the arrays of the instance of our node_file type
   call parsed%deallocate_arrays()

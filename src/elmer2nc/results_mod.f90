@@ -115,7 +115,7 @@ contains
     ! Special cases where permutation is not directly provided
     if (nPerm < 0) then
       !TO DO: Need to pass Verbose as variable not hard code it
-      call print(Caller, 'Using pervious permutation table', .True.)
+      call print(Caller, 'Using pervious permutation table', .FALSE.)
       GotPerm=.TRUE.
       return
     else if (nPerm == 0) then
