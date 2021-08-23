@@ -1,19 +1,26 @@
+!-------------------------------------------------------------------------------
+! results_mod.f90
+!
+! A collection of subroutines to parse the various parts of the .result file.
+! These functions were heavily inspired/influenced by the elmer source code, which
+! can be found here:
+! https://github.com/ElmerCSC/elmerfem/blob/devel/fem/src/ModelDescription.F90
+!-------------------------------------------------------------------------------
 module result_parser
   use utils
-  !use netcdf
   use parse_variable
 
   implicit none
-  ! private
-  ! public parser_results
 
   integer, parameter :: maxlen=16384
   character(len=:), allocatable :: line
-! no neeed to re-invent the wheel, lets look at what Elmer crowd is doing:
 
-!https://github.com/ElmerCSC/elmerfem/blob/b8b0be7c8a25d8c39b3dc03bc5a57b539b9d272f/fem/src/ModelDescription.F90#L3739
 contains
 
+!-------------------------------------------------------------------------------
+! Read the TotalDOFs (i.e. number of variables with DOFs of 1) from the end
+! of the .result header. Then rewind open file for parsing of reading individual
+! varibale info.
 !-------------------------------------------------------------------------------
   subroutine ReadTotalDOFs(RestartUnit, TotalDOFs, Stat)
     implicit none
@@ -38,7 +45,6 @@ contains
     end do
   end subroutine
 !-------------------------------------------------------------------------------
-
 
 !-------------------------------------------------------------------------------
 ! Inspired by ReadTime from ModelDescription.f90 in elmer source
@@ -71,16 +77,33 @@ contains
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
-  subroutine ReadVariableName( RestartUnit, VarName, Stat )
+! Read Variable name from the open .result file
+!-------------------------------------------------------------------------------
+  subroutine ReadVariableName( RestartUnit, VarName, iostat )
     implicit none
     integer,       intent(in) :: RestartUnit !< Fortran unit number to read from
-    integer,      intent(out) :: Stat        !< Status of io read
+    integer,      intent(out) :: iostat      !< Status of io read
     character(*), intent(out) :: VarName     !< Variable Name
 !-------------------------------------------------------------------------------
-    read(RestartUnit, '(a)', iostat=Stat) VarName
+    character(*), parameter :: Caller="ReadVariableName"
+
+    read(RestartUnit, '(a)', iostat=iostat) VarName
+    if (iostat /=0 ) then
+      call fatal(Caller, "Error reading Variable Name ")
+    end if
   end subroutine ReadVariableName
 !-------------------------------------------------------------------------------
 
+!-------------------------------------------------------------------------------
+! Read permutation for each variable. Subroutine handles "use previous" scenarios
+! with no problem, but does not handle "NULL" scenario correctly. In practice, I've
+! never come across this, but could be an avenue for future development.
+!
+! Currently returns the permutation INDEXES not the node numbers, as in the elmer
+! src code. Indexes seem to work, and I was unable to figure out how to use node
+! number succesfully.
+!
+! This function is high on the list for more error catching / handling.
 !-------------------------------------------------------------------------------
   subroutine ReadPermuation( RestartUnit, Perm, GotPerm)
     implicit none
@@ -95,7 +118,6 @@ contains
     j, k,      & !< index and node number (resectively) from perm table
     iostat       !< Status of the variable read
 
-    !character(maxlen) :: lines
     character(*), parameter :: Caller="ReadPermuation"
 
     ! Read the line defining the permutation info
@@ -156,17 +178,16 @@ contains
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
+! Read numeric value line by line for a given variable.
+!-------------------------------------------------------------------------------
   subroutine ReadValue( RestartUnit, iNode, Val) !, Perm, iPerm,
     implicit none
     integer, intent(in)   :: RestartUnit      !< Fortran unit number to read from
     integer, intent(in)   :: iNode            !< Node index
-    !integer, intent(out)  :: iPerm            !< Permutation index for node
-    !integer, allocatable  :: Perm(:)          !< Permutation table to use for var
     real(dp), intent(out) :: Val              !< Value read from the .result file
 !-------------------------------------------------------------------------------
     integer :: iostat
     character(*), parameter :: Caller="ReadValue"
-    !iPerm = Perm(iNode)
 
     read(RestartUnit, *, iostat=iostat) Val
     if (iostat /= 0) then
@@ -177,7 +198,10 @@ contains
   end subroutine ReadValue
 !-------------------------------------------------------------------------------
 
-
+!-------------------------------------------------------------------------------
+! Read/Parse the header of the .result file. Here we parse the variable name,
+! the size of the field, size of the permutation table, the DOFs per variable,
+! and the solver the variable is from.
 !-------------------------------------------------------------------------------
   subroutine ReadResultHeader(RestartUnit, variable_list, TotalDOFs)
 !-------------------------------------------------------------------------------
@@ -193,7 +217,6 @@ contains
 
     m = 1
     do while ( ReadRecur(RestartUnit, line) )
-      !read(10, '(a)', iostat=ierr) Line
 
       ! get the length of the trimed line
       nlen = len_trim(Line)
@@ -245,24 +268,4 @@ contains
   end subroutine ReadResultHeader
 !-------------------------------------------------------------------------------
 
-  ! subroutine parse_result_NT(mesh_db, TNT, t_idx)
-  !   implicit none
-  !   integer :: k
-  !   real(kind=dp), dimension(TNT) :: t
-  !   integer, dimension(TNT) :: idx, ns, nt
-  !   integer, dimension(TNT), intent(out) :: t_idx
-  !   integer, intent(in) :: TNT !total number of timesteps
-  !
-  !
-  !   character(len=15), intent(in) :: mesh_db
-  !   open(20,file=mesh_db//"timesteps.dat", status='old')
-  !
-  !
-  !   do k = 1, 250
-  !     read(20, *) idx(k), ns(k), nt(k), t(k)
-  !   end do
-  !
-  !   t_idx(:) = idx(:)
-  !   close(20)
-  ! end subroutine parse_result_NT
 end module result_parser
