@@ -54,20 +54,21 @@ program main
   type(variable_t), pointer :: var
   type(variable_t), allocatable, target :: variable_list(:)
 
-  character(len= *), parameter :: mesh_db  = "./results/mesh/"
+  !character(len= *), parameter :: mesh_db  = "./results/mesh/"
   character(len= *), parameter :: caller = "main.f90"
   character(len= *), parameter :: SOLVER = "Solver" ! The solver the variable was written by
 
+  character(len=256) :: in_path  = ' ', & ! path to .result file
+                        mesh_db  = ' ', & ! dir with mesh.* files to be read
+                        out_path = ' '    ! path to .nc file to written
 
-  ! TODO: Manually setting transient to true, but should be parsed from cmd line
-  transient = .TRUE.
-  NT = 250
-
+  ! Parse command line arguments passed by the bash wrapper
+  call argparse(in_path, mesh_db,  out_path, NT, transient)
 
   ! Parse the mesh.nodes file, which will return the x, y, z values and
   ! node indexes to be used with variable permutation tables
   !--------------------------------------------------------------------
-  call parse_nodes(mesh_db, parsed)
+  call parse_nodes(trim(mesh_db), parsed)
 
   ! Allocate array of unique indexes, only need one will be written over each call
   allocate(pidx(size(parsed%x(:))), source= (/(i,i=1,size(parsed%x(:)))/))
@@ -127,11 +128,8 @@ program main
     call fatal(caller, "Only 2D or 3D data is currently supported")
   end if
 
-  ! test3 = (reshape(parsed%nn, shape=(/Nz, Nx/), order=(/2,1/)))
-  ! test4 = (reshape(parsed%p,  shape=(/Nz, Nx/), order=(/2,1/)))
-
   ! Open the input file from which we will parse all our data
-  open(10,file=mesh_db//"Accumulation_Flux.result", status='old')
+  open(10, file=in_path, status='old')
 
   ! Find the number of variables to be parsed
   call ReadTotalDOFs(10, TotalDOFs, iostat)
@@ -149,8 +147,7 @@ program main
   !--------------------------------------------------------------------------
 
   ! Create the NetCDF file.
-  ! TODO: Take variable whih is the outfile name/path
-  call nc_check( nf90_create("results/test.nc", nf90_clobber, ncid) )
+  call nc_check( nf90_create( out_path, nf90_clobber, ncid) )
 
   ! Define the dimensions.
   call nc_check( nf90_def_dim(ncid, "coord_1", Nx, x_dimid) )
@@ -305,9 +302,14 @@ program main
 
   ! Close the file.
   call nc_check( nf90_close(ncid) )
-
-  ! If we got this far, everything worked as expected. Yipee!
-  print *,"*** SUCCESS writing example file sfc_pres_temp.nc!"
+  print *, ""
+  print *, '********************************* elmer2nc *********************************'
+  print *, '   Parsing "'//trim(in_path)//'" as input file'
+  print    '(4x, "Parsed", i6, 3x, "variables from input file")', TotalDOFs
+  print    '(4x, "Parsed", i6, 3x, "timesteps from input file")', SavedCount
+  print *, '   Wrote output to "'//trim(out_path)//'"'
+  print *, '****************************************************************************'
+  print *, ""
 
   close(10)
 

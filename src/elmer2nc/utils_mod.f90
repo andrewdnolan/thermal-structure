@@ -8,7 +8,43 @@ module utils
   Integer, Parameter :: kdp = selected_real_kind(15)
 
 contains
+!-------------------------------------------------------------------------------
+  subroutine argparse( in_path, mesh_db, out_path, NT, Transient )
+!-------------------------------------------------------------------------------
+    integer, intent(out) :: NT
+    logical, intent(out) :: Transient
+    character(len=*), intent(inout) :: in_path, mesh_db, out_path
+!-------------------------------------------------------------------------------
+    character(len=256)   ::  argument
 
+    NT = -1; in_path  = ' '; out_path = ' '; argument = ' '
+
+    select case(command_argument_count())
+    case(0:3)
+      write(*,'(A)') "Insufficent command line arguments!"
+      stop
+    case(4)
+      call get_command_argument(1, in_path)
+      call get_command_argument(2, mesh_db)
+      call get_command_argument(3, out_path)
+      call get_command_argument(4, argument)
+      read(argument, *) NT
+      if (NT > 1) then
+        transient=.TRUE.
+      elseif (NT == 1) then
+        transient=.FALSE.
+      elseif ( NT < 0 ) then
+        write(*,"(A)") "Invalid number of timesteps parsed"
+        stop
+      end if
+    case default
+      write(*,'(A)') "Too many commad line arguments passed, unable to parse."
+      stop
+    end select
+  end subroutine argparse
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
 ! read a (logical) kine from FORTRAN unit device. Inspied by "ReadAndTrim"
 ! function from elmer source code (https://github.com/ElmerCSC/elmerfem/blob/6dfb482454dba8245cf35d0e1591927156b6e1ec/fem/src/GeneralUtils.F90#L842)
 !-------------------------------------------------------------------------------
