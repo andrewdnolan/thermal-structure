@@ -8,6 +8,8 @@ __pycache__/
 
 # Elmer files
 *.result
+*.nc
+*.dat
 
 # Fortran files
 *.o
