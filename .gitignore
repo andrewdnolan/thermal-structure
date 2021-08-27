@@ -11,6 +11,8 @@ __pycache__/
 *.nc
 *.dat
 
+# include topograhy files
+!input_data/*.dat
 # Fortran files
 *.o
 *.mod

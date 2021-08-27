@@ -6,6 +6,10 @@
 #   of `elmer2nc`
 # https://www.golinuxcloud.com/bash-getopts/
 # https://gitlab.awi.de/sicopolis/sicopolis/-/blob/master/get_input_files.sh
+#
+# TODO: this is a much better way to parse, lets us have mutli cahracter cmd line
+# options:
+#   - https://github.com/amanzi/amanzi/blob/master/bootstrap.sh#L603
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 function usage()
