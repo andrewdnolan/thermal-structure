@@ -15,9 +15,9 @@ contains
     logical, intent(out) :: Transient
     character(len=*), intent(inout) :: in_path, mesh_db, out_path
 !-------------------------------------------------------------------------------
-    character(len=256)   ::  argument
+    character(len=1000)   ::  argument
 
-    NT = -1; in_path  = ' '; out_path = ' '; argument = ' '
+    NT = -1; !in_path  = ' '; out_path = ' '; argument = ' '
 
     select case(command_argument_count())
     case(0:3)
@@ -26,6 +26,7 @@ contains
     case(4)
       call get_command_argument(1, in_path)
       call get_command_argument(2, mesh_db)
+      write(*,'(a)') trim(mesh_db)//"mesh.header"
       call get_command_argument(3, out_path)
       call get_command_argument(4, argument)
       read(argument, *) NT

@@ -1,4 +1,38 @@
-# Tuesday (08/24)  
+### Friday  (09/10):
+
+__NetCDf SaveGridData__:
+  - No need to extend the `SaveGridData` Solver yourself, this has already been
+    done and was committed to the `elmerice` branch of the git repo.
+
+      - Will need to make sure you are on the  `elmerice` branch and `git pull`
+        the most recent commits.
+
+      - Might need to remake `Elmer` so as the NetCDF library is properly included
+        and linked. (Check README compilation instructions for linking NetCDF)
+        
+
+### Tuesday (09/07)
+
+__Higher Order Elements__:
+ - Was able to successfully create a mesh with 2nd order quadrilateral elements, but
+   `.sif` file failed to execute. First and foremost the current mass balance model
+   loops over the vertically aligned nodes assuming 1st order quadrilateral nodes.
+   If we want to pursue higher order elements, we will need to update that code.
+
+ - Adrian's fancy surface B.C. model from his 2020 paper requires a vertically
+   structured mesh. Seems like an unstructured mesh is off the table, but need to
+   look into indexing for higher order elements.
+
+
+### Monday (08/30)  
+
+__Synthetic Geometries__:
+  - We need the flow following coordinate system to start (i.e. x=0) at the end of
+    flowline. In the cases where there are multiple flowlines up different tributaries
+    they will have different lengths, so for a uniform coordinate system (at least
+    over the overlapping parts) the coordinates need to start at the end of flowline.
+
+### Tuesday (08/24)  
 __Bedrock Depressions at Terminus__:
   - Fisher Glacier: Terminus is at about ~18.5 km from the end of flowline.   
 

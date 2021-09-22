@@ -58,17 +58,23 @@ program main
   character(len= *), parameter :: caller = "main.f90"
   character(len= *), parameter :: SOLVER = "Solver" ! The solver the variable was written by
 
-  character(len=256) :: in_path  = ' ', & ! path to .result file
-                        mesh_db  = ' ', & ! dir with mesh.* files to be read
-                        out_path = ' '    ! path to .nc file to written
+  character(len=2000) :: in_path  = " ", & ! path to .result file
+                         mesh_db  = " ", & ! dir with mesh.* files to be read
+                         out_path = " "    ! path to .nc file to written
 
   ! Parse command line arguments passed by the bash wrapper
   call argparse(in_path, mesh_db,  out_path, NT, transient)
 
+  write(*,*)
+  write(*,'(a)') trim(mesh_db)//"mesh.header"
+  write(*,*)
+
   ! Parse the mesh.nodes file, which will return the x, y, z values and
   ! node indexes to be used with variable permutation tables
   !--------------------------------------------------------------------
-  call parse_nodes(trim(mesh_db), parsed)
+  call parse_nodes(mesh_db, parsed)
+
+  write(*,*) parsed%nnodes
 
   ! Allocate array of unique indexes, only need one will be written over each call
   allocate(pidx(size(parsed%x(:))), source= (/(i,i=1,size(parsed%x(:)))/))
@@ -95,6 +101,7 @@ program main
   coord_1   = (reshape(parsed%x,  shape=(/Nz, Nx/), order=(/2,1/)))
   coord_2   = (reshape(parsed%y,  shape=(/Nz, Nx/), order=(/2,1/)))
   nodes_num = (reshape(parsed%nn, shape=(/Nz, Nx/), order=(/2,1/)))
+
 
   ! 2D Case. Primary use case
   !------------------------------------------------
@@ -129,7 +136,7 @@ program main
   end if
 
   ! Open the input file from which we will parse all our data
-  open(10, file=in_path, status='old')
+  open(10, file=trim(in_path), status='old')
 
   ! Find the number of variables to be parsed
   call ReadTotalDOFs(10, TotalDOFs, iostat)
@@ -147,7 +154,7 @@ program main
   !--------------------------------------------------------------------------
 
   ! Create the NetCDF file.
-  call nc_check( nf90_create( out_path, nf90_clobber, ncid) )
+  call nc_check( nf90_create( trim(out_path), nf90_clobber, ncid) )
 
   ! Define the dimensions.
   call nc_check( nf90_def_dim(ncid, "coord_1", Nx, x_dimid) )
