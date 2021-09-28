@@ -1,3 +1,29 @@
+### Thursday (09/23) Research Meeting w/ G.F.:
+
+__Synthetic Geometries__:  
+  - With the addition of Glacier #18, the "small" glacier class still only has 2 glacier, whereas "medium" and "large" classes have three each.
+
+  - _To Do_:        
+    - [ ] Add another small glacier to make it 3 in each class, maybe glacier #13 from Crompton field study.
+
+    - [ ] Clip the fore-field topography in the "all glaciers" plot to see if it
+    helps with the crazy aspect ratio needed to make the plot readable.
+
+__Enthalpy Model__:
+  - Current test runs use a 6-month time step for the enthalpy equation.  
+    - __GF__: If we are actually trying to resolve seasonal forcing wouldn't a 1
+    or 2 month time step make more sense?
+  - _Experiment_:
+    - [ ] Compare Enthalpy results for 1-year, 6-month, 2-month, and 1-month time steps.
+
+__Mass Balance Model__:
+  - Linear firn density profile is OK, but feels a little weird. An exponential
+    profile like Nat used would make more sense physically.
+      - Look into briefly, but linear is working and not worth sinking too much
+        time into.
+
+---
+
 ### Friday  (09/10):
 
 __NetCDf SaveGridData__:
@@ -9,7 +35,8 @@ __NetCDf SaveGridData__:
 
       - Might need to remake `Elmer` so as the NetCDF library is properly included
         and linked. (Check README compilation instructions for linking NetCDF)
-        
+
+---
 
 ### Tuesday (09/07)
 
@@ -23,6 +50,7 @@ __Higher Order Elements__:
    structured mesh. Seems like an unstructured mesh is off the table, but need to
    look into indexing for higher order elements.
 
+---
 
 ### Monday (08/30)  
 
@@ -31,6 +59,8 @@ __Synthetic Geometries__:
     flowline. In the cases where there are multiple flowlines up different tributaries
     they will have different lengths, so for a uniform coordinate system (at least
     over the overlapping parts) the coordinates need to start at the end of flowline.
+
+---
 
 ### Tuesday (08/24)  
 __Bedrock Depressions at Terminus__:

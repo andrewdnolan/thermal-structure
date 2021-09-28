@@ -1,5 +1,6 @@
 # OSX
-.DS_Store# OS.DS_Store# OS.DS_Store
+.DS_Store
+# OS.DS_Store# OS.DS_Store
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -10,6 +11,7 @@ __pycache__/
 *.result
 *.nc
 *.dat
+*.vtu
 
 # include topograhy files
 !input_data/*.dat

@@ -99,5 +99,5 @@ function check_args()
 ################################################################################
 check_args $*
 
-./bin/elmer2nc $result_fn $mesh_db $out_fp $NT
+${0%src/elmer2nc/elmer2nc.sh}bin/elmer2nc $result_fn $mesh_db $out_fp $NT
 ################################################################################

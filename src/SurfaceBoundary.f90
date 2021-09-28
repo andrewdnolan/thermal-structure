@@ -149,14 +149,17 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
           endif
       ENDDO
 
+      ! if accu_days (in fractional years) exceeds one there is problem
+      if (accu_days > 1.0) write(*,'(a)') "Warning: accu_days exceeds 1"
+
       ! calculate snow accumulation
-      A_snow=accu_days*(A_mean+(z-z_precip)*grad_accu)
+      A_snow=(accu_days*A_mean)*(1 + (z-z_precip)*grad_accu)
       ! calculate local surface melt assuming f_m = f_snow
       melt_local = PDDs * f_snow
       ! calculate refreezing
       R = min(f_r*A_snow, melt_local)
       ! compute the ratio b/w accumulated snow and total melt assuming f_m = f_snow
-      r_s2m = (A_snow - R*(1 + rho_w/((1-rho_s/rho_i)*rho_s)) ) / (melt_local)
+      r_s2m = A_snow / melt_local
 
       ! compute the degree-day factor
       if (r_s2m >= 1) then
@@ -171,12 +174,14 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
       ! Set the mass balance [m yr^{-1}]
       MB % values (MB % perm(n)) = (A_snow + R - M_melt) * (1 / rho_i)
       ! Set the surface melt [kg m^{-2} yr^{-1}]
-      Melting % values (Melting % perm(n)) = M_melt
+      Melting % values (Melting % perm(n)) = M_melt / rho_w
 
       ! calculate the time dependent firn thickness
-      ! NOTE: UNITS Inconsitent here
+      ! NOTE: assuming all new firn is added with the desnity of ice. Inconsistent
+      !       with Gilbert et al. 2020, check with Gwenn about this
       Firn % values (Firn % perm(n)) = Firn % values (Firn % perm(n)) &
-      + (r_s2m*melt_local-M_melt)*dt - Firn % values (Firn % perm(n))*0.3*dt/10.0
+            + ( (A_snow - R  - M_melt) * (1/rho_i) - 0.03 * Firn % values (Firn % perm(n)) )*dt
+
       ! fix negative firn thickness if ablation occurs
       if ( Firn % values (Firn % perm(n))  < 0.0) then
           Firn % values (Firn % perm(n)) = 0.0
@@ -184,13 +189,14 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
 
       ! iterate over vertically aligned nodes
       do i=1,nb_vert
+
         ! index of ith vertically aligned node
         cont=n-(i-1)*nb_surf
 
         ! Check if within firn aquifer, if so set linear density profile
         if (  Firn % values (Firn % perm(n)) > 1.0) then
           ! NOTE: UNITS Inconsitent here
-          Dens % values ( Dens % perm(cont)) = rho_s + Depth%values(Depth%perm(cont))/Firn%values(Firn%perm(n))*(rho_i - rho_s)
+          Dens % values ( Dens % perm(cont)) = rho_s + (Depth%values(Depth%perm(cont))/Firn%values(Firn%perm(n)))*(rho_i - rho_s)
         else
           Dens % values ( Dens % perm(cont)) = rho_i
         endif
@@ -213,56 +219,68 @@ END SUBROUTINE SurfaceMassBalance
 ! end function GetModelConstant
 
 
-! FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
-!   ! provides you with most Elmer functionality
-!   USE DefUtils
-!   ! saves you from stupid errors
-!   IMPLICIT NONE
-!   ! the external variables
-!   !----------------------------------------------------------------------------
-!   TYPE(Model_t) :: Model         ! the access point to everything about the model
-!   INTEGER       :: Node          ! the current Node number
-!   REAL(KIND=dp) :: InputArray(1) ! Contains the argument passed to the function
-!   REAL(KIND=dp) :: Temp          ! intermediate result
-!   REAL(KIND=dp) :: Enthalpy      ! the final result
-!   !----------------------------------------------------------------------------
-!   ! internal variables
-!   !----------------------------------------------------------------------------
-!   REAL(KIND=dp) :: lapserate
-!   REAL(KIND=dp) :: intercept
-!   REAL(KIND=dp) :: elevation
-!   REAL(KIND=dp) :: T_ref, CapA, CapB
-!
-!   ! Enthalpy related constants
-!   T_ref     = 200.0               ! [K]
-!   CapA      = 7.253               ! [J kg-1 K-2]
-!   CapB      = 146.3               ! [J kg-1 K-1]
-!
-!   ! lets hard-code our values (if we have time we can later make them being read from SIF)
-!   lapserate = -0.0065_dp          ! [K m^{-1}] atmospheric lapse rate
-!   intercept = 285.15              ! [K] temp at z=0
-!   elevation = InputArray(1)       ! [m] elevation of current surface node
-!
-!   ! Calculate the temperature
-!   Temp      = lapserate*elevation + intercept
-!
-!   ! calculate mean annual surface temperature
-!   T_surf = grad*(alt-z)+Tmean+273.15
-!   ! calculate the seasonal (6-month) surface temp
-!   if (mod(floor(t_simu/dt), 2) == 1) then
-!     T_surf = T_surf + alpha/2.0
-!   else
-!     T_surf = T_surf - alpha/2.0
-!   endif
-!   ! ! NOTE: Make sure this is correct .......
-!   ! ! Temperature can't exced the melting point at the surface
-!   ! if (T_surf > 273.15) then
-!   !   T_surf = 273.15
-!   ! endif
-!
-!
-!   Enthalpy  = (CapA/2*(Temp**2 - T_ref**2) + CapB*(Temp-T_ref)) ! [J kg-1]
-!
-!   RETURN
-!
-! END FUNCTION getSurfaceEnthalpy
+FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
+  USE DefUtils
+  IMPLICIT NONE
+
+  ! the external variables
+  !----------------------------------------------------------------------------
+  TYPE(Model_t) :: Model         ! the access point to everything about the model
+  INTEGER       :: Node          ! the current Node number
+  REAL(KIND=dp) :: InputArray(1) ! Contains the argument passed to the function
+  REAL(KIND=dp) :: Enthalpy      ! the final result
+  TYPE(Variable_t), POINTER :: TimeVar
+  !----------------------------------------------------------------------------
+  ! internal variables
+  !----------------------------------------------------------------------------
+  REAL(KIND=dp) :: Time,        & ! simulation time                    [a]
+                   Timestep(1), & ! vector of timestep size            [a]
+                   dt             !
+  REAL(KIND=dp) :: T_surf         ! intermediate result
+  REAL(KIND=dp) :: z              ! surface elevation of current node  [m a.s.l.]
+  REAl(KIND=dp) :: alpha          ! annual surf. air temp. amplitude   [K]
+  REAL(KIND=dp) :: T_mean         ! mean annual surf. air. temp        [K]
+  REAL(KIND=dp) :: ref_z          ! reference surface elevation        [m a.s.l.]
+  REAL(KIND=dp) :: grad_T         ! air temp lapse rate                [K m^{-1}]
+  REAL(KIND=dp) :: T_ref, CapA, CapB
+  REAL(KIND=dp) :: year
+
+
+  integer :: DOY                  ! number of timesteps in a year
+  logical ::  Found, Transient
+
+  Transient = GetString(GetSimulation(), "Simulation type", Found)=='transient'
+
+  ! Enthalpy related constants
+  T_ref     = GetConstReal(Model % Constants, "t_ref_enthalpy")            ! [K]
+  CapA      = GetConstReal(Model % Constants, "Enthalpy Heat Capacity A ") ! [J kg-1 K-2]
+  CapB      = GetConstReal(Model % Constants, "Enthalpy Heat Capacity B")  ! [J kg-1 K-1]
+  alpha     = GetConstReal(Model % Constants, "delta_T")                   ! [K]
+  grad_T    = GetConstReal(Model % Constants, "grad_T" )                   ! [K m^{-1}]
+  T_mean    = GetConstReal(Model % Constants, "T_mean" )                   ! [K]
+  ref_z     = GetConstReal(Model % Constants, "ref_z" )                    ! [m a.s.l.]
+  z         = InputArray(1)              ! elevation of current surface node [m]
+
+
+  if (Transient) then
+    TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
+    Time     =  TimeVar % Values(1)
+    ! Convert real time into approximate DOY
+    DOY    = NINT((Time - floor(Time))*365.0)
+    ! Find surface temp for DOY
+    T_surf=alpha*sin(2*3.14*DOY/365)+grad_T*(ref_z-z)+T_mean
+  else
+    ! calculate mean annual surface temperature
+    T_surf = grad_T*(ref_z-z)+T_mean
+  endif
+
+  ! Temperature can't exced the melting point at the surface
+  if (T_surf > 273.15) then
+    T_surf = 273.15
+  endif
+
+  Enthalpy  = (CapA/2*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+
+  RETURN
+
+END FUNCTION getSurfaceEnthalpy

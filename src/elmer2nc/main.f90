@@ -202,13 +202,13 @@ program main
   call nc_check( nf90_put_var(ncid, ZZ_varid, coord_2) )
   call nc_check( nf90_put_var(ncid, nn_varid, nodes_num) )
 
+  ! Initialize timestep variable
+  Timestep = 0
   ! Loop over the timesteps
   do while ( Timestep < NT   )
 
     ! Read the current timestep info
     call ReadTime( 10, SavedCount, Timestep, Time, iostat )
-
-    !write(*,*) SavedCount,Timestep,Time
 
     ! For a given timestep loop over each of the variable to be read
     do i=1,TotalDOFs
