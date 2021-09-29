@@ -65,7 +65,7 @@ Simulation
   Steady State Min Iterations = 1
   Steady State Max Iterations = 1
 
-  Timestep Intervals          = 500  ![a]
+  Timestep Intervals          = 750  ![a]
   Timestep Sizes              = 1.0  ![a]
   Output Intervals            = 1
 

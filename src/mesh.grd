@@ -21,4 +21,4 @@ Element Innernodes = True
 Element Degree = 1
 Triangles = False
 Element Divisions 1 = 554
-Element Divisions 2 = 10
+Element Divisions 2 = 15
