@@ -247,7 +247,7 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
 
 
   integer :: DOY                  ! number of timesteps in a year
-  logical ::  Found, Transient
+  logical :: Found, Transient
 
   Transient = GetString(GetSimulation(), "Simulation type", Found)=='transient'
 

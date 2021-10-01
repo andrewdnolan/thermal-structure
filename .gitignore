@@ -2,6 +2,9 @@
 .DS_Store
 # OS.DS_Store# OS.DS_Store
 
+# Compiled code
+bin/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

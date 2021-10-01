@@ -1,4 +1,4 @@
-!echo off
+!echo on
 
 ! Physical Constants
 #spy         = 365.25*24*60*60                        ![s a^-1]
@@ -37,7 +37,6 @@ Constants
   !~~~~~~~~~~~~~~~~~~~~~~~~
   delta_T       = real 12.0      ! annual surf. air temp. amplitude   [K]
   T_mean        = real 265.15    ! mean annual surf. air. temp        [K]
-  ! NOTE: Adrian claims this is in units of m w.eq.:
   A_mean        = real 2500.0    ! mean annual accumulation           [kg m^{-2} yr^{-1}]
   ref_z         = real 2300.0    ! reference surface elevation        [m a.s.l.]
   d_firn        = real 0.03      ! firn regularization                [kg m^{-2} y^{-1}]
@@ -86,18 +85,18 @@ Simulation
   Coordinate System           = "Cartesian 2D"
   Simulation Type             = "Transient"
   Timestepping Method         = "BDF"
-  BDF order                   = 2
+  BDF order                   = 3
 
   Steady State Min Iterations = 1
   Steady State Max Iterations = 25
 
-  Timestep Intervals          = <NT>
-  Timestep Sizes              = <H_dt>  ![a] monthly timestep
+  Timestep Intervals          = 50
+  Timestep Sizes              = 1  ![a] monthly timestep
   Output Intervals            = 1
   Restart File                = "uncoupled.result"
   Restart Time                = Real 0.0
-  Post File                   = "../VTU/<T>a_dt_<dt_m>m.vtu"
-  Output File                 = "<T>a_dt_<dt_m>m.result"        !\"
+  Post File                   = "../VTU/50a_dt_12m_crank.vtu"
+  Output File                 = "50a_dt_12m_crank.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
 End
@@ -256,7 +255,7 @@ Solver 1
 End
 
 Solver 2
-  Exec Interval              = <NT_a>
+  Exec Interval              = 1
   Exec Solver                = "before timestep"
   Equation                   = "MapCoordinate"
   Procedure                  = "StructuredMeshMapper" "StructuredMeshMapper"
@@ -272,7 +271,7 @@ Solver 2
 End
 
 Solver 3
-  Exec Interval              = <NT_a>
+  Exec Interval              = 1
   Equation                   = "HeightDepth"
   Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -283,7 +282,7 @@ End
 
 ! Stokes Flow
 Solver 4
-  Exec Interval                            = <NT_a>
+  Exec Interval                            = 1
   Equation                                 = "Navier-Stokes"
   Optimize Bandwidth                       = Logical True
   Stabilization Method                     = String "Stabilized"
@@ -312,7 +311,7 @@ End
 
 ! Surface Mass Balance
 Solver 5
-  Exec Interval            = <NT_a>
+  Exec Interval            = 1
   Equation                 = "SurfBoundary"
   procedure                =  "../../bin/SurfaceBoundary" "SurfaceMassBalance"
 
@@ -329,7 +328,7 @@ End
 
 ! Free Surface
 Solver 6
-   Exec Interval                           = <NT_a>
+   Exec Interval                           = 1
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
    Variable DOFs                           =  1
@@ -386,10 +385,10 @@ Solver 7
   Steady State Convergence Tolerance       = 1.0E-04
 
   Apply Limiter                            = Logical True
-  Apply Dirichlet                          = Logical True
-  Stabilize                                = Logical True
-  Nonlinear Update Exported Variables      = Logical True
-  Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
+  !Apply Dirichlet                          = Logical True
+  !Stabilize                                = Logical True
+  ! Nonlinear Update Exported Variables      = Logical True
+  ! Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
 
   Exported Variable 1                      = String "Phase Change Enthalpy" ! (J kg-1)
   Exported Variable 1 DOFs                 = 1

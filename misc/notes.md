@@ -1,3 +1,19 @@
+### Wednesday (09/29) Research Meeting w/ G.F.:
+
+__Enthalpy Surface B.C.__:
+  - Applying the temperature forcing as the discrete temperature at the time step
+    isn't super intuitive to Gwenn. Suggests average temperature between the previous
+    time step and the current time step.  
+  - Months physically mean something, but numerically for properly sampling the
+    temperature forcing, they don't make that much sense. Suggests 9 time steps
+    per year, you accurately capture all the signal.
+
+__Corrugated Temperature__:
+  - Present in prognostic simulations but not diagnostic.
+  - Looks like a numerical problem to Gwenn.
+  - Suggests turning off coupling (so heat transfer through diffusion only, no advection)
+    to start de-bugging 
+
 ### Thursday (09/23) Research Meeting w/ G.F.:
 
 __Synthetic Geometries__:  
