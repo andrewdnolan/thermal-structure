@@ -1,4 +1,4 @@
-!echo on
+!echo off
 
 ! Physical Constants
 #spy         = 365.25*24*60*60                        ![s a^-1]
@@ -37,6 +37,7 @@ Constants
   !~~~~~~~~~~~~~~~~~~~~~~~~
   delta_T       = real 12.0      ! annual surf. air temp. amplitude   [K]
   T_mean        = real 265.15    ! mean annual surf. air. temp        [K]
+  ! NOTE: Adrian claims this is in units of m w.eq.:
   A_mean        = real 2500.0    ! mean annual accumulation           [kg m^{-2} yr^{-1}]
   ref_z         = real 2300.0    ! reference surface elevation        [m a.s.l.]
   d_firn        = real 0.03      ! firn regularization                [kg m^{-2} y^{-1}]
@@ -85,7 +86,7 @@ Simulation
   Coordinate System           = "Cartesian 2D"
   Simulation Type             = "Transient"
   Timestepping Method         = "BDF"
-  BDF order                   = 3
+  BDF order                   = 2
 
   Steady State Min Iterations = 1
   Steady State Max Iterations = 25
@@ -95,8 +96,8 @@ Simulation
   Output Intervals            = 1
   Restart File                = "uncoupled.result"
   Restart Time                = Real 0.0
-  Post File                   = "../VTU/50a_dt_12m_crank.vtu"
-  Output File                 = "50a_dt_12m_crank.result"        !\"
+  Post File                   = "../VTU/<run>.vtu"
+  Output File                 = "<run>.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
 End
@@ -220,11 +221,12 @@ Material 1
   ! Thermodynamic Properties for Enthalpy:
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Enthalpy Density           = Equals "Densi"        ! [kg m-3]
-  Enthalpy Water Diffusivity = real #1.045e-4*spy    ! [kg m-1 a-1] <--- [kg m-1 s-1] (Gilbert et al. 2014, Table 1)
+  Enthalpy Water Diffusivity = real #1.0e-5*spy     ! [kg m-1 a-1] <--- [kg m-1 s-1] (wilson and Flowers 2013, Table 1)
+  Enthalpy Heat Diffusivity  = <diffusion>
+
   ! NOTE: the enthalpy heat Diffusivity should be a function of temperature and
   !       density
-  Enthalpy Heat Diffusivity  = Variable Temperature
-                               Real procedure "../../bin/thermodynamics" "Diffusivity"
+
   ! Limiters
   Min Zs                  = Variable Zbed
                             Real MATC "tx(0)+25.0"
@@ -385,10 +387,10 @@ Solver 7
   Steady State Convergence Tolerance       = 1.0E-04
 
   Apply Limiter                            = Logical True
-  !Apply Dirichlet                          = Logical True
-  !Stabilize                                = Logical True
-  ! Nonlinear Update Exported Variables      = Logical True
-  ! Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
+  Apply Dirichlet                          = Logical True
+  Stabilize                                = Logical True
+  Nonlinear Update Exported Variables      = Logical True
+  Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
 
   Exported Variable 1                      = String "Phase Change Enthalpy" ! (J kg-1)
   Exported Variable 1 DOFs                 = 1

@@ -16,7 +16,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "." "mesh"     !\"
+  Mesh DB           "." "mesh_nz31"     !\"
   Include Path      "."            !\"
   Results Directory "."            !\"
 End

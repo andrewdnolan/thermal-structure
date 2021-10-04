@@ -9,7 +9,7 @@ mesh_files = $(foreach wrd,$(mesh_extensions),$(MESH_DIR)/mesh.$(wrd))
 
 # make the mesh dir if does not exist
 $(mesh_files) : $(MESH_DIR)
-	cd  ../.. && ./scripts/make_mesh.sh 200 ./study/enthalpy_timestep/mesh
+	cd  ../.. && ./scripts/make_mesh.sh 200 ./study/enthalpy_timestep/$(MESH_DIR)
 
 # make the mesh dir if does not exist
 $(MESH_DIR) :

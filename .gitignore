@@ -16,6 +16,10 @@ __pycache__/
 *.dat
 *.vtu
 
+# figures
+*.png
+*.eps
+
 # include topograhy files
 !input_data/*.dat
 # Fortran files
