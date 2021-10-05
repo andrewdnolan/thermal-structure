@@ -16,7 +16,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "." "mesh_nz31"     !\"
+  Mesh DB           "." "mesh"     !\"
   Include Path      "."            !\"
   Results Directory "."            !\"
 End
@@ -63,7 +63,7 @@ Constants
   Enthalpy Heat Conductivity A    = Real 2.5e-6                 ![W m^5 K^-1 kg^-2]
   Enthalpy Heat Conductivity B    = Real 1.23e-4                ![W m^2 K^-1 kg^-1]
   Enthalpy Heat Conductivity C    = Real 0.024                  ![W kg-1 m-1]
-  P_triple                        = real 0.061173               ![MPa] Triple point pressure for water
+  P_triple                        = real 6.1173e-4              ![MPa] Triple point pressure for water
   P_surf                          = real 0.1013                 ![MPa] Surface atmospheric pressure
   T_triple                        = Real 273.16                 ![K]       Temperature of water triple point
   beta_clapeyron                  = real 0.0974                 ![K MPa-1] Clausus clapeyron relationship (Gilbert et al. 2014)

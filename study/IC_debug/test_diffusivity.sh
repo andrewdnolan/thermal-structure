@@ -2,13 +2,13 @@
 
 NT=50
 
-
-for diff in "constant" "variable"; do
+# "constant"
+for diff in "variable_fixed_diff"; do
 
   echo -e "------------------------------------------------------------------------\n" \
           "Running test case for ${diff} temperate diffusivity\n"\
           "------------------------------------------------------------------------\n" \
-          >> "test.out" 2>&1
+          > "test.out" 2>&1
 
 
   if   [[ "$diff" == "constant" ]]; then
@@ -16,8 +16,8 @@ for diff in "constant" "variable"; do
     sed "s#<run>#"$diff"#g;
          s#<diffusion>#real \#9.92e-4*spy#g" "diffusivity.sif" > "${diff}.sif"
 
-  elif [[ "$diff" == "variable" ]]; then
-    string="Variable Temperature \n \t\t\t Real procedure "../../bin/thermodynamics" "Diffusivity" "
+  elif [[ "$diff" == "variable" ]] || [[ "$diff" == "variable_fixed_diff" ]]; then
+    string="Variable Temperature \n \t\t\t Real procedure \"../../bin/thermodynamics\" \"Diffusivity\" "
 
     sed "s#<run>#"$diff"#g;
          s#<diffusion>#$string#g" "diffusivity.sif" > "${diff}.sif"

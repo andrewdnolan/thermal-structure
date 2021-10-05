@@ -279,7 +279,7 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
     T_surf = 273.15
   endif
 
-  Enthalpy  = (CapA/2*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+  Enthalpy  = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
 
   RETURN
 

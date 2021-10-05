@@ -7,6 +7,9 @@ mesh_extensions := boundary elements header nodes
 # For each "word" in foo, output that same word with an exclamation after
 mesh_files = $(foreach wrd,$(mesh_extensions),$(MESH_DIR)/mesh.$(wrd))
 
+
+all: $(mesh_files) ../../bin/surf_9point_BC
+
 # make the mesh dir if does not exist
 $(mesh_files) : $(MESH_DIR)
 	cd  ../.. && ./scripts/make_mesh.sh 200 ./study/enthalpy_timestep/$(MESH_DIR)
@@ -14,3 +17,6 @@ $(mesh_files) : $(MESH_DIR)
 # make the mesh dir if does not exist
 $(MESH_DIR) :
 	test ! -d $(MESH_DIR) && mkdir $(MESH_DIR)
+
+../../bin/surf_9point_BC : src/surf_9point_BC.f90
+	elmerf90 $^ -o $@ #1> /dev/null

@@ -91,13 +91,13 @@ Simulation
   Steady State Min Iterations = 1
   Steady State Max Iterations = 25
 
-  Timestep Intervals          = 50
-  Timestep Sizes              = 1  ![a] monthly timestep
+  Timestep Intervals          = 450
+  Timestep Sizes              = 0.11111111  ![a] 9 timesteps per year
   Output Intervals            = 1
   Restart File                = "uncoupled.result"
   Restart Time                = Real 0.0
-  Post File                   = "../VTU/<run>.vtu"
-  Output File                 = "<run>.result"        !\"
+  Post File                   = "../VTU/surf_9point_BC_mean.vtu"
+  Output File                 = "surf_9point_BC_mean.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
 End
@@ -168,9 +168,9 @@ Body Force 1
   Flow Solution Passive      = Variable depth, height
                              Real lua "((tx[0] + tx[1]) < 25.0)"
 
-  ! ! Deformational Heat Source
-  ! Heat Souce = Variable "W"
-  !              real MATC "if (tx<0.0) (0.0); else (tx*1e6/917.0)" !Convert to J yr-1 kg-1
+  ! Deformational Heat Source
+  Heat Souce = Variable "W"
+               real MATC "if (tx<0.0) (0.0); else (tx*1e6/917.0)" !Convert to J yr-1 kg-1
 
   ! Enthalpy Limiters
   Enthalpy_h Upper Limit = Variable Phase Change Enthalpy
@@ -221,12 +221,11 @@ Material 1
   ! Thermodynamic Properties for Enthalpy:
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   Enthalpy Density           = Equals "Densi"        ! [kg m-3]
-  Enthalpy Water Diffusivity = real #1.0e-5*spy     ! [kg m-1 a-1] <--- [kg m-1 s-1] (wilson and Flowers 2013, Table 1)
-  Enthalpy Heat Diffusivity  = <diffusion>
-
+  Enthalpy Water Diffusivity = real #1.045e-4*spy    ! [kg m-1 a-1] <--- [kg m-1 s-1] (Gilbert et al. 2014, Table 1)
   ! NOTE: the enthalpy heat Diffusivity should be a function of temperature and
   !       density
-
+  Enthalpy Heat Diffusivity  = Variable Temperature
+                               Real procedure "../../bin/thermodynamics" "Diffusivity"
   ! Limiters
   Min Zs                  = Variable Zbed
                             Real MATC "tx(0)+25.0"
@@ -257,7 +256,7 @@ Solver 1
 End
 
 Solver 2
-  Exec Interval              = 1
+  Exec Interval              = 9
   Exec Solver                = "before timestep"
   Equation                   = "MapCoordinate"
   Procedure                  = "StructuredMeshMapper" "StructuredMeshMapper"
@@ -273,7 +272,7 @@ Solver 2
 End
 
 Solver 3
-  Exec Interval              = 1
+  Exec Interval              = 9
   Equation                   = "HeightDepth"
   Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -284,7 +283,7 @@ End
 
 ! Stokes Flow
 Solver 4
-  Exec Interval                            = 1
+  Exec Interval                            = 9
   Equation                                 = "Navier-Stokes"
   Optimize Bandwidth                       = Logical True
   Stabilization Method                     = String "Stabilized"
@@ -313,7 +312,7 @@ End
 
 ! Surface Mass Balance
 Solver 5
-  Exec Interval            = 1
+  Exec Interval            = 9
   Equation                 = "SurfBoundary"
   procedure                =  "../../bin/SurfaceBoundary" "SurfaceMassBalance"
 
@@ -330,7 +329,7 @@ End
 
 ! Free Surface
 Solver 6
-   Exec Interval                           = 1
+   Exec Interval                           = 9
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
    Variable DOFs                           =  1
@@ -470,7 +469,7 @@ Boundary Condition 2
   Top Surface          = Equals "Zs"
   Depth                = Real 0.0
   Enthalpy_h           = Variable Coordinate 2
-                         Real Procedure  "../../bin/SurfaceBoundary" "getSurfaceEnthalpy"
+                         Real Procedure  "../../bin/surf_9point_BC" "SE_mean"
   ! ! Prescribe melt for percolation model
   ! Surf_melt            = Equals "Melting"
 

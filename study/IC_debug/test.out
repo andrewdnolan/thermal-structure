@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------
- Running test case for constant temperate diffusivity
+ Running test case for variable_fixed_diff temperate diffusivity
  ------------------------------------------------------------------------
 
 ./mesh/mesh.header
@@ -9,26 +9,9 @@
         2384
  
  ********************************* elmer2nc *********************************
-    Parsing "./mesh/constant.result" as input file
+    Parsing "./mesh/variable_fixed_diff.result" as input file
     Parsed    22   variables from input file
     Parsed    50   timesteps from input file
-    Wrote output to "./nc/constant.nc"
- ****************************************************************************
- 
-------------------------------------------------------------------------
- Running test case for variable temperate diffusivity
- ------------------------------------------------------------------------
-
-./mesh/mesh.header
-
-./mesh/mesh.header
-
-        2384
- 
- ********************************* elmer2nc *********************************
-    Parsing "./mesh/variable.result" as input file
-    Parsed    22   variables from input file
-    Parsed    50   timesteps from input file
-    Wrote output to "./nc/variable.nc"
+    Wrote output to "./nc/variable_fixed_diff.nc"
  ****************************************************************************
  
