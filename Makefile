@@ -1,23 +1,22 @@
+# folder to store compiled files
+BIN_DIR = bin
+# folder with fortran source
+SRC_DIR = src
+# Find all the source files
+SRC = $(wildcard src/*.f90)
+# compiled executables used in .sif files
+EXEC := $(SRC:src/%.f90=$(BIN_DIR)/%)
 
-#https://stackoverflow.com/questions/488333/gfortran-how-to-control-output-directory-for-mod-files
-FC=gfortran
-FCFLAGS=-O3 -Wall -Wextra -Wconversion -pedantic
-EXE=bin/elmer2nc
-OBJS=bin/main.o bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o bin/utils_mod.o
+all: $(EXEC) elmer2nc
 
+# compile the *.F90 files with the `elmerf90` alias
+$(EXEC): $(SRC)
+	elmerf90 $< -o $@ #> /dev/null
 
-all: $(EXE)
-
-bin/nodes_mod.o: bin/utils_mod.o
-bin/variable_mod.o: bin/utils_mod.o
-bin/results_mod.o: bin/variable_mod.o bin/utils_mod.o
-bin/main.o: src/elmer2nc/main.f90 bin/nodes_mod.o bin/results_mod.o bin/variable_mod.o bin/utils_mod.o
-
-$(EXE): $(OBJS)
-	$(FC) $(FCFLAGS) $(OBJS) -o $@ `nf-config --fflags --flibs`
-
-bin/%.o: src/elmer2nc/%.f90
-	gfortran -Wall -Wextra -Wconversion -pedantic -c $< -o $@ -J bin/ `nf-config --fflags --flibs`
+# make the elmer2nc .result parser using thr makefile in it's source folder
+elmer2nc: $(wildcard src/elmer2nc/*.f90)
+	$(MAKE) -C src/elmer2nc
 
 clean:
-	rm $(EXE) bin/*.mod bin/*.o
+	ls bin/* | grep -v "\." | xargs rm && \
+	rm bin/*.o bin/*.mod
