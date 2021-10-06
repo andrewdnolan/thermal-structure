@@ -3,15 +3,15 @@ BIN_DIR = bin
 # folder with fortran source
 SRC_DIR = src
 # Find all the source files
-SRC = $(wildcard src/*.f90)
+SRC  := $(wildcard src/*.f90)
 # compiled executables used in .sif files
 EXEC := $(SRC:src/%.f90=$(BIN_DIR)/%)
 
-all: $(EXEC) elmer2nc
+all: $(EXEC) #elmer2nc
 
 # compile the *.F90 files with the `elmerf90` alias
-$(EXEC): $(SRC)
-	elmerf90 $< -o $@ #> /dev/null
+$(BIN_DIR)/%: $(SRC_DIR)/%.f90
+	elmerf90 $^ -o $@ #> /dev/null
 
 # make the elmer2nc .result parser using thr makefile in it's source folder
 elmer2nc: $(wildcard src/elmer2nc/*.f90)

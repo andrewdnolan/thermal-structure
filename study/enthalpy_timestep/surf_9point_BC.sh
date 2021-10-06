@@ -2,7 +2,8 @@
 
 T=50  #[a]
 
-for case in "discrete" "mean"; do
+# "discrete" 
+for case in "mean"; do
 
 
   # Place appropriate variables in

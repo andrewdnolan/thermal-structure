@@ -83,7 +83,8 @@ FUNCTION SE_mean(Model, Node, InputArray) RESULT(Enthalpy)
   REAL(KIND=dp) :: Time_n,      & ! simulation time                    [a]
                    Time_nm1   , & ! Time_n minus 1                     [a]
                    dt_sizes(1), & ! vector of timesteps, but assumed of size one
-                   dt             ! timestep size
+                   dt,          & ! timestep size
+                   dt_prev        ! previous timestep size
   REAL(KIND=dp) :: T_surf         ! intermediate result
   REAL(KIND=dp) :: z              ! surface elevation of current node  [m a.s.l.]
   REAl(KIND=dp) :: alpha          ! annual surf. air temp. amplitude   [K]
@@ -95,7 +96,9 @@ FUNCTION SE_mean(Model, Node, InputArray) RESULT(Enthalpy)
 
 
   integer :: i, DOY_n, DOY_nm1       ! number of timesteps in a year
-  logical :: Found, Transient
+  logical :: Found, Transient, first_time=.TRUE.
+
+  save first_time, dt_prev
 
   Transient = GetString(GetSimulation(), "Simulation type", Found)=='transient'
 
@@ -109,26 +112,55 @@ FUNCTION SE_mean(Model, Node, InputArray) RESULT(Enthalpy)
   ref_z     = GetConstReal(Model % Constants, "ref_z" )                    ! [m a.s.l.]
   z         = InputArray(1)              ! elevation of current surface node [m]
 
-
   if (Transient) then
+
     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
     Time_n   =  TimeVar % Values(1)
     TimestepSizes => ListGetConstRealArray(Model%Simulation, "Timestep Sizes", Found)
     dt       = TimestepSizes(1,1)
 
-    !write(*,*) dt
-    Time_nm1 = Time_n - dt
 
+    if (first_time .and. Time_n == 0.0) then
+      dt_prev=0.0
+    else
+      first_time=.FALSE.
+    end if
+
+    !write(*,*) dt_prev
+    Time_nm1 = Time_n - dt_prev
+
+    !write(*,*) Time_nm1, Time_n
     ! Convert real time into approximate DOY
-    DOY_n    = NINT((Time_n - floor(Time_n))*365.0)
+    DOY_n    = NINT((Time_n   - floor(Time_n  ))*365.0)
     DOY_nm1  = NINT((Time_nm1 - floor(Time_nm1))*365.0)
 
+    if (DOY_nm1 > DOY_n) then
+      ! because of machine precision
+      DOY_nm1 = 0
+    endif
+
+    ! --------------------
+    ! Arithmatic mean
+    ! --------------------
+
     ! Find the average surface temp, between current and last timesteps
-    do i = DOY_nm1, DOY_n, 1
-      sum = sum + alpha*sin(2*3.14*i/365)+grad_T*(ref_z-z)+T_mean
-    end do
-    ! Find surface temp for DOY
-    T_surf= sum / real(DOY_n - DOY_nm1)
+    ! sum=0.0
+    ! do i = DOY_nm1, DOY_n, 1
+    !   sum = sum + alpha*sin(2*3.14*i/365)+grad_T*(ref_z-z)+T_mean
+    ! end do
+    ! ! Find surface temp for DOY
+    ! T_surf= sum / max(1.0, real(DOY_n - DOY_nm1))
+    ! linearly interpolate temperature between timestep
+
+    ! --------------------
+    ! Linearly interpolate b/w timesteps mean
+    ! --------------------
+    T_surf = &
+    ((alpha*sin(2*3.14*DOY_n/365)  +grad_T*(ref_z-z)+T_mean) + &
+     (alpha*sin(2*3.14*DOY_nm1/365)+grad_T*(ref_z-z)+T_mean)) / 2.0
+
+
+    !write(*,*) T_surf
   else
     ! calculate mean annual surface temperature
     T_surf = grad_T*(ref_z-z)+T_mean
@@ -141,6 +173,7 @@ FUNCTION SE_mean(Model, Node, InputArray) RESULT(Enthalpy)
 
   Enthalpy  = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
 
+  dt_prev = dt
   RETURN
-
+  
 END FUNCTION SE_mean
