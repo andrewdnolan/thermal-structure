@@ -26,7 +26,6 @@ contains
     case(4)
       call get_command_argument(1, in_path)
       call get_command_argument(2, mesh_db)
-      write(*,'(a)') trim(mesh_db)//"mesh.header"
       call get_command_argument(3, out_path)
       call get_command_argument(4, argument)
       read(argument, *) NT

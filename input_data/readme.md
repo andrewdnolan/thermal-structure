@@ -5,7 +5,7 @@
 |-------------|---------------|------------|----------------------------|
 | `glc1-a`    | South Glacier | small      | Main tributary             |
 | `glc1-b`    | South Glacier | small      | Shorter tributary          |
-| `crmpt13  ` | Glacier #13   | small      |                            |
+| `crmpt12  ` | Glacier #12   | small      |                            |
 | `crmpt18-a` | Glacier #18   | small      | Main tributary             |
 | `crmpt18-b` | Glacier #18   | small      | Shorter tributary          |
 | `crmpt13  ` | Glacier #13   | small      |                            |

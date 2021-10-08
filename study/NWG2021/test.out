@@ -1,0 +1,28 @@
+------------------------------------------------------------------------
+ Step 1: Dirichlet B.C. for surface, no heatflux at bed
+ ------------------------------------------------------------------------
+
+Step finsihed in: 	 16 itterations
+./mesh/mesh.header
+ 
+ ********************************* elmer2nc *********************************
+    Parsing "./mesh/heat_sources_step1.result" as input file
+    Parsed    23   variables from input file
+    Parsed     2   timesteps from input file
+    Wrote output to "./nc/heat_sources_step1.nc"
+ ****************************************************************************
+ 
+------------------------------------------------------------------------
+ Step 2: Dirichlet B.C. for surface and geothermal heat flux at bed 
+ ------------------------------------------------------------------------
+
+Step finsihed in: 	 29 itterations
+./mesh/mesh.header
+ 
+ ********************************* elmer2nc *********************************
+    Parsing "./mesh/heat_sources_step2.result" as input file
+    Parsed    23   variables from input file
+    Parsed     2   timesteps from input file
+    Wrote output to "./nc/heat_sources_step2.nc"
+ ****************************************************************************
+ 

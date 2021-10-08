@@ -7,7 +7,7 @@ SRC  := $(wildcard src/*.f90)
 # compiled executables used in .sif files
 EXEC := $(SRC:src/%.f90=$(BIN_DIR)/%)
 
-all: $(EXEC) #elmer2nc
+all: $(EXEC) elmer2nc
 
 # compile the *.F90 files with the `elmerf90` alias
 $(BIN_DIR)/%: $(SRC_DIR)/%.f90

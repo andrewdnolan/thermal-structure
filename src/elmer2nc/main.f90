@@ -65,16 +65,16 @@ program main
   ! Parse command line arguments passed by the bash wrapper
   call argparse(in_path, mesh_db,  out_path, NT, transient)
 
-  write(*,*)
-  write(*,'(a)') trim(mesh_db)//"mesh.header"
-  write(*,*)
+  ! write(*,*)
+  ! write(*,'(a)') trim(mesh_db)//"mesh.header"
+  ! write(*,*)
 
   ! Parse the mesh.nodes file, which will return the x, y, z values and
   ! node indexes to be used with variable permutation tables
   !--------------------------------------------------------------------
   call parse_nodes(mesh_db, parsed)
 
-  write(*,*) parsed%nnodes
+  ! write(*,*) parsed%nnodes
 
   ! Allocate array of unique indexes, only need one will be written over each call
   allocate(pidx(size(parsed%x(:))), source= (/(i,i=1,size(parsed%x(:)))/))
