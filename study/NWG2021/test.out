@@ -3,7 +3,6 @@
  ------------------------------------------------------------------------
 
 Step finsihed in: 	 16 itterations
-./mesh/mesh.header
  
  ********************************* elmer2nc *********************************
     Parsing "./mesh/heat_sources_step1.result" as input file
@@ -17,7 +16,6 @@ Step finsihed in: 	 16 itterations
  ------------------------------------------------------------------------
 
 Step finsihed in: 	 29 itterations
-./mesh/mesh.header
  
  ********************************* elmer2nc *********************************
     Parsing "./mesh/heat_sources_step2.result" as input file

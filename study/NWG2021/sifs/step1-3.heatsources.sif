@@ -96,7 +96,7 @@ Simulation
   Output Intervals            = 100
   Restart File                = "relax_2150.result"
   Restart Time                = Real 0.0
-  !Post File                   = "../VTU/heat_source.vtu"
+  Post File                   = "../VTU/heat_sources_<step>.vtu"
   Output File                 = "heat_sources_<step>.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
@@ -374,8 +374,7 @@ End
 
 ! Deformational Heat
 Solver 7
-  !
-  Exec Solver                             = String "Never"
+  Exec Solver                              = String "Never" !
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1

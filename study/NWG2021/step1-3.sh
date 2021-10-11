@@ -36,7 +36,18 @@ for step in 1 2; do
     sed "s#<step>#step2#g;
          s#Enthalpy Heat Flux BC =.*#Enthalpy Heat Flux BC = Logical True#g;"\
            $src_sif > "step${step}.sif"
+
+  elif [[ $step == 3 ]]; then
+    echo -e "------------------------------------------------------------------------\n" \
+            "Step 3: Dirichlet B.C. for surface and geothermal heat flux at bed \n"\
+            "------------------------------------------------------------------------\n" \
+            >> "test.out" 2>&1
+
+    sed "s#<step>#step2#g;
+         s#Enthalpy Heat Flux BC =.*#Enthalpy Heat Flux BC = Logical True#g;"\
+            $src_sif > "step${step}.sif"
   fi
+
 
 
   run_simulation

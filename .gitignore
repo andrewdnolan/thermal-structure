@@ -19,9 +19,11 @@ __pycache__/
 # figures
 *.png
 *.eps
+*.mp4
 
 # include topograhy files
 !input_data/*.dat
+
 # Fortran files
 *.o
 *.mod
