@@ -96,8 +96,8 @@ Simulation
   Output Intervals            = 100
   Restart File                = "relax_2150.result"
   Restart Time                = Real 0.0
-  Post File                   = "../VTU/heat_sources_<step>.vtu"
-  Output File                 = "heat_sources_<step>.result"        !\"
+  Post File                   = "../VTU/heat_sources_step4.vtu"
+  Output File                 = "heat_sources_step4.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
 End
@@ -374,7 +374,7 @@ End
 
 ! Deformational Heat
 Solver 7
-  Exec Solver                              = String "Never" ! <DeformationalHeat>
+  Exec Solver = String "Always"
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1
@@ -438,7 +438,7 @@ End
 
 
 Solver 10
-  Exec Solver = String "Never" ! <percolation>
+  Exec Solver = String "Always"
   Equation    = String "percolation"
   Procedure   = File "../../bin/percol_1D_solver" "percol_1D_solver"
 End
@@ -490,7 +490,7 @@ Boundary Condition 1
   Velocity 2        = Real 0.0
 
   ! < Heat_Flux>
-  Enthalpy Heat Flux BC = logical False
+  Enthalpy Heat Flux BC = Logical True
   Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
 End
 
@@ -503,7 +503,7 @@ Boundary Condition 2
   Enthalpy_h           = Variable Coordinate 2
                          Real Procedure  "../../bin/SurfaceBoundary" "getSurfaceEnthalpy"
   ! ! Prescribe melt for percolation model
-  ! Surf_melt            = Equals "Melting"
+  Surf_melt = Equals "Melting"
 
   ! <surf_melt>
 End

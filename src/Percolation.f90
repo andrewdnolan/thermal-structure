@@ -21,7 +21,7 @@ subroutine Percolation(Model, Solver, dt, Transient)
   !> following Gilbert et al. 2014/2020.
   !>
   !> Surface melt ("Surf_melt") must be specified as boundary condition along the
-  !> free surface for this subroutine to work correctly. 
+  !> free surface for this subroutine to work correctly.
   ! *****************************************************************************
   use DefUtils
   implicit none
@@ -159,6 +159,8 @@ subroutine Percolation(Model, Solver, dt, Transient)
 
         ! Maximum residual water content in kg m^-3
         wres = Sr*(1.0 - Density(k)/rho_i)*rho_w
+
+        write(*,*) wres
         ! Enthalpy of fusion for maximum residual water content
         H_limit = Enthalpy % values(Enthalpy % perm(k)) + wres/Density(k)*L_heat
 

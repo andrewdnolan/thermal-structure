@@ -84,20 +84,20 @@ End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Simulation
   Coordinate System           = "Cartesian 2D"
-  Simulation Type             = "Steady"
+  Simulation Type             = "Transient"
   Timestepping Method         = "BDF"
   BDF order                   = 2
 
   Steady State Min Iterations = 1
   Steady State Max Iterations = 100
 
-  Timestep Intervals          = 450
+  Timestep Intervals          = 90
   Timestep Sizes              = 0.11111111  ![a] 9 timesteps per year
-  Output Intervals            = 100
+  Output Intervals            = 1
   Restart File                = "relax_2150.result"
   Restart Time                = Real 0.0
-  Post File                   = "../VTU/heat_sources_<step>.vtu"
-  Output File                 = "heat_sources_<step>.result"        !\"
+  Post File                   = "../VTU/heat_sources_step4.vtu"
+  Output File                 = "heat_sources_step4.result"        !\"
   Max Output Level            = 3
   !Restart Before Initial Conditions = Logical False
 End
@@ -256,8 +256,8 @@ Solver 1
 End
 
 Solver 2
-  !Exec Interval              = 9
-  !Exec Solver                = "before timestep"
+  Exec Interval              = 9
+  Exec Solver                = "before timestep"
   Equation                   = "MapCoordinate"
   Procedure                  = "StructuredMeshMapper" "StructuredMeshMapper"
   Active Coordinate          = Integer 2 ! the mesh-update is y-direction
@@ -272,7 +272,7 @@ Solver 2
 End
 
 Solver 3
-  !Exec Interval              = 9
+  Exec Interval              = 9
   Equation                   = "HeightDepth"
   Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -283,7 +283,7 @@ End
 
 ! Stokes Flow
 Solver 4
-  !Exec Interval                            = 9
+  Exec Interval                            = 9
   Equation                                 = "Navier-Stokes"
   Optimize Bandwidth                       = Logical True
   Stabilization Method                     = String "Stabilized"
@@ -312,7 +312,7 @@ End
 
 ! Surface Mass Balance
 Solver 5
-  !Exec Interval            = 9
+  Exec Interval            = 9
   Exec Solver              = String "Never"
   Equation                 = "SurfBoundary"
   procedure                =  "../../bin/SurfaceBoundary" "SurfaceMassBalance"
@@ -330,7 +330,7 @@ End
 
 ! Free Surface
 Solver 6
-   !Exec Interval                           = 9
+   Exec Interval                           = 9
    Exec Solver                             = String "Never"
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
@@ -357,7 +357,7 @@ Solver 6
    Nonlinear System Convergence Tolerance  = 1.0e-6
    Nonlinear System Relaxation Factor      = 0.7
 
-   Steady State Convergence Tolerance      = 1.0e-8
+   Steady State Convergence Tolerance      = 1.0e-6
 
    !Stabilization Method                    = Stabilized
    Stabilization Method                    = String "Bubbles"
@@ -374,7 +374,7 @@ End
 
 ! Deformational Heat
 Solver 7
-  Exec Solver                              = String "Never" ! <DeformationalHeat>
+  Exec Solver = String "Always"
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1
@@ -387,7 +387,7 @@ Solver 7
   Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU0"
 
-  Steady State Convergence Tolerance       = 1.0E-09
+  Steady State Convergence Tolerance       = 1.0E-06
   Nonlinear System Convergence Tolerance   = 1.0E-06
   Nonlinear System Max Iterations          = 10
   Nonlinear System Relaxation Factor       = Real 1.0
@@ -438,7 +438,9 @@ End
 
 
 Solver 10
-  Exec Solver = String "Never" ! <percolation>
+  Exec Interval = 9
+
+  !Exec Solver = String "Always"
   Equation    = String "percolation"
   Procedure   = File "../../bin/percol_1D_solver" "percol_1D_solver"
 End
@@ -490,7 +492,7 @@ Boundary Condition 1
   Velocity 2        = Real 0.0
 
   ! < Heat_Flux>
-  Enthalpy Heat Flux BC = logical False
+  Enthalpy Heat Flux BC = Logical True
   Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
 End
 
@@ -503,7 +505,7 @@ Boundary Condition 2
   Enthalpy_h           = Variable Coordinate 2
                          Real Procedure  "../../bin/SurfaceBoundary" "getSurfaceEnthalpy"
   ! ! Prescribe melt for percolation model
-  ! Surf_melt            = Equals "Melting"
+  Surf_melt = Equals "Melting"
 
   ! <surf_melt>
 End
