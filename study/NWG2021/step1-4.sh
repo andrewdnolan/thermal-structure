@@ -49,19 +49,6 @@ for step in 1 2 3 4; do
          s#Exec Solver .* = String \"Never\" ! <DeformationalHeat>#Exec Solver = String \"Always\"#g;"\
          $src_sif > "step${step}.sif"
 
-  elif [[ $step == 4 ]]; then
-    echo -e "------------------------------------------------------------------------\n" \
-            "Step 4: Dirichlet B.C. for surface, geothermal heat flux at bed, \n"\
-            "        Deformational heating, and melt water percolation. \n"\
-            "------------------------------------------------------------------------\n" \
-            >> "step1-4.log" 2>&1
-
-    sed "s#<step>#step${step}#g;
-         s#Enthalpy Heat Flux BC =.*#Enthalpy Heat Flux BC = Logical True#g;
-         s#Exec Solver .* = String \"Never\" ! <DeformationalHeat>#Exec Solver = String \"Always\"#g;
-         s#! Surf_melt .* = Equals \"Melting\"#Surf_melt = Equals \"Melting\"#g;
-         s#Exec Solver = String \"Never\" ! <percolation>#Exec Solver = String \"Always\"#g;"\
-         $src_sif > "step${step}.sif"
   fi
 
   if [[ $step == 4 ]]; then
