@@ -169,7 +169,7 @@ Body Force 1
                              Real lua "((tx[0] + tx[1]) < 25.0)"
 
   ! Deformational Heat Source
-  Heat Souce = Variable "W"
+  Heat Source = Variable "W"
                real MATC "if (tx<0.0) (0.0); else (tx*1e6/917.0)" !Convert to J yr-1 kg-1
 
   ! Enthalpy Limiters

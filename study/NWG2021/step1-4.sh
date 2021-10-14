@@ -17,7 +17,8 @@ run_simulation () {
   rm "step${step}.sif"
 }
 
-for step in 1 2 3 4; do
+for step in 1 2 3; do
+#for step in 1 2 3 4; do
 
   if [[ $step == 1 ]]; then
     echo -e "------------------------------------------------------------------------\n" \
