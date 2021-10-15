@@ -387,9 +387,9 @@ Solver 7
   Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU0"
 
-  Steady State Convergence Tolerance       = 1.0E-09
+  Steady State Convergence Tolerance       = 1.0E-04
   Nonlinear System Convergence Tolerance   = 1.0E-06
-  Nonlinear System Max Iterations          = 10
+  Nonlinear System Max Iterations          = 50
   Nonlinear System Relaxation Factor       = Real 1.0
 End
 
@@ -406,17 +406,17 @@ Solver 8
   Linear System Convergence Tolerance      = 1.0E-07
   Linear System Abort Not Converged        = Logical True
 
-
-  Nonlinear System Convergence Tolerance   = 1.0E-07
+  Nonlinear System Newton After Tolerance  = 1.0e-06
+  Nonlinear System Convergence Tolerance   = 1.0E-05
   Nonlinear System Max Iterations          = 50
   Nonlinear System Relaxation Factor       = Real 1.0
 
-  Steady State Convergence Tolerance       = 1.0E-06
+  Steady State Convergence Tolerance       = 1.0E-04
 
   Apply Limiter                            = Logical True
   Apply Dirichlet                          = Logical True
   Stabilize                                = Logical True
-  Nonlinear Update Exported Variables      = Logical True
+  !Nonlinear Update Exported Variables      = Logical True
   Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
 
   Exported Variable 1                      = String "Phase Change Enthalpy" ! (J kg-1)
