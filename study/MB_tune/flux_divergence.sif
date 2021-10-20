@@ -1,0 +1,300 @@
+!echo on
+
+! Physical Constants
+#spy         = 365.25*24*60*60                        ![s a^-1]
+! SI base units
+#rhoi_si     = 910.0                                  ![kg m^-3]
+#rhow_si     = 1000.0                                 ![kg m^-3]
+#gravity_si  = -9.81                                  ![m s^-2]
+! Elmer Base units
+#rhoi        = rhoi_si*1.0E-06*spy^(-2.0)             ![MPa m^-2 a^2] <--- [kg m^-3]
+#rhow        = rhow_si*1.0E-06*spy^(-2.0)             ![MPa m^-2 a^2] <--- [kg m^-3]
+#gravity     = gravity_si*spy^2                       ![m a^-1]       <--- [m s^-2]
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  CHECK KEYWORDS Warn
+  Mesh DB           "." "mesh"             !\"
+  Include Path      "."                    !\"
+  Results Directory "."                    !\"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                           BEGIN CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+  !Physical Constants:
+  rho_i         = real #rhoi_si  ! water        density               [kg m^{-3}]
+  rho_w         = real #rhow_si  ! ice          density               [kg m^{-3}]
+  rho_s         = real 350.      ! snow/surface density               [kg m^{-3}]
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                            BEGIN SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+  Coordinate System           = "Cartesian 2D"
+  Simulation Type             = "Steady"
+
+  Steady State Min Iterations = 1
+  Steady State Max Iterations = 25
+  Output Intervals            = 25
+
+  Post File                   = "../VTU/div_flux_lk.vtu"
+  Output File                 = "div_flux_lk.result"               !\"
+  Max Output Level            = 3
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                              END SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                 BEGIN BODIES (i.e., domains to compute on)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body 1
+  Name              = "Glacier"
+  Body Force        = 1
+  Equation          = 1
+  Material          = 1
+  Initial Condition = 1
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODIES
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Initial Condition 1
+  Velocity 1      = Real 0.0
+  Velocity 2      = Real 0.0
+  Pressure        = Real 0.0
+  Depth           = Real 0.0
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BODY FORCEs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body Force 1
+  Flow BodyForce 1    = Real 0.0
+  Flow BodyForce 2    = Real #gravity   ![m a^-1]
+  Flow Solution Passive      = Variable depth, height
+                             Real lua "((tx[0] + tx[1]) < 25.0)"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODY FORCE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Material 1
+  Name                    = "ice"
+  Density                 = real #rhoi_si*1.0E-06*spy^(-2.0) ![MPa m^-2 a^2]
+  Viscosity Model         = String "Glen"
+  ! Viscosity has to be set to a dummy value to avoid warning output from Elmer
+  Viscosity               = Real 1.0
+  Glen Exponent           = Real 3.0
+
+  Critical Shear Rate     = Real 1.0e-10
+  Rate Factor 1           = Real 1.258e13                             ! [MPa^-3a^-1']
+  Rate Factor 2           = Real 6.046e28                             ! [MPa^-3a^-1']
+
+  ! these are in SI units - no problem, as long as
+  ! the gas constant also is
+  Activation Energy 1     = Real 60.0e3
+  Activation Energy 2     = Real 139.0e3
+  Glen Enhancement Factor = Real 1.0
+
+  ! the temperature to switch between the two regimes in the flow law
+  Limit Temperature       = Real -10.0                                ! [C]
+  Constant Temperature    = Real 0.00                                 ! [C]
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                               BEGIN SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Solver 1
+  Exec Solver                = "Before Simulation"
+  Equation                   = "MapCoordinate"
+  Procedure                  = "StructuredMeshMapper" "StructuredMeshMapper"
+  Active Coordinate          = Integer 2 ! the mesh-update is y-direction
+  ! For time being this is currently externally allocated
+  Mesh Velocity Variable     = String "Mesh Velocity 2"
+  ! The 1st value is special as the mesh velocity could be unrelistically high
+  Mesh Velocity First Zero   = Logical True
+  Dot Product Tolerance      = Real 0.01
+  ! Essential to keep a minimum of 10 m flow height
+  Correct Surface            = Logical True
+  Minimum Height             = Real 10.0
+End
+
+Solver 2
+  Equation                   = "HeightDepth"
+  Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
+  Active Coordinate          = Integer 2
+  Operator 1                 = Depth
+  Operator 2                 = Height
+End
+
+Solver 3
+  Equation                                 = "Navier-Stokes"
+  Optimize Bandwidth                       = Logical True
+  Stabilization Method                     = String "Stabilized"
+  Flow model                               = String "Stokes"
+
+  Linear System Solver                     = Direct
+  Linear System Direct Method              = umfpack
+
+  Nonlinear System Max Iterations          = 50
+  Nonlinear System Convergence Tolerance   = 1.0e-6
+  Nonlinear System Newton After Iterations = 5
+  Nonlinear System Newton After Tolerance  = 1.0e-04
+  Nonlinear System Reset Newton            = Logical True
+
+  Steady State Convergence Tolerance       = Real 1.0e-5
+
+  Exported Variable 1                      = String "Mesh Velocity"
+  Exported Variable 1 DOFS                 = 2
+  Exported Variable 2                      = -dofs 1 "Zbed"
+
+End
+
+! Solver 4
+!   Equation      = "Integrated Velocity"
+!   Procedure     = File "ElmerIceSolvers" "IntegratedVelocity"
+!   Variable = -nooutput "varVelo"
+!   Variable DOFs = 1
+!
+!   Exported Variable 1      =  -dofs 1  "Integrated Velocity"
+!   !Exported Variable 1 DOFs = 1  ! 1 in 2D, 2 in 3D
+!
+!   Flow Solver Name = String "Flow Solution"
+!   Compute Flux = Logical True
+!   On Surface = Logical False
+!
+!   Linear System Solver = Direct
+!   Linear System Direct Method = umfpack
+! End
+
+Solver 4
+  Equation = "IntegrateVertically"
+
+   Procedure = File "ElmerIceSolvers" "IntegrateVertically"
+   Variable = String "Q"
+   Variable DOFs = 1
+
+   Exported Variable 1 = String "Velocity 2"
+   Exported Variable 1 DOFs = 1
+
+   ! We want it computed on the bed
+   On Surface = Logical False
+   ! We want the mean value
+   ! We then need the Depth
+   Compute Mean = Logical True
+   Integrated Variable Name = String "Velocity 2"
+
+   Linear System Solver = "Direct"
+   Linear System Direct Method = umfpack
+End
+
+Solver 5
+  Equation                            = String "Divergence Solver"
+  Procedure                           = File "DivergenceSolver" "DivergenceSolver"
+  !Variable                            = String "Div Q"
+
+
+  ! Target variable
+!  Exported Variable 1                 = String "Integrated Velocity"
+!  Divergence Variable                 = String "Integrated Velocity"
+
+!  Nonlinear Update Exported Variables = Logical True
+
+  Linear System Solver                = String "Iterative"
+  Linear System Iterative Method      = String "cg"
+  Linear System Preconditioning       = String "None"
+  Linear System Max Iterations        = integer 500
+  Linear System Convergence Tolerance = real    1.0e-10
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Equation 1
+  Name               = "Equation1"
+  Convection         = "Computed"
+  Flow Solution Name = String "Flow Solution"
+  Active Solvers(5)  = 1 2 3 4 5
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Bedrock
+Boundary Condition 1
+  Name              = "bed"
+  Target Boundaries = 1
+  Compute Normals   = Logical True
+  Bottom Surface    = Variable Coordinate 1
+                      Real cubic
+                         include   "../../input_data/lilk-a_bed.dat"
+                      End
+  Zbed              = Variable Coordinate 1
+                      Real cubic
+                         include   "../../input_data/lilk-a_bed.dat"
+                      End
+  Velocity 1        = Real 0.0
+  Velocity 2        = Real 0.0
+
+  !Integrated Velocity 1 = Equals "Velocity 1"
+
+End
+
+Boundary Condition 2
+  Name                 = "surface"
+  Target Boundaries    = 2
+  Depth                = Real 0.0
+  Top Surface          = Variable Coordinate 1
+                         Real cubic
+                            include   "../../input_data/lilk-a_surf.dat"
+                         End
+  Integrated Velocity 1 = Equals "Velocity 1"
+End
+
+! Front of the glacier
+Boundary Condition 3
+  Target Boundaries = 3
+End
+
+! Upper limit of the glacier
+Boundary Condition 4
+  Target Boundaries = 4
+  Velocity 1        = real 0.0
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
