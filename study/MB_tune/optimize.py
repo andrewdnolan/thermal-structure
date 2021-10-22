@@ -20,14 +20,14 @@ def net_balance_func(f_snow, f_ice, net_flux):
     ref_z     = 2000.0  # reference surface elevation  [m a.s.l.]
     α         = 12.0    # anual air temp. amplitude    [K]
     ΔTΔz      = 6.5E-3  # air temp lapse rate          [K m^-1]
-    grad_A    = 0.3332  # accum. gradient              [(kg m^{-2} yr^{-1}) m^{-1}]
+    grad_A    = 0.3332  # accum. gradient              [m^{-1}]
     T_mean    = 265.15  # Mean annual air temp @ ref_z [K]
     A_mean    = 578.56  # Mean annual accum.  @ ref_z  [kg m^-2 yr^-1]
     temp_peak = 365./2. # DOY of annual temp peak      [doy]
     f_r       = 0.20    # refreezing factor            [-]
 
 
-    DOY = np.linspace(1,365,365)[:,np.newaxis]
+    DOY        = np.linspace(1,365,365)[:,np.newaxis]
     T          = α*np.cos( 2*np.pi*(DOY-temp_peak)/365 )+ΔTΔz*(ref_z-z)+T_mean
     PDDs       = np.where(T>273.15, T-273.15, 0).sum(axis=0)
     accum_days = np.where(T<274.15, 1/365.,   0).sum(axis=0)
