@@ -6,7 +6,7 @@ for i, key in enumerate(['glc1-a', 'lilk-a', 'twds-a']):
 
     bfp   = './input_data/{}_bed.dat'.format(key)
     cmd   = "cd  ../.. &&"
-    cmd  += " ./scripts/make_mesh.sh 200"
+    cmd  += " ./scripts/make_mesh.sh 100"
     cmd  += " ./study/MB_tune/result/{} {}".format(key,bfp)
 
     print(cmd)

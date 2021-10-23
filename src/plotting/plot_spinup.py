@@ -30,7 +30,7 @@ def make_colorbar(mf_dataset):
     #---------------------------------------------------------------------------
     cmap = cm.plasma
     norm = mcolors.Normalize(vmin=np.min(mf_dataset.Delta_MB),
-                                  vmax=np.max(mf_dataset.Delta_MB))
+                             vmax=np.max(mf_dataset.Delta_MB))
 
     s_map = cm.ScalarMappable(norm=norm, cmap=cmap)
     s_map.set_array(mf_dataset.Delta_MB)
@@ -46,7 +46,8 @@ def make_colorbar(mf_dataset):
 def plot_volume(mf_dataset, precision=3, title=''):
 
     # Make a volume xarray
-    Vol = mf_dataset.H.integrate("x") / mf_dataset.H.isel(t=1).integrate("x")
+    Vol = mf_dataset.height.isel(coord_2=-1).integrate("coord_1") /\
+          mf_dataset.height.isel(coord_2=-1).isel(t=0).integrate("coord_1")
 
     # Make a colormap and all the associated var names
     cmap, norm, s_map, bounds = make_colorbar(mf_dataset)
@@ -90,13 +91,21 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
 
     for delta_mb in mf_dataset.Delta_MB:
         color = cmap(norm(delta_mb))
-        ax.plot(mf_dataset.x/1000., mf_dataset.isel(t=-1).z_s.sel(Delta_MB=delta_mb), color=color)
+        ax.plot(mf_dataset.coord_1/1000.,
+                mf_dataset.isel(t=-1, coord_2=-1).z_s.sel(Delta_MB=delta_mb),
+                color=color)
 
-    ax.plot(mf_dataset.x/1000., mf_dataset.isel(t=0,Delta_MB=0).z_b, color='k', label=r'$z_{\rm b}$')
-    ax.plot(mf_dataset.x/1000., mf_dataset.isel(t=1,Delta_MB=0).z_s,
+    ax.plot(mf_dataset.coord_1/1000.,
+            mf_dataset.isel(t=0,Delta_MB=0,coord_2=-1).zbed,
+            color='k', label=r'$z_{\rm b}$')
+
+    ax.plot(mf_dataset.coord_1/1000.,
+            mf_dataset.isel(t=1,Delta_MB=0,coord_2=-1).z_s,
             color='k', ls=':', lw=0.5, alpha = 0.5, label=r'$z_{\rm s}(t=0)$')
 
-    ax.fill_between(mf_dataset.x/1000., mf_dataset.isel(t=0,Delta_MB=0).z_b, color='gray', alpha=0.5)
+    ax.fill_between(mf_dataset.coord_1/1000.,
+                    mf_dataset.isel(t=0,Delta_MB=0,coord_2=-1).zbed,
+                    color='gray', alpha=0.5)
 
     cbar = fig.colorbar(s_map,
                         spacing='proportional',
@@ -112,8 +121,9 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
 
     ax.set_xlabel('Length (km)')
     ax.set_ylabel('m a.s.l.')
-    ax.set_xlim(0,np.max(mf_dataset.x)/1000.)
-    ax.set_ylim(1200, None)
+    ax.set_xlim(0,np.max(mf_dataset.coord_1)/1000.)
+    ax.set_ylim( mf_dataset.z_s.min() - \
+                 (mf_dataset.Z.max() - mf_dataset.Z.min()) / 20, None)
 
     cbar.set_label('$\Delta \dot b$ (m a$^{-1}$)', rotation=270, labelpad=20)
     cbar.ax.tick_params(labelsize=6)
@@ -179,15 +189,19 @@ def main(argv):
 
     # Iterate over each .nc file and read in with xarray
     for file in files:
-        xarrays.append(xr.open_dataset(file))
+        with xr.open_dataset(file) as src:
+                # correct for minimum ice thickness
+                src["depth"] = xr.where(src.depth <= 10, 0, src.depth)
+                # apply sigma coordinate transform for vertical coordinate
+                src["z_s"]     = src.zbed + src.Z * src.height
+                # Calculate the magnitude of the velocity vectors
+                src['vel_m'] = np.sqrt(src['velocity 1']**2 + src['velocity 2']**2)
+
+        xarrays.append(src)
 
     # Concatenate the .nc files via their mass balance offset
     mf_dataset = xr.concat(xarrays,
                            pd.Index(data = MB, name='Delta_MB'))
-    # Correct for mimimum thickness
-    # NOTE:: This shoud have been done in the dat2h5.py file but it's not working
-    mf_dataset['z_s'] = mf_dataset.z_s.where((mf_dataset.z_s - mf_dataset.z_b) != 10., mf_dataset.z_b)
-    mf_dataset["H"]   = mf_dataset.z_s - mf_dataset.z_b
     #---------------------------------------------------------------------------
 
     out_fn = args.output_filename

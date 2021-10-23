@@ -44,3 +44,23 @@ for OFFSET in $(seq -w -2.0 0.1 -0.1);do
   # Remove the sif file
   rm "./sifs/${RUN}.sif"
 done
+
+#-----------------------------------------------------------------------------
+ # Make the volume plots
+ #-----------------------------------------------------------------------------
+python3 ../../src/plotting/plot_spinup.py \
+         -fp "./result/nc/${KEY}_${TT}a_dt_${dt}_dx_100_MB_*_OFF.nc" \
+         -mb -2.0 0.1 0.0 \
+         --plot_volume      \
+         --title "$ Dx=200 $" \
+         -out_fn "./figs/Vol_-2.0--0.0_dx_200m.png"
+
+ #-----------------------------------------------------------------------------
+ # Make the final z_s plot
+ #-----------------------------------------------------------------------------
+ python3 ../../src/plotting/plot_spinup.py \
+         -fp "./result/nc/${KEY}_${TT}a_dt_${dt}_dx_100_MB_*_OFF.nc" \
+         -mb -2.0 0.1 0.0 \
+         --plot_Z_s         \
+         --title "$ Dx=200 $" \
+         -out_fn "./figs/Zs_-2.0--0.0_dx_200m.png"
