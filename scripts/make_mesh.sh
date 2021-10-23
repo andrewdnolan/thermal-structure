@@ -8,6 +8,8 @@ usage () {
   echo -e "\n Usage ./$(basename $0) dx out_dir \n"\
 	  "[ dx ]     => horizontal mesh resolution in meters \n"\
 	  "[out_dir]  => name of folder to write mesh too \n"
+    "[bedfile]  => filepath (from top dir) to .dat file to be meshed \n"
+
   exit 1
 }
 
@@ -23,6 +25,7 @@ update_grd () {
 main () {
   dx=$1      # horizontal grid cell resolution [m]
   out_dir=$2 # directory name to build mesh in
+  bedfile=$3 # relative filepath to .dat file to mesh
 
   # Get the start and end of the bedfile
   start=$(awk 'NR==1 {print $1}' $bedfile)
@@ -52,4 +55,4 @@ if [ $# -eq 0 ]; then
 fi
 
 # Run the main loop
-main $1 $2
+main $1 $2 $3
