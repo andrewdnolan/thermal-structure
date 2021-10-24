@@ -2,12 +2,29 @@
 
 import subprocess
 
-for i, key in enumerate(['glc1-a', 'lilk-a', 'twds-a']):
+# for i, key in enumerate(['glc1-a', 'lilk-a', 'twds-a']):
+#
+#     bfp   = './input_data/{}_bed.dat'.format(key)
+#     cmd   = "cd  ../.. &&"
+#     cmd  += " ./scripts/make_mesh.sh 100"
+#     cmd  += " ./study/MB_tune/result/{} {}".format(key,bfp)
+#
+#     print(cmd)
+#     result = subprocess.run(
+#                             [cmd],
+#                             shell=True,
+#                             capture_output=True,
+#                             text=True
+#                             )
+#     #print("stdout:", result.stdout)
+#     print("stderr:", result.stderr)
 
+for dx in [50, 100]:
+    key   = 'glc1-a'
     bfp   = './input_data/{}_bed.dat'.format(key)
     cmd   = "cd  ../.. &&"
-    cmd  += " ./scripts/make_mesh.sh 100"
-    cmd  += " ./study/MB_tune/result/{} {}".format(key,bfp)
+    cmd  += " ./scripts/make_mesh.sh {}".format(dx)
+    cmd  += " ./study/MB_tune/result/{}/mesh_dx{} {}".format(key,dx,bfp)
 
     print(cmd)
     result = subprocess.run(

@@ -9,9 +9,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./result/" "<KEY>"    !\"
-  Include Path      "./result"                  !\"
-  Results Directory "./result"                  !\"
+  Mesh DB           "./result/<KEY>" "mesh_dx<DX>"    !\"
+  Include Path      "./result/<KEY>"                  !\"
+  Results Directory "./result/<KEY>"                  !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
