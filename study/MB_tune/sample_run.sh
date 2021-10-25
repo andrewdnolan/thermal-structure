@@ -17,7 +17,7 @@ BED='farinotti_corrected'               # Mesh DB for the given bed config
 KEY='glc1-a'
 
 for dx in 50 100; do
-  for OFFSET in $(seq -w -2.0 0.1 -0.1);do
+  for OFFSET in $(seq -w -0.1 -0.1 -2.0);do
     # Model RUN identifier
     RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF"
 
@@ -65,7 +65,7 @@ for dx in 50 100; do
   #-----------------------------------------------------------------------------
   python3 ../../src/plotting/plot_spinup.py \
            -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-           -mb -2.0 0.1 -0.1 \
+           -mb -0.1 -0.1 -2.0 \
            --plot_volume      \
            --title "$ Dx=${dx} $" \
            -out_fn "./figs/${KEY}/Vol_-2.0--0.0_dx_${dx}m.png"
@@ -75,7 +75,7 @@ for dx in 50 100; do
    #-----------------------------------------------------------------------------
    python3 ../../src/plotting/plot_spinup.py \
            -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-           -mb -2.0 0.1 -0.1 \
+           -mb -0.1 -0.1 -2.0 \
            --plot_Z_s         \
            --title "$ Dx=${dx} $" \
            -out_fn "./figs/${KEY}/Zs_-2.0--0.0_dx_${dx}m.png"

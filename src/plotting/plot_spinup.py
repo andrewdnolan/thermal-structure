@@ -5,6 +5,7 @@
 # Plotting script
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+import re
 import os
 import sys
 import glob
@@ -33,12 +34,14 @@ def make_colorbar(mf_dataset):
                              vmax=np.max(mf_dataset.Delta_MB))
 
     s_map = cm.ScalarMappable(norm=norm, cmap=cmap)
-    s_map.set_array(mf_dataset.Delta_MB)
+    s_map.set_array(np.linspace(mf_dataset.Delta_MB.values.min(),
+                                mf_dataset.Delta_MB.values.max(),
+                                mf_dataset.Delta_MB.size))
 
     # If color parameters is a linspace, we can set boundaries in this way
-    halfdist = (mf_dataset.Delta_MB[1] - mf_dataset.Delta_MB[0]) / 2.0
-    bounds   = np.linspace(mf_dataset.Delta_MB[0]   - halfdist,
-                           mf_dataset.Delta_MB[-1]  + halfdist,
+    halfdist = np.abs(mf_dataset.Delta_MB[1] - mf_dataset.Delta_MB[0]) / 2.0
+    bounds   = np.linspace(mf_dataset.Delta_MB.values.min()  - halfdist,
+                           mf_dataset.Delta_MB.values.max()  + halfdist,
                            len(mf_dataset.Delta_MB) + 1)
 
     return cmap, norm, s_map, bounds
@@ -63,7 +66,9 @@ def plot_volume(mf_dataset, precision=3, title=''):
 
     cbar = fig.colorbar(s_map,
                     spacing='proportional',
-                    ticks=mf_dataset.Delta_MB,
+                    ticks=np.linspace(mf_dataset.Delta_MB.values.min(),
+                                      mf_dataset.Delta_MB.values.max(),
+                                      mf_dataset.Delta_MB.size),
                     ax=ax,
                     boundaries=bounds,
                     drawedges=True,
@@ -174,6 +179,13 @@ def main(argv):
     if not files:
         raise OSError('value passed for "src_path" is invalid')
 
+    # Sorting isn't guaranted to work corretly, so if pattern is matched
+    # do special sorting ensure it's done correctly
+    regex = re.search('MB_-*\d*\d\.\d*\d_OFF', files[0])
+    if regex:
+        files.sort(key = lambda x: float(x.split('MB_')[-1].split('_OFF')[0]),
+                   reverse = True)
+
     # Create array of mass balance values used in spin-up
     MB, dx = np.linspace(float(args.mb_range[0]),
                          float(args.mb_range[2]),
@@ -191,7 +203,7 @@ def main(argv):
     for file in files:
         with xr.open_dataset(file) as src:
                 # correct for minimum ice thickness
-                src["depth"] = xr.where(src.depth <= 10, 0, src.depth)
+                src["height"] = xr.where(src.height <= 10, 0, src.height)
                 # apply sigma coordinate transform for vertical coordinate
                 src["z_s"]     = src.zbed + src.Z * src.height
                 # Calculate the magnitude of the velocity vectors
