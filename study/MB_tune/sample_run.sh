@@ -14,10 +14,11 @@ TT=$((NT*dt))                           # total time of simulation
 
 SIF='./simple_spinup.sif'               # template SIF file
 BED='farinotti_corrected'               # Mesh DB for the given bed config
-KEY='glc1-a'
+KEY='lilk-a'
 
-for dx in 50 100; do
-  for OFFSET in $(seq -w -0.1 -0.1 -2.0);do
+for dx in 50; do
+#for dx in 50 100; do
+  for OFFSET in $(seq -w 0.0 0.1 0.0);do
     # Model RUN identifier
     RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF"
 
@@ -46,8 +47,10 @@ for dx in 50 100; do
    # Execution time of the solver
    runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
 
-   echo "${dx} ${OFFSET} ${runtime}" |
-   awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> out.time_profile
+   echo "${dx} ${OFFSET} ${runtime}"
+   
+   # echo "${dx} ${OFFSET} ${runtime}" |
+   # awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> out.time_profile
 
 
    # Convert result files into NetCDFs

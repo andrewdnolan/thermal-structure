@@ -20,7 +20,7 @@ import subprocess
 #     print("stderr:", result.stderr)
 
 for dx in [50, 100]:
-    key   = 'glc1-a'
+    key   = 'lilk-a'
     bfp   = './input_data/{}_bed.dat'.format(key)
     cmd   = "cd  ../.. &&"
     cmd  += " ./scripts/make_mesh.sh {}".format(dx)
