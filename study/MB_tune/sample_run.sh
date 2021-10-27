@@ -8,17 +8,26 @@
 
 set +x
 
+#-------------------------------------------------------------------------------
+# Numerical parameters
+#-------------------------------------------------------------------------------
 dt=1                                    # time step size
 NT=1000                                 # number of time step
 TT=$((NT*dt))                           # total time of simulation
-
+#-------------------------------------------------------------------------------
+# Mass balance (MB) gridsearch params
+#-------------------------------------------------------------------------------
+MB_0=0.0                                # MB offset start
+MN_f=1.0                                # MB offset finish
+MB_s=0.1                                # MB offset stride
+#-------------------------------------------------------------------------------
+# input data parameters
+#-------------------------------------------------------------------------------
 SIF='./simple_spinup.sif'               # template SIF file
-BED='farinotti_corrected'               # Mesh DB for the given bed config
-KEY='lilk-a'
+KEY='lilk-a'                            # glacier key for input data
 
-for dx in 50; do
-#for dx in 50 100; do
-  for OFFSET in $(seq -w 0.0 0.1 0.0);do
+for dx in 50 100 200; do
+  for OFFSET in $(seq -w $MB_0 $MB_s $MN_f);do
     # Model RUN identifier
     RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF"
 
@@ -47,10 +56,8 @@ for dx in 50; do
    # Execution time of the solver
    runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
 
-   echo "${dx} ${OFFSET} ${runtime}"
-   
-   # echo "${dx} ${OFFSET} ${runtime}" |
-   # awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> out.time_profile
+   echo "${dx} ${OFFSET} ${runtime}" |
+   awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> "result/${KEY}/spinup.time_profile"
 
 
    # Convert result files into NetCDFs
@@ -62,24 +69,24 @@ for dx in 50; do
     # Remove the sif file
     rm "./sifs/${RUN}.sif"
   done
-
-  #-----------------------------------------------------------------------------
-  # Make the volume plots
-  #-----------------------------------------------------------------------------
-  python3 ../../src/plotting/plot_spinup.py \
-           -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-           -mb -0.1 -0.1 -2.0 \
-           --plot_volume      \
-           --title "$ Dx=${dx} $" \
-           -out_fn "./figs/${KEY}/Vol_-2.0--0.0_dx_${dx}m.png"
-
-   #-----------------------------------------------------------------------------
-   # Make the final z_s plot
-   #-----------------------------------------------------------------------------
-   python3 ../../src/plotting/plot_spinup.py \
-           -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-           -mb -0.1 -0.1 -2.0 \
-           --plot_Z_s         \
-           --title "$ Dx=${dx} $" \
-           -out_fn "./figs/${KEY}/Zs_-2.0--0.0_dx_${dx}m.png"
+  # 
+  # #-----------------------------------------------------------------------------
+  # # Make the volume plots
+  # #-----------------------------------------------------------------------------
+  # python3 ../../src/plotting/plot_spinup.py \
+  #          -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
+  #          -mb $MB_0 $MB_s $MN_f \
+  #          --plot_volume      \
+  #          --title "$ Dx=${dx} $" \
+  #          -out_fn "./figs/${KEY}/Vol_-2.0--0.0_dx_${dx}m.png"
+  #
+  #  #-----------------------------------------------------------------------------
+  #  # Make the final z_s plot
+  #  #-----------------------------------------------------------------------------
+  #  python3 ../../src/plotting/plot_spinup.py \
+  #          -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
+  #          -mb $MB_0 $MB_s $MN_f \
+  #          --plot_Z_s         \
+  #          --title "$ Dx=${dx} $" \
+  #          -out_fn "./figs/${KEY}/Zs_-2.0--0.0_dx_${dx}m.png"
 done

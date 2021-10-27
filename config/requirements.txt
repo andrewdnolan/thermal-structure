@@ -1,0 +1,5 @@
+setuptools >= 40.4
+numpy >= 1.17
+pandas >= 1.0
+SAlib
+"xarray[complete]"
