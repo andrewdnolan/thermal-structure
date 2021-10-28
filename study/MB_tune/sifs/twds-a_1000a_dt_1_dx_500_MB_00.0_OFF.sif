@@ -9,9 +9,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./result/<KEY>" "mesh_dx<DX>"    !\"
-  Include Path      "./result/<KEY>"                  !\"
-  Results Directory "./result/<KEY>"                  !\"
+  Mesh DB           "./result/twds-a" "mesh_dx500"    !\"
+  Include Path      "./result/twds-a"                  !\"
+  Results Directory "./result/twds-a"                  !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -22,7 +22,7 @@ End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Constants
   Stefan Boltzmann    = 5.67e-08                    ![W m^−2 K^−4]
-  Mass Balance Offset = real <OFFSET>               ![m a^-1]
+  Mass Balance Offset = real 00.0               ![m a^-1]
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END CONSTANTS
@@ -44,10 +44,10 @@ Simulation
   ! initial conditions. Therefore, we add one extra timestep to make sure
   ! we have a full N number simulation timesteps
   Timestep Sizes              = 1     ! [a]
-  Timestep Intervals          = <NT>
+  Timestep Intervals          = 1000
 
-  Output File                 = "<RUN>".result"               !\"
-  ! Post File                   = "VTU/<RUN>".vtu"              !\"
+  Output File                 = "twds-a_1000a_dt_1_dx_500_MB_00.0_OFF".result"               !\"
+  ! Post File                   = "VTU/twds-a_1000a_dt_1_dx_500_MB_00.0_OFF".vtu"              !\"
   Max Output Level            = 3
 
   ! Initialize Dirichlet Conditions = Logical False
@@ -110,22 +110,22 @@ End
 Initial Condition 2
   Zs    = Variable Coordinate 1
           Real
-           include  "<Zs_fp>"
+           include  "../../input_data/twds-a_surf.dat"
           End
 
   RefZs = Variable Coordinate 1
           Real
-           include  "<Zs_fp>"
+           include  "../../input_data/twds-a_surf.dat"
           End
 
   Zbed  = Variable Coordinate 1
          Real
-          include  "<Zb_fp>"
+          include  "../../input_data/twds-a_bed.dat"
          End
 
   Bottom Surface = Variable Coordinate 1
          Real
-          include  "<Zb_fp>"
+          include  "../../input_data/twds-a_bed.dat"
          End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -210,7 +210,7 @@ Solver 4
   Linear System Convergence Tolerance      = 1.0E-08
   Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU2"
-  ! Linear System Residual Output            = 10
+  Linear System Residual Output            = 10
 
   Steady State Convergence Tolerance       = 1.0E-06
   !  Stabilization Method = [Stabilized,P2/P1,Bubbles]
@@ -320,12 +320,12 @@ Boundary Condition 1
 
   Zbed                       = Variable Coordinate 1
                                Real
-                                include  "<Zb_fp>"
+                                include  "../../input_data/twds-a_bed.dat"
                                End
 
   Bottom Surface             = Variable Coordinate 1
                                Real
-                                include  "<Zb_fp>"
+                                include  "../../input_data/twds-a_bed.dat"
                                End
 End
 
