@@ -202,13 +202,13 @@ End
 Solver 4
   Equation                                 = "Navier-Stokes"
   Optimize Bandwidth                       = Logical True
-  Linear System Solver                     = Direct
-  Linear System Direct Method              = "UMFPACK"
-  ! Linear System Solver                     = "Iterative"
-  ! Linear System Iterative Method           =  "GCR"     !"BICGStab"
+  ! Linear System Solver                     = Direct
+  ! Linear System Direct Method              = "UMFPACK"
+  Linear System Solver                     = "Iterative"
+  Linear System Iterative Method           =  "GCR"     !"BICGStab"
   Linear System Max Iterations             = 5000
   Linear System Convergence Tolerance      = 1.0E-08
-  Linear System Abort Not Converged        = False
+  Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU2"
   Linear System Residual Output            = 10
 
@@ -219,7 +219,7 @@ Solver 4
   Nonlinear System Convergence Tolerance   = 1.0E-07
   Nonlinear System Max Iterations          = 25
   Nonlinear System Newton After Iterations = 10
-  Nonlinear System Newton After Tolerance  = 1.0E-05
+  Nonlinear System Newton After Tolerance  = 1.0E-04
   Nonlinear System Reset Newton            = Logical True
   Exported Variable 1                      = -dofs 2 "Mesh Velocity"
   Exported Variable 2                      = -dofs 2 "Mesh Update"

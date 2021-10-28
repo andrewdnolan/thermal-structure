@@ -19,8 +19,8 @@ import subprocess
 #     #print("stdout:", result.stdout)
 #     print("stderr:", result.stderr)
 
-for dx in [50, 100]:
-    key   = 'lilk-a'
+for dx in [500]:
+    key   = 'twds-a'
     bfp   = './input_data/{}_bed.dat'.format(key)
     cmd   = "cd  ../.. &&"
     cmd  += " ./scripts/make_mesh.sh {}".format(dx)
