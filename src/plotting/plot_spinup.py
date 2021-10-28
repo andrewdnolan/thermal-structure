@@ -30,8 +30,8 @@ def make_colorbar(mf_dataset):
     #    - http://csc.ucdavis.edu/~jmahoney/matplotlib-tips.html
     #---------------------------------------------------------------------------
     cmap = cm.plasma
-    norm = mcolors.Normalize(vmin=np.min(mf_dataset.Delta_MB),
-                             vmax=np.max(mf_dataset.Delta_MB))
+    norm = mcolors.Normalize(vmin=np.min(mf_dataset.Delta_MB.values),
+                             vmax=np.max(mf_dataset.Delta_MB.values))
 
     s_map = cm.ScalarMappable(norm=norm, cmap=cmap)
     s_map.set_array(np.linspace(mf_dataset.Delta_MB.values.min(),
@@ -39,7 +39,7 @@ def make_colorbar(mf_dataset):
                                 mf_dataset.Delta_MB.size))
 
     # If color parameters is a linspace, we can set boundaries in this way
-    halfdist = np.abs(mf_dataset.Delta_MB[1] - mf_dataset.Delta_MB[0]) / 2.0
+    halfdist = (mf_dataset.Delta_MB[1] - mf_dataset.Delta_MB[0]) / 2.0
     bounds   = np.linspace(mf_dataset.Delta_MB.values.min()  - halfdist,
                            mf_dataset.Delta_MB.values.max()  + halfdist,
                            len(mf_dataset.Delta_MB) + 1)
@@ -59,7 +59,7 @@ def plot_volume(mf_dataset, precision=3, title=''):
     fig, ax = plt.subplots(figsize=(7, 5))
 
     for delta_mb in Vol.Delta_MB:
-        color = cmap(norm(delta_mb))
+        color = cmap(1-norm(delta_mb))
         ax.plot(Vol.t[1:], Vol.sel(Delta_MB=delta_mb)[1:], color=color)
 
     ax.axhline(1.0,c='k',ls=':',lw=1, alpha=0.5)
@@ -95,7 +95,7 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
     fig, ax = plt.subplots(figsize=(9, 5))
 
     for delta_mb in mf_dataset.Delta_MB:
-        color = cmap(norm(delta_mb))
+        color = cmap(1-norm(delta_mb))
         ax.plot(mf_dataset.coord_1/1000.,
                 mf_dataset.isel(t=-1, coord_2=-1).z_s.sel(Delta_MB=delta_mb),
                 color=color)
