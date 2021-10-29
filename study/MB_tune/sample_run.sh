@@ -18,14 +18,14 @@ TT=$((NT*dt))                           # total time of simulation
 #-------------------------------------------------------------------------------
 # Mass balance (MB) gridsearch params
 #-------------------------------------------------------------------------------
-MB_0=0.0                                # MB offset start
-MN_f=10.0                               # MB offset finish
+MB_0=10.0                               # MB offset start
+MN_f=15.0                               # MB offset finish
 MB_s=1.0                                # MB offset stride
 #-------------------------------------------------------------------------------
 # input data parameters
 #-------------------------------------------------------------------------------
 SIF='./simple_spinup.sif'               # template SIF file
-KEY='twds-a'                            # glacier key for input data
+KEY='twds-b'                            # glacier key for input data
 
 for OFFSET in $(seq -w $MB_0 $MB_s $MN_f);do
   # Model RUN identifier
