@@ -1,3 +1,10 @@
+### Thursday (10/28) Research Meeting w/ G.F. & A.A.:
+
+__Mass Balance Grid Searches__:
+  - No need to be doing these at course mesh resolutions, `dx=200` or larger is fine.
+  - Prioritize finding an initial mass balance offset for each glacier,
+    different flowlines doesn't really matter right now (secondary priority).
+
 ### Wednesday (09/29) Research Meeting w/ G.F.:
 
 __Enthalpy Surface B.C.__:
@@ -12,7 +19,7 @@ __Corrugated Temperature__:
   - Present in prognostic simulations but not diagnostic.
   - Looks like a numerical problem to Gwenn.
   - Suggests turning off coupling (so heat transfer through diffusion only, no advection)
-    to start de-bugging 
+    to start de-bugging
 
 ### Thursday (09/23) Research Meeting w/ G.F.:
 
