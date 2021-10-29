@@ -10,6 +10,15 @@
 #rhoi        = rhoi_si*1.0E-06*spy^(-2.0)             ![MPa m^-2 a^2] <--- [kg m^-3]
 #rhow        = rhow_si*1.0E-06*spy^(-2.0)             ![MPa m^-2 a^2] <--- [kg m^-3]
 #gravity     = gravity_si*spy^2                       ![m a^-1]       <--- [m s^-2]
+!-------------------------------------------------------------------------------
+! Flow Law Parameters from  Cuffey and Paterson (2010)
+!-------------------------------------------------------------------------------
+#A1 = 2.89165e-13*yearinsec*1.0e18      ![MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A2 = 2.42736e-02*yearinsec*1.0e18      ![MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+! Values below are in SI units. No problem, as long as the gas constant (R) also is
+#Q1 = 60.0e3                            ![J mol^{-1}]
+#Q2 = 115.0e3                           ![J mol^{-1}]
+#R  = 8.314                             ![J mol^{-1} K^{-1}]
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! BEGIN HEADER
@@ -29,6 +38,7 @@ End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Constants
   !Physical Constants:
+  Gas Constant  = real #R        ![J mol^{-1} K^{-1}]
   rho_i         = real #rhoi_si  ! water        density               [kg m^{-3}]
   rho_w         = real #rhow_si  ! ice          density               [kg m^{-3}]
   rho_s         = real 350.      ! snow/surface density               [kg m^{-3}]
@@ -101,26 +111,22 @@ End
 ! BEGIN MATERIALs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Material 1
-  Name                    = "ice"
-  Density                 = real #rhoi_si*1.0E-06*spy^(-2.0) ![MPa m^-2 a^2]
-  Viscosity Model         = String "Glen"
+  Name                       = String "ice"
+  Density                    = Real #rhoi       ! [MPa a2 m-2]
+  Viscosity Model            = String "Glen"
   ! Viscosity has to be set to a dummy value to avoid warning output from Elmer
-  Viscosity               = Real 1.0
-  Glen Exponent           = Real 3.0
-
-  Critical Shear Rate     = Real 1.0e-10
-  Rate Factor 1           = Real 1.258e13                             ! [MPa^-3a^-1']
-  Rate Factor 2           = Real 6.046e28                             ! [MPa^-3a^-1']
-
-  ! these are in SI units - no problem, as long as
-  ! the gas constant also is
-  Activation Energy 1     = Real 60.0e3
-  Activation Energy 2     = Real 139.0e3
-  Glen Enhancement Factor = Real 1.0
-
+  Viscosity                  = Real 1.0
+  Glen Exponent              = Real 3.0
+  Critical Shear Rate        = Real 1.0e-10
+  Rate Factor 1              = Real #A1         ! [MPa^-3a^-1']
+  Rate Factor 2              = Real #A2         ! [MPa^-3a^-1']
+  ! these are in SI units - no problem, as long as the gas constant also is
+  Activation Energy 1        = Real #Q1         ! [J mol^{-1}]
+  Activation Energy 2        = Real #Q2         ! [J mol^{-1}]
+  Glen Enhancement Factor    = Real 1.0
   ! the temperature to switch between the two regimes in the flow law
-  Limit Temperature       = Real -10.0                                ! [C]
-  Constant Temperature    = Real 0.00                                 ! [C]
+  Limit Temperature          = Real -10.0       ! [C]
+  Constant Temperature       = Real 0.00        ! [C]
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END MATERIALs
