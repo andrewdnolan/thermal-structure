@@ -92,7 +92,7 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
     # Make a colormap and all the associated var names
     cmap, norm, s_map, bounds = make_colorbar(mf_dataset)
 
-    fig, ax = plt.subplots(figsize=(9, 5))
+    fig, ax = plt.subplots(figsize=(10, 3))
 
     for delta_mb in mf_dataset.Delta_MB:
         color = cmap(1-norm(delta_mb))
@@ -110,6 +110,7 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
 
     ax.fill_between(mf_dataset.coord_1/1000.,
                     mf_dataset.isel(t=0,Delta_MB=0,coord_2=-1).zbed,
+                    y2=np.minimum(mf_dataset.isel(t=0,Delta_MB=0,coord_2=-1).zbed.min(), 0.0),
                     color='gray', alpha=0.5)
 
     cbar = fig.colorbar(s_map,
@@ -135,6 +136,10 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
 
     fig.tight_layout()
 
+    ratio = 1/3
+    xleft, xright = ax.get_xlim()
+    ybottom, ytop = ax.get_ylim()
+    ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     return fig, ax
 
 def main(argv):
