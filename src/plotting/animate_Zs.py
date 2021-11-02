@@ -24,8 +24,9 @@ def animate_Zs(result, title=''):
 
     # Set the x and y limits, which do not change throughout animation
     ax.set_xlim(0,np.max(result.coord_1)/1000.)
-    ax.set_ylim(result.z_s.min() - (result.Z.max() - result.Z.min()) / 20,
-                None)
+    ax.set_ylim(result.z_s.min(),
+                result.z_s.isel(t=0).max() + \
+                (result.z_s.isel(t=0).max() - result.z_s.isel(t=0).min())/ 10 )
 
     # Set axes labels, which do not change throughout animation
     ax.set_ylabel('Elevation [m a.s.l.]')
@@ -63,7 +64,7 @@ def animate_Zs(result, title=''):
 
     NT = result.t.size
     anim = animation.FuncAnimation(fig, animate,
-                                   frames=np.arange(0, NT, 1),
+                                   frames=np.arange(0, NT, 5),
                                    interval=100,
                                    blit=True)
 
@@ -97,12 +98,12 @@ def main(argv):
         raise OSError('\n value passed for "src_path" is invalid \n')
 
     with xr.open_dataset(args.src_path) as src:
-            # correct for minimum ice thickness
-            src["height"] = xr.where(src.height <= 10, 0, src.height)
-            # apply sigma coordinate transform for vertical coordinate
-            src["z_s"]     = src.zbed + src.Z * src.height
-            # Calculate the magnitude of the velocity vectors
-            src['vel_m'] = np.sqrt(src['velocity 1']**2 + src['velocity 2']**2)
+        # correct for minimum ice thickness
+        src["height"] = xr.where(src.height <= 10, 0, src.height)
+        # apply sigma coordinate transform for vertical coordinate
+        src["z_s"]     = src.zbed + src.Z * src.height
+        # Calculate the magnitude of the velocity vectors
+        src['vel_m'] = np.sqrt(src['velocity 1']**2 + src['velocity 2']**2)
 
     fig = animate_Zs(src, title=title)
 

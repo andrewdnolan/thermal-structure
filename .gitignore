@@ -1,7 +1,9 @@
 # OSX
 .DS_Store
 # OS.DS_Store# OS.DS_Store
-
+*.tar
+*.tar.*
+*.zip
 # Compiled code
 bin/*
 
