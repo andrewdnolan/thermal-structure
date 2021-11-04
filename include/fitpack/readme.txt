@@ -1,0 +1,2 @@
+- fitpack functions called by `scipy.interpolate.splev` 
+- fitpack by P. Dierckx is called dierckx in netlib
