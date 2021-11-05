@@ -11,21 +11,21 @@ set +x
 #-------------------------------------------------------------------------------
 # Numerical parameters
 #-------------------------------------------------------------------------------
-dx=100                                  # mesh resolution
+dx=200                                  # mesh resolution
 dt=1                                    # time step size
 NT=1000                                 # number of time step
 TT=$((NT*dt))                           # total time of simulation
 #-------------------------------------------------------------------------------
 # Mass balance (MB) gridsearch params
 #-------------------------------------------------------------------------------
-MB_0=-1.5                               # MB offset start
-MN_f=-0.5                               # MB offset finish
+MB_0=0.6                                # MB offset start
+MN_f=0.6                                # MB offset finish
 MB_s=0.1                                # MB offset stride
 #-------------------------------------------------------------------------------
 # input data parameters
 #-------------------------------------------------------------------------------
 SIF='./sifs/simple_spinup.sif'          # template SIF file
-KEY='crmpt12'                           # glacier key for input data
+KEY='sprg'                           # glacier key for input data
 
 for OFFSET in $(seq -w $MB_0 $MB_s $MN_f);do
   # Model RUN identifier
@@ -70,22 +70,22 @@ for OFFSET in $(seq -w $MB_0 $MB_s $MN_f);do
   rm "./sifs/${RUN}.sif"
 done
 
-#-----------------------------------------------------------------------------
-# Make the volume plots
-#-----------------------------------------------------------------------------
-python3 ../../src/plotting/plot_spinup.py \
-         -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-         -mb $MB_0 $MB_s $MN_f \
-         --plot_volume      \
-         --title "$ Dx=${dx} $" \
-         -out_fn "./figs/${KEY}/Vol_$MB_0--$MN_f_dx_${dx}m.png"
-
- #-----------------------------------------------------------------------------
- # Make the final z_s plot
- #-----------------------------------------------------------------------------
- python3 ../../src/plotting/plot_spinup.py \
-         -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
-         -mb $MB_0 $MB_s $MN_f \
-         --plot_Z_s         \
-         --title "$ Dx=${dx} $" \
-         -out_fn "./figs/${KEY}/Zs_$MB_0--$MN_f_dx_${dx}m.png"
+# #-----------------------------------------------------------------------------
+# # Make the volume plots
+# #-----------------------------------------------------------------------------
+# python3 ../../src/plotting/plot_spinup.py \
+#          -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
+#          -mb $MB_0 $MB_s $MN_f \
+#          --plot_volume      \
+#          --title "$ Dx=${dx} $" \
+#          -out_fn "./figs/${KEY}/Vol_$MB_0--$MN_f_dx_${dx}m.png"
+#
+#  #-----------------------------------------------------------------------------
+#  # Make the final z_s plot
+#  #-----------------------------------------------------------------------------
+#  python3 ../../src/plotting/plot_spinup.py \
+#          -fp "./result/${KEY}/nc/${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_*_OFF.nc" \
+#          -mb $MB_0 $MB_s $MN_f \
+#          --plot_Z_s         \
+#          --title "$ Dx=${dx} $" \
+#          -out_fn "./figs/${KEY}/Zs_$MB_0--$MN_f_dx_${dx}m.png"
