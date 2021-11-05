@@ -18,6 +18,8 @@ __pycache__/
 *.dat
 *.vtu
 
+# Presenations
+*.html
 # figures
 *.png
 *.eps
