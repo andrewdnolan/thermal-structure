@@ -4,6 +4,8 @@
 *.tar
 *.tar.*
 *.zip
+*.tif
+
 # Compiled code
 bin/*
 

@@ -1,0 +1,258 @@
+!echo on
+
+! Physical Constants
+#spy         = 365.25*24*60*60                ! -- [s a^-1]
+! SI base units
+#rhoi_si     = 910.0                          ! -- [kg m^-3]
+#rhow_si     = 1000.0                         ! -- [kg m^-3]
+#gravity_si  = -9.81                          ! -- [m s^-2]
+! Elmer Base units
+! #rhoi        = rhoi_si*1.0E-06*spy^(-2.0)     ! --- [MPa m^-2 a^2] <--- [kg m^-3]
+! #rhow        = rhow_si*1.0E-06*spy^(-2.0)     ! --- [MPa m^-2 a^2] <--- [kg m^-3]
+#gravity     = gravity_si*spy^2               ! -- [m a^-1]       <--- [m s^-2]
+!-------------------------------------------------------------------------------
+! Flow Law Parameters from  Cuffey and Paterson (2010)
+!-------------------------------------------------------------------------------
+#A1 = 2.89165e-13*spy*1.0e18      ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A2 = 2.42736e-02*spy*1.0e18      ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+! Values below are in SI units. No problem, as long as the gas constant (R) also is
+#Q1 = 60.0e3                            ! -- [J mol^{-1}]
+#Q2 = 115.0e3                           ! -- [J mol^{-1}]
+#R  = 8.314                             ! -- [J mol^{-1} K^{-1}]
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  !CHECK KEYWORDS Warn
+  Mesh DB           "./result/<KEY>" "mesh_dx<DX>"    !\"
+  Include Path      "./result/<KEY>"                  !\"
+  Results Directory "./result/<KEY>"                  !\"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                           BEGIN CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+  !Physical Constants:
+  Gas Constant  = real #R        ![J mol^{-1} K^{-1}]
+  rho_i         = real #rhoi_si  ! water        density               [kg m^{-3}]
+  rho_w         = real #rhow_si  ! ice          density               [kg m^{-3}]
+  rho_s         = real 350.      ! snow/surface density               [kg m^{-3}]
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                            BEGIN SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+  Coordinate System           = "Cartesian 2D"
+  Simulation Type             = "Steady"
+
+  Steady State Min Iterations = 1
+  Steady State Max Iterations = 25
+  Output Intervals            = 1
+
+  Output File                 = "<RUN>".result"               !\"
+  Max Output Level            = 3
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                              END SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                 BEGIN BODIES (i.e., domains to compute on)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body 1
+  Name              = "Glacier"
+  Body Force        = 1
+  Equation          = 1
+  Material          = 1
+  Initial Condition = 1
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODIES
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Initial Condition 1
+  Velocity 1      = Real 0.0
+  Velocity 2      = Real 0.0
+  Pressure        = Real 0.0
+  Depth           = Real 0.0
+
+  Zbed  = Variable Coordinate 1
+         Real
+          include  "<Zb_fp>"
+         End
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BODY FORCEs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body Force 1
+  Flow BodyForce 1    = Real 0.0
+  Flow BodyForce 2    = Real #gravity   ![m a^-1]
+  Flow Solution Passive      = Variable depth, height
+                             Real lua "((tx[0] + tx[1]) < 11.0)"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODY FORCE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Material 1
+  Name                       = String "ice"
+  Density                    = Real #rhoi_si*1.0E-06*(spy)^(-2.0) ! --- [MPa m^-2 a^2] <--- [kg m^-3]
+  Viscosity Model            = String "Glen"
+  ! Viscosity has to be set to a dummy value to avoid warning output from Elmer
+  Viscosity                  = Real 1.0
+  Glen Exponent              = Real 3.0
+  Critical Shear Rate        = Real 1.0e-10
+  Rate Factor 1              = Real #A1         ! -- [MPa^-3a^-1']
+  Rate Factor 2              = Real #A2         ! -- [MPa^-3a^-1']
+  ! these are in SI units - no problem, as long as the gas constant also is
+  Activation Energy 1        = Real #Q1         ! -- [J mol^{-1}]
+  Activation Energy 2        = Real #Q2         ! -- [J mol^{-1}]
+  Glen Enhancement Factor    = Real 1.0
+  ! the temperature to switch between the two regimes in the flow law
+  Limit Temperature          = Real -10.0       ! [C]
+  Constant Temperature       = Real 0.00        ! [C]
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                               BEGIN SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Solver 1
+  Exec Solver                = "Before Simulation"
+  Equation                   = "MapCoordinate"
+  Procedure                  = "StructuredMeshMapper" "StructuredMeshMapper"
+  Active Coordinate          = Integer 2 ! the mesh-update is y-direction
+  ! For time being this is currently externally allocated
+  Mesh Velocity Variable     = String "Mesh Velocity 2"
+  ! The 1st value is special as the mesh velocity could be unrelistically high
+  Mesh Velocity First Zero   = Logical True
+  Dot Product Tolerance      = Real 0.01
+  ! Essential to keep a minimum of 10 m flow height
+  Correct Surface            = Logical True
+  Minimum Height             = Real 10.0
+End
+
+Solver 2
+  Equation                   = "HeightDepth"
+  Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
+  Active Coordinate          = Integer 2
+  Operator 1                 = Depth
+  Operator 2                 = Height
+End
+
+Solver 3
+  Equation                                 = "Navier-Stokes"
+  Optimize Bandwidth                       = Logical True
+  Stabilization Method                     = String "Stabilized"
+  Flow model                               = String "Stokes"
+
+  Linear System Solver                     = Direct
+  Linear System Direct Method              = umfpack
+
+  Nonlinear System Max Iterations          = 50
+  Nonlinear System Convergence Tolerance   = 1.0e-9
+  Nonlinear System Newton After Iterations = 50
+  Nonlinear System Newton After Tolerance  = 1.0e-05
+  Nonlinear System Reset Newton            = Logical True
+
+  Steady State Convergence Tolerance       = Real 1.0e-6
+
+  Exported Variable 1                      = String "Mesh Velocity"
+  Exported Variable 1 DOFS                 = 2
+  Exported Variable 2                      = -dofs 1 "Zbed"
+
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Equation 1
+  Name               = "Equation1"
+  Convection         = "Computed"
+  Flow Solution Name = String "Flow Solution"
+  Active Solvers(3)  = 1 2 3
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Bedrock
+Boundary Condition 1
+  Name                       = "bedrock"
+  Target Boundaries          = 1
+  Compute Normals            = Logical True
+  Normal-Tangential Velocity = Logical True
+  Mass Consistent Normals    = Logical True
+
+  ! No sliding
+  Velocity 1                 = Real 0.0e0
+  Slip Coefficient 2         = Real <BETA>
+  
+  Zbed                       = Variable Coordinate 1
+                               Real
+                                include  "<Zb_fp>"
+                               End
+
+  Bottom Surface             = Variable Coordinate 1
+                               Real
+                                include  "<Zb_fp>"
+                               End
+End
+
+
+Boundary Condition 2
+  Name                 = "surface"
+  Target Boundaries    = 2
+  Depth                = Real 0.0
+  Top Surface          = Variable Coordinate 1
+                         Real cubic
+                            include  "<Zs_fp>"
+                         End
+End
+
+Boundary Condition 3
+  Name                       = "Head Wall"
+  Target Boundaries          = 3
+  ! Apply Dirichlet Condition at upper margin
+  ! See: http://elmerfem.org/elmerice/wiki/doku.php?id=tips:freesurface
+  Zs                         = Equals "Zbed"
+End
+
+Boundary Condition 4
+  Name                       = "Front"
+  Target Boundaries          = 4
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
