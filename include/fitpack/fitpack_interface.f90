@@ -1,3 +1,18 @@
+! ******************************************************************************
+! *
+! *  Authors: Andrew Nolan
+! *  Email:   anolan@sfu.ca
+! *  Github:  andrewdnolan
+! *
+! *  Date Written:
+! *   2021/11/06
+! *
+! * f90 interface to f77 code for evaluating a spline using fitpack (dierckx)
+! * library. fitpack (dierckx) is what's used under the hood for spline interpolation
+! * by scipy.interpolate. Spline should be fit within python, but tck tuple
+! * retuned by splrep should be written to disk inorder to be evaluated in fortran
+!
+! ******************************************************************************
 module fitpack_interface
 
   implicit none
