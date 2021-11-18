@@ -18,17 +18,17 @@ program test_fitpack
                         y           ! evaluated spline y=s(x)
 
   ! Load the knots
-  call read_vector(t, n, 'test_data/knots.dat')
+  call read_vector(t, n, 'data/knots.dat')
   ! Load the coefs
-  call read_vector(c, n, 'test_data/coefs.dat')
+  call read_vector(c, n, 'data/coefs.dat')
   ! Load the points to evaluate spline at
-  call read_vector(x, m, 'test_data/x_vec.dat')
+  call read_vector(x, m, 'data/x_vec.dat')
 
   ! evaluate the spline
   call splev(t,n,c,k,x,y,m,ier)
 
   ! write the evaluated spline to disc
-  call write_field(y, m, 'test_data/y_vec.dat')
+  call write_field(y, m, 'data/y_vec.dat')
 contains
 
 
