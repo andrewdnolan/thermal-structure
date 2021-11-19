@@ -29,7 +29,8 @@ __pycache__/
 
 # include topograhy files
 !input_data/*.dat
-
+# include spline knots of coefs
+!input_data/mass_balance/*.dat
 # include the files for testing fitpack interface
 !include/fitpack/test/data/*.dat
 
