@@ -14,8 +14,9 @@ MOD         = $(BIN_DIR)/fitpack_interface.mod
 all: $(OBJS) $(MOD)
 
 # Complile and link interface module with f77 code
-$(BIN_DIR)/fitpack_interface.mod: fitpack_interface.f90
-	gfortran fitpack_interface.f90 -o $(BIN_DIR)/fitpack_interface.o -J $(BIN_DIR) -shared $(OBJS)
+$(BIN_DIR)/fitpack_interface.mod: fitpack_interface.f90 $(OBJS)
+	elmerf90 -c fitpack_interface.f90 -o $(BIN_DIR)/fitpack_interface.o \
+				   -J $(BIN_DIR) -shared $(OBJS)
 
 # Compile and assmble, but do not link the fitpack source code (f77 code)
 $(BIN_DIR)/%.o: %.f

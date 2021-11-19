@@ -6,17 +6,22 @@ SRC_DIR = src
 SRC  := $(wildcard src/*.f90)
 # compiled executables used in .sif files
 EXEC := $(SRC:src/%.f90=$(BIN_DIR)/%)
+# compiled fitpack source code
+F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 
-all: fitpack $(EXEC) elmer2nc
+all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance
+
+$(BIN_DIR)/mass_balance: $(SRC_DIR)/mass_balance.f90 $(BIN_DIR)/fitpack_interface.o $(F77_OBJ)
+	elmerf90 $^ -o $@ -I$(BIN_DIR)
 
 # compile the fitpack source code and f90 interface
-fitpack: $(wildcard src/elmer2nc/*.f90)
+$(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90 #$(F77_OBJ)
 	$(MAKE) -C include/fitpack
 
 # compile the *.F90 files with the `elmerf90` alias
 $(BIN_DIR)/%: $(SRC_DIR)/%.f90
 	@if [ $@ = "bin/mass_balance" ]; then\
-		elmerf90 $^ -o $@ $(BIN_DIR)/fitpack_interface.o -I$(BIN_DIR); \
+		continue; \
 	 else \
 		elmerf90 $^ -o $@ ; \
 	 fi
