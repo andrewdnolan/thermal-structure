@@ -36,13 +36,13 @@ module fitpack_interface
       !   ier  : error flag
       !     ier = 0 : normal return
       !     ier =10 : invalid input data (see restrictions)
-      real(8), dimension(n), intent(in)  :: t
+      real, dimension(n), intent(in)  :: t
       integer, intent(in)  :: n
-      real(8), dimension(n), intent(in)  :: c
+      real, dimension(n), intent(in)  :: c
       integer, intent(in)  :: k
-      real(8), dimension(n), intent(in)  :: x
+      real, dimension(n), intent(in)  :: x
       integer, intent(in)  :: m
-      real(8), dimension(m), intent(out) :: y
+      real, dimension(m), intent(out) :: y
       integer, intent(out) :: ier
     end subroutine splev
 

@@ -67,10 +67,10 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
   coefs_fp="../../input_data/mass_balance/cubic_spline_coefs_s_1500_weighted.dat"
 
   LOGICAL :: FirstTime=.TRUE., GotIt
-  REAL(KIND=dp) :: Delta_mb        ! mass balance offset [m i.e.q. yr^{-1}]
-  REAL(KIND=dp) :: x(1),         & ! where to evaluate spline (x vec)
+  REAL    :: Delta_mb        ! mass balance offset [m i.e.q. yr^{-1}]
+  REAL    :: x(1),         & ! where to evaluate spline (x vec)
                    y(1)            ! evaluated spline y=s(x)
-  REAL(KIND=dp),dimension(nn) :: &
+  REAL, dimension(nn) :: &
                    knots,        & ! vector of knots
                    coefs           ! vector of coefficients
   integer       :: spl_err,      & ! spline error
@@ -93,6 +93,8 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
     call read_vector(knots, nn, trim(knots_fp))
     ! Load the coefs
     call read_vector(coefs, nn, trim(coefs_fp))
+
+    !write(*,*) knots
   END IF
 
   ! dump our nodal surface elevation input a vector
@@ -105,8 +107,10 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
     CALL FATAL('cubic_spline', 'splev raised error')
   end if
 
-  ! dump the y vector to the returned scalar
-  accum = y(1)
+  !write(*,*) x(1), y(1)
+
+  ! dump the y vector to the returned scalar and add the mass balance offset
+  accum = y(1) + Delta_mb
   RETURN
 
 contains
@@ -114,8 +118,7 @@ contains
   subroutine read_vector(vec, len, fn)
     implicit none
     integer, intent(in)                 :: len ! length of vector to be read
-    real(kind=dp), dimension(len), &
-                   intent(inout)        :: vec ! vector to be read from disk
+    real, dimension(len), intent(inout) :: vec ! vector to be read from disk
     character(len=*), intent(in)        :: fn  ! filename
 
     integer            :: funit,   &  ! iounit number
