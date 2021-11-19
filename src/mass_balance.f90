@@ -89,15 +89,6 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
       CALL WARN('cubic_spline','Taking default value >Mass Balance Offset< of 0.0 (m a^{-1})')
       Delta_mb = 0.0_dp
     END IF
-
-    ! ! Allocate the dimids array
-    ! allocate(knots(nn), stat=alloc)
-    ! if ( alloc /= 0) print *, "ndims: Allocation request denied"
-    !
-    ! ! Allocate the dimids array
-    ! allocate(coefs(nn), stat=alloc)
-    ! if ( alloc /= 0) print *, "ndims: Allocation request denied"
-
     ! Load the knots
     call read_vector(knots, nn, trim(knots_fp))
     ! Load the coefs
@@ -146,3 +137,8 @@ contains
   end subroutine read_vector
   !-----------------------------------------------------------------------------
 END FUNCTION cubic_spline
+
+! subroutine cubic_spline( Model,Solver,dt,TransientSimulation )
+!
+!
+! end subroutine

@@ -98,14 +98,14 @@ def net_balance_func(z, DOY, f_snow, f_ice, f_r, α, temp_peak, T_mean, A_mean,
     return MB
 
 class optimizer:
-    def __init__(self):
+    def __init__(self, popt):
         self.x_true = src["zs accumulation flux 2"].isel(t=-1, coord_2=-1).values
         self.z      = src.Z.isel(t=-1, coord_2=-1).values[np.newaxis, :]
-
+        self.popt   = popt
     def forward(self,x):
-        α         = popt[0]
-        temp_peak = popt[1]
-        T_mean    = popt[2]+273.15
+        α         = self.popt[0]
+        temp_peak = self.popt[1]
+        T_mean    = self.popt[2]+273.15
         ΔTΔz      = 6.5E-3
         ref_z     = 2193.
         T_m       = 273.15
@@ -119,9 +119,9 @@ class optimizer:
         return MB.flatten()
 
     def objective(self, x):
-        α         = popt[0]
-        temp_peak = popt[1]
-        T_mean    = popt[2]+273.15
+        α         = self.popt[0]
+        temp_peak = self.popt[1]
+        T_mean    = self.popt[2]+273.15
         ΔTΔz      = 6.5E-3
         ref_z     = 2193.
         T_m       = 273.15
@@ -135,6 +135,8 @@ class optimizer:
 
         return LA.norm(self.x_true-MB,2)
 
+# Simple Fitting of air temperature forcing parameters to Katie's Model runs
+Young2020 = xr.open_dataset("Young_etal_2020_Delta_T_-0.9_C.nc")
 
 z_ref = Young2020.stack(z=('x', 'y')).Elevation.mean().values
 
@@ -151,4 +153,3 @@ with xr.open_dataset('../../../initialization/coarse/result/lilk-a/nc/lilk-a_100
 
 Vol = src.height.isel(coord_2=-1).integrate("coord_1") /\
       src.height.isel(coord_2=-1).isel(t=0).integrate("coord_1")
-      

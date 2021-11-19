@@ -27,7 +27,7 @@ def poly_fit(ds, deg=1, ret_p=True):
     else:
         return x_, fit
 
-def spline_fit(ds, deg=3, ret_p=True):
+def spline_fit(ds, deg=3, ret_p=True, s=240):
     # Deal with nan's internally
     x = ds.Elevation.values
     y = ds.MB.values
@@ -36,9 +36,8 @@ def spline_fit(ds, deg=3, ret_p=True):
     mask = np.where(~np.isnan(x))
     idxs = np.argsort(x[mask])
 
-    # Remove the nans and sort the data
-    # downsample data so there are less verically overlappig points, casing the
-    # spline fitting to fail
+    # Remove the nans and sort the data and downsample data so there are
+    # less verically overlappig points, causing the spline fitting to fail
     x_sub = x[~np.isnan(x)][::10]
     y_sub = y[~np.isnan(x)][::10]
 
@@ -50,7 +49,7 @@ def spline_fit(ds, deg=3, ret_p=True):
     y_ = y_sub[idxs]
 
 
-    tck  = interpolate.splrep(x_, y_, k=deg, s=240)
+    tck  = interpolate.splrep(x_, y_, k=deg, s=s)
     xnew = np.linspace(x_.min(), x_.max(), 1000)
     fit  = interpolate.splev(xnew, tck)
 

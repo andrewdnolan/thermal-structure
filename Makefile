@@ -11,11 +11,13 @@ F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 
 all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance
 
+# compile the net balance boundary conditions functions, while linking to the
+# necessary interface and fitpack source code objects
 $(BIN_DIR)/mass_balance: $(SRC_DIR)/mass_balance.f90 $(BIN_DIR)/fitpack_interface.o $(F77_OBJ)
 	elmerf90 $^ -o $@ -I$(BIN_DIR)
 
 # compile the fitpack source code and f90 interface
-$(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90 #$(F77_OBJ)
+$(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90
 	$(MAKE) -C include/fitpack
 
 # compile the *.F90 files with the `elmerf90` alias
