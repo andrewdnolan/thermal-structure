@@ -11,15 +11,15 @@ set +x
 #-------------------------------------------------------------------------------
 # Numerical parameters
 #-------------------------------------------------------------------------------
-dx=200                                  # mesh resolution
+dx=500                                  # mesh resolution
 dt=1                                    # time step size
 NT=1000                                 # number of time step
 TT=$((NT*dt))                           # total time of simulation
 #-------------------------------------------------------------------------------
 # Mass balance (MB) gridsearch params
 #-------------------------------------------------------------------------------
-MB_0=10.0                               # MB offset start
-MN_f=10.0                               # MB offset finish
+MB_0=9.0                                # MB offset start
+MN_f=9.0                                # MB offset finish
 MB_s=0.1                                # MB offset stride
 #-------------------------------------------------------------------------------
 # input data parameters
@@ -29,8 +29,8 @@ KEY='twds-b'                            # glacier key for input data
 
 for OFFSET in $(seq -w $MB_0 $MB_s $MN_f);do
   # Model RUN identifier
-  #RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF"
-  RUN="TEST_SPLINE"
+  RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_spline"
+  #RUN="TEST_SPLINE"
   # File paths to input data
   Zb_fp="../../input_data/${KEY}_bed.dat"
   Zs_fp="../../input_data/${KEY}_surf.dat"
