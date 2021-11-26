@@ -23,7 +23,7 @@ RESTART="twds-b_5000a_dt_1_dx_500_MB_9.29_OFF_psuedo.result"
 #-------------------------------------------------------------------------------
 # Run the surge
 #-------------------------------------------------------------------------------
-RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_psuedo"
+RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_pseudo"
 
 # File paths to input data
 Zb_fp="../../input_data/${KEY}_bed.dat"
@@ -53,7 +53,7 @@ end=$(date +%s.%N)
 runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
 
 echo "${dx} ${OFFSET} ${runtime}" |
-awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> "${KEY}.psuedo.time_profile"
+awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3}' >> "${KEY}.pseudo.time_profile"
 
 
 # Convert result files into NetCDFs
@@ -71,7 +71,7 @@ rm "./sifs/${RUN}.sif"
 #-------------------------------------------------------------------------------
 
 dt=1                                    # time step size
-NT=100                                  # number of time step
+NT=5000                                 # number of time step
 TT=$((NT*dt))                           # total time of simulation
 RESTART=RUN
 

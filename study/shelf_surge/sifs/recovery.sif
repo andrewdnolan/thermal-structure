@@ -56,7 +56,6 @@ Simulation
   Timestep Sizes              = <dt>    ! [a]
   Timestep Intervals          = <NT>
   Restart File                = "<RESTART>"
-  Post File                   = "VTU/<RUN>.vtu"              !\"
   Output File                 = "<RUN>.result"               !\"
   Max Output Level            = 3
   Restart Position            = 0
@@ -96,7 +95,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(4)  = 1 2 3 4 
+  Active Solvers(4)  = 1 2 3 4
 End
 
 Equation 2
