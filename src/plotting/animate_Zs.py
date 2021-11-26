@@ -64,8 +64,8 @@ def animate_Zs(result, title=''):
 
     NT = result.t.size
     anim = animation.FuncAnimation(fig, animate,
-                                   frames=np.arange(0, NT, 5),
-                                   interval=100,
+                                   frames=np.arange(0, NT, 10),
+                                   interval=50,
                                    blit=True)
 
     return anim

@@ -148,7 +148,7 @@ def main(argv):
     # Specify command line arguments
     #---------------------------------------------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument("src_path", metavar="path", type=str,
+    parser.add_argument("src_path", metavar="path", type=str, nargs='+'
                         help = "Path to .nc files to be plotted"\
                                "enclose in quotes, accepts * as wildcard for directories or filenames")
     parser.add_argument('-mb','--mb_range', nargs='+',
@@ -177,8 +177,11 @@ def main(argv):
     # Load and concatenate the .nc files
     #---------------------------------------------------------------------------
 
-    # Glob the file paths and return list of files
-    files = sorted(glob.glob(args.src_path))
+    if "*" in args.src_path:
+        # Glob the file paths and return list of files
+        files = sorted(glob.glob(args.src_path))
+    elif type(args.src_path) == list:
+        files = args.src_path
 
     # Raise error if glob didn't work
     if not files:
