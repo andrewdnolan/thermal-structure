@@ -1,13 +1,9 @@
 #!/usr/bin/env python3
 
-import sbi
-# import torch
 import numpy as np
 import xarray as xr
 from dataclasses import dataclass
 import scipy.optimize as optimize
-
-# from sbi.inference.base import infer
 
 def fit_airtemp(ds, plot=True):
     """
@@ -31,7 +27,7 @@ def fit_airtemp(ds, plot=True):
     parameters = {
             'ΔTΔz'      : 6.5E-3,
             'α'         : popt[0],
-            'T_peak' : int(np.round(popt[1])),
+            'T_peak'    : int(np.round(popt[1])),
             'T_mean'    : popt[2]
             }
 
@@ -52,7 +48,7 @@ class AirTemp:
     α     : float
     T_mean: float
     T_peak: int
-    ΔTΔz  : float = 6.1E-3
+    ΔTΔz  : float = 6.5E-3
     ref_z : float = 2193.
 
     def eval(self, z, DOY):
@@ -145,7 +141,7 @@ class MassBalance:
         T          = self.Temp.eval(self.Z, DOY)
 
         PDDs       = np.where(T>self._T_m,  T-self._T_m, 0).sum(axis=0)
-        accum_days = np.where(T<=self._T_rs,     1/365., 0).sum(axis=0)
+        accum_days = np.where(T<self._T_rs,     1/365., 0).sum(axis=0)
 
         # calculate snow accumulation
         A_snow=np.maximum((accum_days*self._A_mean)*
