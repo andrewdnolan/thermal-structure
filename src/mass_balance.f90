@@ -67,14 +67,14 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
   coefs_fp="../../input_data/mass_balance/cubic_spline_coefs_s_1500_weighted.dat"
 
   LOGICAL :: FirstTime=.TRUE., GotIt
-  REAL    :: Delta_mb        ! mass balance offset [m i.e.q. yr^{-1}]
-  REAL    :: x(1),         & ! where to evaluate spline (x vec)
-                   y(1)            ! evaluated spline y=s(x)
-  REAL, dimension(nn) :: &
-                   knots,        & ! vector of knots
-                   coefs           ! vector of coefficients
-  integer       :: spl_err,      & ! spline error
-                   alloc           ! allocaction error
+  REAL*8  :: Delta_mb                    ! mass balance offset [m i.e.q. yr^{-1}]
+  REAL*8  :: x(1),                     & ! where to evaluate spline (x vec)
+             y(1)                        ! evaluated spline y=s(x)
+
+  REAL*8, dimension(nn) :: knots,        & ! vector of knots
+                           coefs           ! vector of coefficients
+  integer       ::         spl_err,      & ! spline error
+                           alloc           ! allocaction error
 
   ! Variables that only need to be read in once, are saved for future uses
   SAVE FirstTime, Delta_mb, knots, coefs
@@ -101,7 +101,7 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
   x(1) = z
 
   ! evaluate the spline
-  call splev(knots,nn,coefs,3,x,y,1,spl_err)
+  call splev(knots,nn,coefs,3,x,y,1,0,spl_err)
   ! make sure the spline evaluation worked
   if (spl_err/=0) then
     CALL FATAL('cubic_spline', 'splev raised error')
@@ -118,7 +118,7 @@ contains
   subroutine read_vector(vec, len, fn)
     implicit none
     integer, intent(in)                 :: len ! length of vector to be read
-    real, dimension(len), intent(inout) :: vec ! vector to be read from disk
+    real*8, dimension(len), intent(inout) :: vec ! vector to be read from disk
     character(len=*), intent(in)        :: fn  ! filename
 
     integer            :: funit,   &  ! iounit number
@@ -140,8 +140,3 @@ contains
   end subroutine read_vector
   !-----------------------------------------------------------------------------
 END FUNCTION cubic_spline
-
-! subroutine cubic_spline( Model,Solver,dt,TransientSimulation )
-!
-!
-! end subroutine

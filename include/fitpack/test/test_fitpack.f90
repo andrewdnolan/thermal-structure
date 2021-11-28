@@ -8,14 +8,15 @@ program test_fitpack
 
   integer, parameter :: dp = real64
   integer            :: ier         ! error flag
-  integer, parameter :: n = 19,  &  ! number of knots
+  integer, parameter :: n = 9,   &  ! number of knots
                         k = 3,   &  ! spline order
+                        e = 0,   &  ! extrapolate
                         m = 1000    ! number of points in x vec
 
-  real, dimension(n) :: t,       &  ! vector of knots
-                        c           ! vector of coefficients
-  real, dimension(m) :: x,       &  ! where to evaluate spline (x vec)
-                        y           ! evaluated spline y=s(x)
+  real*8, dimension(n) :: t,     &  ! vector of knots
+                          c         ! vector of coefficients
+  real*8, dimension(m) :: x,     &  ! where to evaluate spline (x vec)
+                                    ! evaluated spline y=s(x)
 
   ! Load the knots
   call read_vector(t, n, 'data/knots.dat')
@@ -25,7 +26,7 @@ program test_fitpack
   call read_vector(x, m, 'data/x_vec.dat')
 
   ! evaluate the spline
-  call splev(t,n,c,k,x,y,m,ier)
+  call splev(t,n,c,k,x,y,m,e,ier)
 
   ! write the evaluated spline to disc
   call write_field(y, m, 'data/y_vec.dat')
@@ -35,9 +36,9 @@ contains
   !-----------------------------------------------------------------------------
   subroutine read_vector(vec, len, fn)
     implicit none
-    integer, intent(in)                 :: len ! length of vector to be read
-    real, dimension(len), intent(inout) :: vec ! vector to be read from disk
-    character(len=*), intent(in)        :: fn  ! filename
+    integer, intent(in)                   :: len ! length of vector to be read
+    real*8, dimension(len), intent(inout) :: vec ! vector to be read from disk
+    character(len=*), intent(in)          :: fn  ! filename
 
     integer            :: funit,   &  ! iounit number
                           stat,    &  ! status of io read
@@ -64,7 +65,7 @@ contains
 
     implicit none
     integer, intent(in)                 :: len ! length of vector to be written
-    real, dimension(len), intent(in)    :: vec ! vector to be written to disk
+    real*8, dimension(len), intent(in)    :: vec ! vector to be written to disk
     character(len=*), intent(in)        :: fn  ! filename
 
     integer            :: funit,   &  ! iounit number
