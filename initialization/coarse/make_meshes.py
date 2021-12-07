@@ -13,7 +13,7 @@ glaciers = { 'crmpt12'   : 100, # Δx [m]
              'klun-a'    : 200, # Δx [m]
              'sprg'      : 200, # Δx [m]
              'fish'      : 500, # Δx [m]
-             'klut-a'    : 500, # Δx [m]
+             'klut-b'    : 500, # Δx [m]
              'twds-b'    : 500, # Δx [m]
             }
 
