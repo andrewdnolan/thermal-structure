@@ -19,7 +19,7 @@ from matplotlib import animation, rc
 plt.rcParams['text.usetex']    = False
 plt.rcParams['animation.html'] = 'jshtml'
 
-def animate_Zs(result, title=''):
+def animate_Zs(result, stride, title=''):
     fig, ax = plt.subplots(figsize=(9,3), constrained_layout=True)
 
     # Set the x and y limits, which do not change throughout animation
@@ -64,7 +64,7 @@ def animate_Zs(result, title=''):
 
     NT = result.t.size
     anim = animation.FuncAnimation(fig, animate,
-                                   frames=np.arange(0, NT, 10),
+                                   frames=np.arange(0, NT, stride),
                                    interval=50,
                                    blit=True)
 
@@ -81,11 +81,15 @@ def main(argv):
                         help = "string for the title of the plot")
     parser.add_argument('-out_fn','--output_filename', type=str,
                         help = "full path to the output figure")
+    parser.add_argument('-strd','--animation_stride', type=int, default=5,
+                        help = "stride to loop over timestesps. 1 will plot every"+\
+                               "but will be slow.")
 
     args, _ = parser.parse_known_args(argv)
 
-    out_fn      = args.output_filename
-    title       = args.title
+    out_fn  = args.output_filename
+    title   = args.title
+    stride  = int(args.animation_stride)
     #---------------------------------------------------------------------------
 
     #---------------------------------------------------------------------------
@@ -105,7 +109,7 @@ def main(argv):
         # Calculate the magnitude of the velocity vectors
         src['vel_m'] = np.sqrt(src['velocity 1']**2 + src['velocity 2']**2)
 
-    fig = animate_Zs(src, title=title)
+    fig = animate_Zs(src, stride=stride, title=title)
 
     # Write the plot to a file
     fig.save(out_fn, dpi=400, fps=10)
