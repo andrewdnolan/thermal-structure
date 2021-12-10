@@ -11,19 +11,24 @@ set +x
 #-------------------------------------------------------------------------------
 dx=500                                  # mesh resolution
 dt=0.1                                  # time step size
-NT=100                                  # number of time step
-TT=$((NT*dt))                           # total time of simulation
+NT=251                                  # number of time step
+TT=$(awk -v NT=$NT -v dt=$dt "BEGIN { print NT*dt - dt }" )
 
 #-------------------------------------------------------------------------------
 # input data parameters
 #-------------------------------------------------------------------------------
 KEY='twds-b'                            # glacier key for input data
-OFFSET=9.29                             # MB offset start
-RESTART="twds-b_5000a_dt_1_dx_500_MB_9.29_OFF_psuedo.result"
+BETA=0.0001                             # Slip coef
+OFFSET=10.8                             # MB offset start
+RESTART="twds-b_1000a_dt_0.5_dx_500_MB_10.8_OFF_cubic_spline.result"
+
+# File paths to input data
+Zb_fp="../../input_data/${KEY}_bed.dat"
+Zs_fp="../../input_data/${KEY}_surf.dat"
 #-------------------------------------------------------------------------------
 # Run the surge
 #-------------------------------------------------------------------------------
-RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_pseudo"
+RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${BETA}_B_pseudo"
 
 # File paths to input data
 Zb_fp="../../input_data/${KEY}_bed.dat"
@@ -38,7 +43,7 @@ sed "s#<dt>#"$dt"#g;
      s#<Zs_fp>#"$Zs_fp"#g;
      s#<Zb_fp>#"$Zb_fp"#g;
      s#<OFFSET>#"$OFFSET"#g;
-     s#<RESTART>"$RESTART"#g" "/sifs/pseudo_surge.sif" > "./sifs/${RUN}.sif"
+     s#<RESTART>#"$RESTART"#g" "./sifs/pseudo_surge.sif" > "./sifs/${RUN}.sif"
 
 # Start the timer
 start=$(date +%s.%N)
@@ -70,16 +75,13 @@ rm "./sifs/${RUN}.sif"
 # Run the recovery from the surge
 #-------------------------------------------------------------------------------
 
+STT=$TT                                 # length of surge simulation
 dt=1                                    # time step size
-NT=5000                                 # number of time step
+NT=1000                                 # number of time step
 TT=$((NT*dt))                           # total time of simulation
-RESTART=RUN
+RESTART="${RUN}.result"
 
-RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_spline"
-
-# File paths to input data
-Zb_fp="../../input_data/${KEY}_bed.dat"
-Zs_fp="../../input_data/${KEY}_surf.dat"
+RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${STT}a_${BETA}_B_recovery"
 
 # Update the .SIF FILE with the model run specifc params
 sed "s#<dt>#"$dt"#g;
@@ -90,7 +92,7 @@ sed "s#<dt>#"$dt"#g;
      s#<Zs_fp>#"$Zs_fp"#g;
      s#<Zb_fp>#"$Zb_fp"#g;
      s#<OFFSET>#"$OFFSET"#g;
-     s#<RESTART>"$RESTART"#g" "/sifs/recovery.sif" > "./sifs/${RUN}.sif"
+     s#<RESTART>#"$RESTART"#g" "./sifs/recovery.sif" > "./sifs/${RUN}.sif"
 
 # Start the timer
 start=$(date +%s.%N)

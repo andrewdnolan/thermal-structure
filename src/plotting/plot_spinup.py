@@ -13,16 +13,9 @@ import argparse
 import numpy as np
 import xarray as xr
 import pandas as pd
-import scipy.linalg as LA
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
-from matplotlib import animation, rc
 import matplotlib.colors as mcolors
-
-
-# Set some matplotlib parameters
-plt.rcParams['text.usetex']    = False
-plt.rcParams['animation.html'] = 'jshtml'
 
 def make_colorbar(mf_dataset):
     #---------------------------------------------------------------------------
@@ -78,11 +71,11 @@ def plot_volume(mf_dataset, precision=3, title=''):
     ax.set_title(title)
 
     # annotate the figures axes
-    ax.set_ylabel('Relative Volume per Unit Width (km$^2$)')
-    ax.set_xlabel('Time (a)')
+    ax.set_ylabel('Relative Volume per Unit Width')
+    ax.set_xlabel('Time (yr)')
     # annotate the colorbar axes
-    cbar.set_label('$\Delta \dot b$ (m a$^{-1}$)', rotation=270, labelpad=20)
-    cbar.ax.tick_params(labelsize=7)
+    cbar.set_label('$\Delta \dot b$ (m i.e.q. yr$^{-1}$)', rotation=270, labelpad=20)
+    #cbar.ax.tick_params(labelsize=7)
 
     fig.tight_layout()
 
@@ -126,13 +119,13 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
     ax.set_title(title)
 
     ax.set_xlabel('Length (km)')
-    ax.set_ylabel('m a.s.l.')
+    ax.set_ylabel('Elevation  [m a.s.l.]')
     ax.set_xlim(0,np.max(mf_dataset.coord_1)/1000.)
     ax.set_ylim( mf_dataset.z_s.min() - \
                  (mf_dataset.Z.max() - mf_dataset.Z.min()) / 20, None)
 
-    cbar.set_label('$\Delta \dot b$ (m a$^{-1}$)', rotation=270, labelpad=20)
-    cbar.ax.tick_params(labelsize=6)
+    cbar.set_label('$\Delta \dot b$ (m i.e.q. yr$^{-1}$)', rotation=270, labelpad=20)
+    #cbar.ax.tick_params(labelsize=6)
 
     fig.tight_layout()
 
@@ -148,7 +141,7 @@ def main(argv):
     # Specify command line arguments
     #---------------------------------------------------------------------------
     parser = argparse.ArgumentParser()
-    parser.add_argument("src_path", metavar="path", type=str, nargs='+'
+    parser.add_argument("src_path", metavar="path", type=str, nargs='+',
                         help = "Path to .nc files to be plotted"\
                                "enclose in quotes, accepts * as wildcard for directories or filenames")
     parser.add_argument('-mb','--mb_range', nargs='+',
@@ -164,6 +157,8 @@ def main(argv):
                         help = "final z_s after mass balance grid search")
     parser.add_argument('-out_fn','--output_filename', type=str,
                         help = "full path to the output figure")
+    parser.add_argument('-TeX','--use_LaTeX', action='store_true',
+                        help = "use LaTeX for text rendeing ")
 
     args, _ = parser.parse_known_args(argv)
 
@@ -173,19 +168,48 @@ def main(argv):
     title       = args.title
     #---------------------------------------------------------------------------
 
+    if args.use_LaTeX:
+        plt.rcParams['text.usetex'] = True
+
     #---------------------------------------------------------------------------
     # Load and concatenate the .nc files
     #---------------------------------------------------------------------------
 
-    if "*" in args.src_path:
-        # Glob the file paths and return list of files
-        files = sorted(glob.glob(args.src_path))
-    elif type(args.src_path) == list:
+    if type(args.src_path) == list:
+        if "*" in args.src_path[0]:
+            # Glob the file paths and return list of files
+            files = sorted(glob.glob(args.src_path[0]))
+    else:
         files = args.src_path
 
     # Raise error if glob didn't work
     if not files:
         raise OSError('value passed for "src_path" is invalid')
+
+    # We need to do some more filtering cause there will be lots of misc files
+    # in th nc directories which might be matched by a overly general glob
+    stride_length = len(args.mb_range[1].split(".")[1])
+
+    # loop over the globed files
+    for file in files[:]:
+        match = []
+        # loop over mb offset values
+        for MB in np.arange(float(args.mb_range[0]),
+                            float(args.mb_range[2]) + float(args.mb_range[1]),
+                            float(args.mb_range[1])):
+
+            # if MB offset is not in any of the globed filenames will return flase
+            match.append(str(np.round(MB, stride_length)) in file)
+
+            # Deal wih -0.0 error
+            if np.abs(np.round(MB, stride_length)) == 0.0:
+                match.append(str(np.round(np.abs(MB), stride_length)) in file)
+            else:
+                match.append(str(np.round(MB, stride_length)) in file)
+
+        # if none of the MB offsets are contained in the filename drop it
+        if not any(match):
+            files.remove(file)
 
     # Sorting isn't guaranted to work corretly, so if pattern is matched
     # do special sorting ensure it's done correctly
@@ -194,14 +218,18 @@ def main(argv):
         files.sort(key = lambda x: float(x.split('MB_')[-1].split('_OFF')[0]),
                    reverse = True)
 
+
     # Create array of mass balance values used in spin-up
     MB, dx = np.linspace(float(args.mb_range[0]),
                          float(args.mb_range[2]),
                          len(files),
                          retstep=True)
 
+
     # Check the the MB stride is the same as the stride that was specified
     if not np.isclose(dx, float(args.mb_range[1])):
+
+        print(dx)
         raise OSError('MB stride passed does not match that of files found')
 
     # Make an empty list to store the read in .nc files

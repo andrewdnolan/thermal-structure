@@ -56,7 +56,7 @@ Simulation
   Timestep Sizes              = <dt>    ! [a]
   Timestep Intervals          = <NT>
   Restart File                = "<RESTART>"
-  Post File                   = "VTU/<RUN>.vtu"              !\"
+  Post File                   = "../VTU/<RUN>.VTU"              !\"
   Output File                 = "<RUN>.result"               !\"
   Max Output Level            = 3
   Restart Position            = 0
@@ -210,7 +210,7 @@ Solver 4
   !  Stabilization Method = [Stabilized,P2/P1,Bubbles]
   Stabilization Method                     = String "Bubbles"
 
-  Nonlinear System Convergence Tolerance   = 1.0E-07
+  Nonlinear System Convergence Tolerance   = 1.0E-06
   Nonlinear System Max Iterations          = 25
   Nonlinear System Newton After Iterations = 10
   Nonlinear System Newton After Tolerance  = 1.0E-04
@@ -320,7 +320,7 @@ Boundary Condition 1
   Mass Consistent Normals    = Logical True
 
   Velocity 1                 = Real 0.0e0
-  Slip Coefficient 2         = Real 0.00035
+  Slip Coefficient 2         = Real 0.0001
 
   Zbed                       = Variable Coordinate 1
                                Real
