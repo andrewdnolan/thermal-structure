@@ -69,6 +69,7 @@ def animate_Zs(result, stride, title=''):
                                    blit=True)
 
     return anim
+    
 def main(argv):
     #---------------------------------------------------------------------------
     # Specify command line arguments
