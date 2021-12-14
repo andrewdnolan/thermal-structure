@@ -53,7 +53,7 @@ Simulation
   ! We execute the "SaveLine" Solver before the timestep as to record the
   ! initial conditions. Therefore, we add one extra timestep to make sure
   ! we have a full N number simulation timesteps
-  Timestep Sizes              = 1     ! [a]
+  Timestep Sizes              = <dt>     ! [a]
   Timestep Intervals          = <NT>
 
   Output File                 = "<RUN>".result"               !\"
@@ -157,7 +157,7 @@ Body Force 2
   Name                       = "Climate"
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                                Real Procedure "../../bin/mass_balance" "cubic_spline"
+                                Real Procedure "../../bin/mass_balance" "<FIT>"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
