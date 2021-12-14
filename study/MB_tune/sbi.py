@@ -134,7 +134,7 @@ class MassBalance:
         ########################################################################
 
         # Rounce et al. 2020
-        self._f_ice = 0.7 * self._f_snow
+        self._f_ice = 2.0 * self._f_snow
 
         DOY = np.linspace(1,365,365,dtype=int)[:, np.newaxis]
 
