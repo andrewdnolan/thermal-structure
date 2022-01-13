@@ -18,9 +18,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./result/<KEY>" "mesh_dx<DX>"    !\"
-  Include Path      "./result/<KEY>"                  !\"
-  Results Directory "./result/<KEY>"                  !\"
+  Mesh DB           "./result/lilk-a" "mesh_dx50"    !\"
+  Include Path      "./result/lilk-a"                  !\"
+  Results Directory "./result/lilk-a"                  !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -32,7 +32,7 @@ End
 Constants
   Gas Constant        = real #R                     ![J mol^{-1} K^{-1}]
   Stefan Boltzmann    = real 5.67e-08               ![W m^−2 K^−4]
-  Mass Balance Offset = real <OFFSET>               ![m a^-1]
+  Mass Balance Offset = real 0.0               ![m a^-1]
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END CONSTANTS
@@ -53,11 +53,11 @@ Simulation
   ! We execute the "SaveLine" Solver before the timestep as to record the
   ! initial conditions. Therefore, we add one extra timestep to make sure
   ! we have a full N number simulation timesteps
-  Timestep Sizes              = <dt>     ! [a]
-  Timestep Intervals          = <NT>
+  Timestep Sizes              = 1     ! [a]
+  Timestep Intervals          = 1000
 
-  Output File                 = "<RUN>.result"               !\"
-  ! Post File                   = "VTU/<RUN>".vtu"              !\"
+  Output File                 = "lilk-a_1000a_dt_1_dx_50_MB_0.0_OFF_cubic_spline.result"               !\"
+  ! Post File                   = "VTU/lilk-a_1000a_dt_1_dx_50_MB_0.0_OFF_cubic_spline".vtu"              !\"
   Max Output Level            = 3
 
   ! Initialize Dirichlet Conditions = Logical False
@@ -120,22 +120,22 @@ End
 Initial Condition 2
   Zs    = Variable Coordinate 1
           Real
-           include  "<Zs_fp>"
+           include  "../../input_data/lilk-a_surf.dat"
           End
 
   RefZs = Variable Coordinate 1
           Real
-           include  "<Zs_fp>"
+           include  "../../input_data/lilk-a_surf.dat"
           End
 
   Zbed  = Variable Coordinate 1
          Real
-          include  "<Zb_fp>"
+          include  "../../input_data/lilk-a_bed.dat"
          End
 
   Bottom Surface = Variable Coordinate 1
          Real
-          include  "<Zb_fp>"
+          include  "../../input_data/lilk-a_bed.dat"
          End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -157,7 +157,7 @@ Body Force 2
   Name                       = "Climate"
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                                Real Procedure "../../bin/mass_balance" "<FIT>"
+                                Real Procedure "../../bin/mass_balance" "cubic_spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
@@ -329,12 +329,12 @@ Boundary Condition 1
 
   Zbed                       = Variable Coordinate 1
                                Real
-                                include  "<Zb_fp>"
+                                include  "../../input_data/lilk-a_bed.dat"
                                End
 
   Bottom Surface             = Variable Coordinate 1
                                Real
-                                include  "<Zb_fp>"
+                                include  "../../input_data/lilk-a_bed.dat"
                                End
 End
 
