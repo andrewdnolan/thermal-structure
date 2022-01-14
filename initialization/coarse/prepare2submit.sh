@@ -17,43 +17,116 @@
 #       geometry in each group.
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-parse_args()
+parse_prepare_args()
 { #https://gist.github.com/cosimo/3760587
   #https://www.aplawrence.com/Unix/getopts.html
   #https://stackoverflow.com/a/7948533/10221482
   #https://www.bahmanm.com/2015/01/command-line-options-parse-with-getopt.html
 
-  OPTS=`getopt -o fh: --long force,help, -n 'parse-options' -- "$@"`
+  OPTS=`getopt -o fhx:o: --long force,help,make_sif:,off: -n 'parse-options' -- "$@"`
 
   if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
-  # echo "$OPTS"
-  eval set -- "$OPTS"
-
-  # Set deaultsh
+  # Set deaults options
   #VERBOSE=false
   HELP=false
   FORCE=false
+  make_sif=false
   #DRY_RUN=false
   STACK_SIZE=0
 
+  echo "$OPTS"
+  eval set -- "$OPTS"
   while true; do
     case "$1" in
       -f | --force ) FORCE=true; shift ;;
       -h | --help )   HELP=true; shift ;;
-      -n | --dry-run ) DRY_RUN=true; shift ;;
+      -x | --make_sif ) shift; echo $1; ;;
+      -o | --off )  OFFSET="$2"; shift 2;;
       -s | --stack-size ) STACK_SIZE="$2"; shift 2;;
+      -- ) shift; break ;;
+      * ) break ;;
+    esac
+
+    if [ $make_sif = true ]; then break; fi
+  done
+
+  echo VERBOSE=$VERBOSE
+  echo HELP=$HELP
+  echo make_sif=$make_sif
+  echo STACK_SIZE=$STACK_SIZE
+
+  echo OFFSET=$OFFSET
+  echo "$1"
+}
+
+parse_make_sif_args()
+{ #https://gist.github.com/cosimo/3760587
+  #https://www.aplawrence.com/Unix/getopts.html
+  #https://stackoverflow.com/a/7948533/10221482
+  #https://www.bahmanm.com/2015/01/command-line-options-parse-with-getopt.html
+
+  OPTS=`getopt -o hx:t:T:k:f:o:s: --long help,dx:,dt:,tt:,key:,fit:,off:,sif: -n 'parse-options' -- "$@"`
+
+  if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
+
+  usage="
+  $(basename "$0") make_sif [-h] [--dx dx --dt dt --tt tt --key key --fit fit  --off off --sif sif ]
+  --
+  program to create exectuable .sif file from template based of params passed
+
+  where:
+      -h | --help ) show this help text
+      -x | --dx   ) mesh resolution                         [m]
+      -t | --dt   ) time step                               [y]
+      -T | --tt   ) length of the simulation                [y]
+      -k | --key  ) glacier id key
+      -f | --fit  ) fit type to Young et al 2020. MB data
+      -o | --off  ) offset to mass balance curve            [m i.e.q yr^-1]
+      -s | --sif  ) path to template sif file
+
+      "
+  # set default arg for those that need one
+  HELP=false
+
+  eval set -- "$OPTS"
+  while true; do
+    case "$1" in
+      -h | --help ) echo "$usage";exit 0;;
+      -x | --dx   ) dx="$2";     shift 2;;
+      -t | --dt   ) dt="$2";     shift 2;;
+      -T | --tt   ) TT="$2";     shift 2;;
+      -k | --key  ) KEY="$2";    shift 2;;
+      -f | --fit  ) FIT="$2";    shift 2;;
+      -o | --off  ) OFFSET="$2"; shift 2;;
+      -s | --sif  ) SIF="$2";    shift 2;;
       -- ) shift; break ;;
       * ) break ;;
     esac
   done
 
-  echo VERBOSE=$VERBOSE
-  echo HELP=$HELP
-  echo DRY_RUN=$DRY_RUN
-  echo STACK_SIZE=$STACK_SIZE
+  not_set=false
+  for var in dx dt TT KEY FIT OFFSET SIF; do
+    if [ -z ${!var} ]; then
+    echo "Error:"
+    echo "    --${var} was not passed"
+    not_set=true
+   fi
+  done
 
+  if [ $not_set = true ]; then
+    echo
+    echo "********************************************************************"
+    echo "All variables must be set for $(basename "$0") make_sif to work"
+    echo "********************************************************************"
+    echo
+    exit 1
+  fi
+
+  # If all the check are passed, finally actually call the function
+  make_sif $dx $dt $TT $KEY $FIT $OFFSET $SIF
 }
+
 parse_json()
 {
   #-----------------------------------------------------------------------------
@@ -154,7 +227,7 @@ make_sif()
        s#<FIT>#"$FIT"#g;
        s#<Zs_fp>#"$Zs_fp"#g;
        s#<Zb_fp>#"$Zb_fp"#g;
-       s#<OFFSET>#"$OFFSET"#g" "$7" > "./sifs/${RUN}.sif"
+       s#<OFFSET>#"$OFFSET"#g" "$SIF" > "./sifs/${RUN}.sif"
 }
 
 check_inout_files()
@@ -195,7 +268,8 @@ make_input_file()
   #-----------------------------------------------------------------------------
 
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
-    echo "make_sif $dx $dt $TT $KEY $FIT $OFFSET "./sifs/simple_spinup.sif" " \
+    echo "make_sif --dx ${dx} --dt ${dt} --tt ${TT} --key ${KEY} --fit ${FIT}"\
+         " --off \"${OFFSET}\" --sif \"./sifs/simple_spinup.sif\" " \
          >> "./run/${group}.in"
   done
 
@@ -231,7 +305,7 @@ make_output_file()
 #
 # }
 ################################################################################
-FORCE=false
+FORCE=true
 
 # Declare arrays for the individual size classifications
 declare -a  small=("crmpt12" "crmpt18-a" "crmpt18-b" "glc1-a" "glc1-b")
@@ -294,9 +368,9 @@ ElmerSolver \$SIF > logs/\${SIF##*/}.log
 EOF
 )
 
-echo "$template" > "./run/test.sh"
-
-sed "s#<NJ>#10#g" "./run/test.sh"
+# echo "$template" > "./run/test.sh"
+#
+# sed "s#<NJ>#10#g" "./run/test.sh"
 
 # CREATE=$( sed -n "1p" "./run/small.in" )
 #
@@ -305,3 +379,25 @@ sed "s#<NJ>#10#g" "./run/test.sh"
 #
 # echo $SIF
 # # echo "$template"
+
+run_make_sif=false
+
+# Check if we are running one of our special functions from the command line
+case $1 in
+  # make the individual sif file
+  'make_sif') run_make_sif=true; shift ;;
+esac
+
+if [ $run_make_sif = true ]; then
+  parse_make_sif_args "$@"
+else
+  echo "more to do"
+fi
+
+
+
+  #parse_args $*
+#
+# OFF=-1.5
+#
+# echo "test \"${OFF}\" "
