@@ -19,12 +19,16 @@ __TO DO__:
     - [x] call `elmer2nc.sh` to conver form `.result` to `NetCDF`
 
   - Actual submission script:
-    - [ ] count number of jobs per group in existing nested `for` loops
-    - [ ] create group specific run name
-    - [ ] Need to pass three runtimes and three memory request one for each size class
-    - [ ] check that paths work if submitted from  `run` directory 
-    - [ ] Make the scripts executable?
+    - [x] count number of jobs per group in existing nested `for` loops
+    - [x] create group specific run name
+    - [x] parse `MEM` and `RUN_TIME` from command line
+    - [x] wrap whole process into function to be run per size group
+    - [x] parse group from command line and appropriate control flow.
+    - [ ] check that paths work if submitted from  `run` directory
+    - [x] Make the scripts executable?
 
+  - Make sense to run script once per group.
+    - [ ] `makefile` with rule for each group size
 
   - [ ] Can we plot, but only after all the runs are completed for a single glacier?
     - maybe this needs to be it's own script which waits for the job arrays to complete?

@@ -17,47 +17,99 @@
 #       geometry in each group.
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+check_vars_defined()
+{
+  local not_set=false
+  for var in $2; do
+    if [ -z ${!var} ]; then
+      echo
+      echo "Error:"
+      echo "    ${var} is NOT set"
+      local not_set=true
+    fi
+  done
+
+  if [ $not_set = true ]; then
+    echo
+    echo "********************************************************************"
+    echo "function: ${1} can not be run, not all necessary vars are set."
+    echo "********************************************************************"
+    echo
+    exit 1
+  fi
+}
+
 parse_prepare_args()
 { #https://gist.github.com/cosimo/3760587
   #https://www.aplawrence.com/Unix/getopts.html
   #https://stackoverflow.com/a/7948533/10221482
   #https://www.bahmanm.com/2015/01/command-line-options-parse-with-getopt.html
 
-  OPTS=`getopt -o fhx:o: --long force,help,make_sif:,off: -n 'parse-options' -- "$@"`
+  OPTS=`getopt -o fhm:t:g:s: --long force,help,mem:,time:,group:,stride:, -n 'parse-options' -- "$@"`
 
   if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
+  usage="
+  $(basename "$0") [-h] [--dx dx --dt dt --tt tt --key key --fit fit  --off off --sif sif ]
+  --
+  program to generate SLURM job array submission scripts for a given size class
+
+  where:
+      -h | --help  ) show this help text
+      -f | --force ) overwrite .in/.out files if they already exist
+      -m | --mem   ) Memory request for one job in the SLURM job array. Default
+                      units are MB.
+      -t | --time  ) Wall time request for one job in the SLURM job array.
+                    Must be in: HH:MM:SS format
+      -g | --group ) Glacier size class [small, medium, large] to prepare
+      -s | --stride) How many jobs in the SLURM array to submit at once default=10
+      "
+
   # Set deaults options
-  #VERBOSE=false
   HELP=false
   FORCE=false
-  make_sif=false
-  #DRY_RUN=false
-  STACK_SIZE=0
+  JS=10
 
-  echo "$OPTS"
   eval set -- "$OPTS"
   while true; do
     case "$1" in
       -f | --force ) FORCE=true; shift ;;
-      -h | --help )   HELP=true; shift ;;
-      -x | --make_sif ) shift; echo $1; ;;
-      -o | --off )  OFFSET="$2"; shift 2;;
-      -s | --stack-size ) STACK_SIZE="$2"; shift 2;;
+      -h | --help  ) echo "$usage"; exit 0 ;;
+      -m | --mem   ) MEM="$2"; shift 2 ;;
+      -t | --time  ) RUN_TIME="$2"; shift 2;;
+      -g | --group ) size="$2"; shift 2;;
+      -s | --stride) JS="$2"; shift 2;;
       -- ) shift; break ;;
       * ) break ;;
     esac
-
-    if [ $make_sif = true ]; then break; fi
   done
 
-  echo VERBOSE=$VERBOSE
-  echo HELP=$HELP
-  echo make_sif=$make_sif
-  echo STACK_SIZE=$STACK_SIZE
+  # check the size is passed correctly
+  local ok_size=false
+  for s in "small" "medium" "large"; do
+    if [ $s == $size ]; then
+      local ok_size=true
+    fi
+  done
 
-  echo OFFSET=$OFFSET
-  echo "$1"
+  if [ $ok_size = false ];then
+    echo
+    echo "**********************************************************************"
+    echo "Error: Incorrect size passed to -g. Select from [small, medium, large]"
+    echo "**********************************************************************"
+    echo
+    exit 1
+  fi
+
+  # Check the time is passed correctly
+  if grep -qv -P '\d*:\d\d:\d\d' <<<"$RUN_TIME"; then
+    echo
+    echo "**********************************************************************"
+    echo "Error: RUN_TIME not in correct format (hh:mm:ss)."
+    echo "**********************************************************************"
+    echo
+    exit 1
+  fi
 }
 
 parse_make_sif_args()
@@ -87,7 +139,7 @@ parse_make_sif_args()
 
       "
   # set default arg for those that need one
-  HELP=false
+  local HELP=false
 
   eval set -- "$OPTS"
   while true; do
@@ -105,26 +157,7 @@ parse_make_sif_args()
     esac
   done
 
-  not_set=false
-  for var in dx dt TT KEY FIT OFFSET SIF; do
-    if [ -z ${!var} ]; then
-    echo "Error:"
-    echo "    --${var} was not passed"
-    not_set=true
-   fi
-  done
-
-  if [ $not_set = true ]; then
-    echo
-    echo "********************************************************************"
-    echo "All variables must be set for $(basename "$0") make_sif to work"
-    echo "********************************************************************"
-    echo
-    exit 1
-  fi
-
-  # If all the check are passed, finally actually call the function
-  make_sif $dx $dt $TT $KEY $FIT $OFFSET $SIF
+  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF"
 }
 
 parse_json()
@@ -186,6 +219,8 @@ make_RUN_name()
   # $FIT       --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
 
+  check_vars_defined "make_RUN_name" "KEY TT dt dx OFFSET FIT"
+
   local RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${FIT}"
   echo $RUN
 }
@@ -208,6 +243,9 @@ make_sif()
   # $OFFSET   --->   offset to mass balance curve            [m i.e.q yr^-1]
   # $SIF      --->   path to template sif file
   #-----------------------------------------------------------------------------
+
+  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF"
+
 
   # File paths to input topography data
   local Zb_fp="../../input_data/${KEY}_bed.dat"
@@ -232,13 +270,15 @@ make_sif()
 
 check_inout_files()
 {
+  check_vars_defined "check_inout_files" "group FORCE"
+
   for ext in "in" "out"; do
 
     # check if file already exists
     if [ -f "./run/${group}.${ext}" ] && [ $FORCE = false ]; then
       echo
       echo "********************************************************************"
-      echo -e "Input file: \"./run${group}.${ext}\" already exists.\n"\
+      echo -e "Input file: \"./run/${group}.${ext}\" already exists.\n"\
       "  Either manually remove the \"./run/${group}.${ext}\" file or\n"\
       "  run this script with the \" -FORCE \" flag to overwrite files."
       echo "********************************************************************"
@@ -246,7 +286,7 @@ check_inout_files()
       exit 1
 
     # if file exists but force flag passed, delete it
-  elif [ -f "$./run/{group}.${ext}" ] && [ $FORCE = true ]; then
+    elif [ -f "./run/${group}.${ext}" ] && [ $FORCE = true ]; then
       # remove the existing file
       rm -f "./run/${group}.${ext}"
     fi
@@ -266,6 +306,8 @@ make_input_file()
   # $KEY   --->   glacier id key
   # $FIT   --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
+
+  check_vars_defined "make_input_file" "MB_0 MB_f MB_s dx TT dt KEY FIT"
 
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
     echo "make_sif --dx ${dx} --dt ${dt} --tt ${TT} --key ${KEY} --fit ${FIT}"\
@@ -288,6 +330,8 @@ make_output_file()
   # $FIT   --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
 
+  check_vars_defined "make_output_file" "MB_0 MB_f MB_s KEY TT dt dx FIT"
+
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
 
     # Given the passed parametes and the current offset make `RUN` name variable
@@ -301,43 +345,43 @@ make_output_file()
   done
 }
 
-# make_submit_scipt(){
-#
-# }
-################################################################################
-FORCE=true
+check_njobs()
+{
+  check_vars_defined "check_njobs" "group "
 
-# Declare arrays for the individual size classifications
-declare -a  small=("crmpt12" "crmpt18-a" "crmpt18-b" "glc1-a" "glc1-b")
-declare -a medium=("lilk-a" "lilk-b" "klun-a" "klun-b" "sprg")
-declare -a  large=("twds-a" "twds-b" "fish" "klut-a" "klut-b")
-# Declare a nested arrays containing the sub-arrays
-declare -a groups=("small" "medium" "large")
+  local n_in=$(cat "./run/${group}.in" | wc -l)
+  local n_out=$(cat "./run/${group}.out" | wc -l )
 
-# for group in "${groups[@]}"; do
-#   # get elements of the group
-#   len="$group[@]"
-#
-#   # check whether in/out files exist
-#   check_inout_files $group $FORCE
-#
-#   # loop over elements of the group
-#   for KEY in "${!len}"; do
-#
-#     # extract parameter values from the json file
-#     parse_json "./params/${KEY}.json"
-#
-#     # Add the `.sif` creation command to the input .txt file
-#     make_input_file $MB_0 $MB_s $MB_f $dx $TT $dt $KEY
-#
-#     # Add the  NetCDF creation command to the output .txt file
-#     make_output_file $MB_0 $MB_s $MB_f $KEY $TT $dt $dx $FIT
-#
-#   done
-# done
+  if [ $n_in -ne $n_out ]; then
+    echo
+    echo "********************************************************************"
+    echo -e "Input and Ouput files are different lenghts for group \" ${group} \"."
+    echo "********************************************************************"
+    echo
+    exit 1
+  else
+    njobs=$n_in
+  fi
 
-# For formating to work correctly, this variable has to be printed within quotes
-template=$(cat << EOF
+}
+
+make_group_name()
+{
+  check_vars_defined "make_group_name" "group "
+
+  local group_name="${group}_spline_init"
+
+  echo $group_name
+}
+
+make_submit_scipt()
+{
+
+  check_vars_defined "check_vars_defined" "njobs JS MEM RUN_TIME JOB_NAME"
+
+
+  # For formating to work correctly, this variable has to be printed within quotes
+  template=$(cat << EOF
 #!/bin/bash
 #SBATCH --array=1-<NJ>%<JS>                  # <NJ> jobs that run <JS> at a time
 #SBATCH --job-name=<JOB_NAME>           # base job name for the array
@@ -360,44 +404,109 @@ CREATE=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <in_fp> )
 # strip .sif file name from the creation command
 SIF=\$(awk '{split(\$0, array, " "); print \$NF}' <<< "\$CREATE")
 
+# create the .sif file
+prepare2submit \$CREATE
+
 # Get the command to convert from .result to NetCDF
 CONVERT=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <in_fp> )
 
 # Execute the .sif file
-ElmerSolver \$SIF > logs/\${SIF##*/}.log
+ElmerSolver \$SIF
+
+# Do post-processing file conversion
+\$CONVERT
+
+# remove the sif
+rm -f \$SIF
 EOF
-)
+  )
 
-# echo "$template" > "./run/test.sh"
-#
-# sed "s#<NJ>#10#g" "./run/test.sh"
+  # write the template submit script to a temp file
+  echo "$template" > "./run/tmp.sh"
 
-# CREATE=$( sed -n "1p" "./run/small.in" )
-#
-# # strip .sif file name from the creation command
-# SIF=$(awk '{split($0, array, " "); print $NF}' <<< "$CREATE")
-#
-# echo $SIF
-# # echo "$template"
+  sed "s#<NJ>#"$njobs"#g;
+       s#<JS>#"$JS"#g;
+       s#<MEM>#"$MEM"#g;
+       s#<RUN_TIME>#"$RUN_TIME"#g;
+       s#<JOB_NAME>#"$JOB_NAME"#g;" "./run/tmp.sh" > "./run/${JOB_NAME}.sh"
 
-run_make_sif=false
+  # remove the temp template
+  rm -f "./run/tmp.sh"
 
-# Check if we are running one of our special functions from the command line
-case $1 in
-  # make the individual sif file
-  'make_sif') run_make_sif=true; shift ;;
-esac
+  chmod +x "./run/${JOB_NAME}.sh"
+}
 
-if [ $run_make_sif = true ]; then
-  parse_make_sif_args "$@"
-else
-  echo "more to do"
-fi
+prepare2submit()
+{
+  check_vars_defined "prepare2submit" "size FORCE MEM RUN_TIME"
+
+  #https://stackoverflow.com/a/16461878/10221482
+  #complicated b/c you can't pass an array to a bash function
+  local group="${size}"
+  local arr_name="${size}[@]"
+  local group_arr=("${!arr_name}")
+
+  # check whether in/out files exist
+  check_inout_files $group $FORCE
+
+  # loop over elements of the group
+  for KEY in "${group_arr[@]}"; do
+    # extract parameter values from the json file
+    parse_json "./params/${KEY}.json"
+
+    # Add the `.sif` creation command to the input .txt file
+    make_input_file $MB_0 $MB_s $MB_f $dx $TT $dt $KEY
+
+    # Add the  NetCDF creation command to the output .txt file
+    make_output_file $MB_0 $MB_s $MB_f $KEY $TT $dt $dx $FIT
+  done
+
+  # Needs to find number of jobs per group
+  check_njobs $group
+
+  # Make group specific run name
+  JOB_NAME=$(make_group_name $group)
+
+  # Make job submission script
+  make_submit_scipt $njobs $JS $RUN_TIME $MEM $JOB_NAME
+
+}
+
+################################################################################
+# FORCE=true
+# MEM=100
+# RUN_TIME="1:15:00"
+# JS=10
+
+main(){
+  # Declare arrays for the individual size classifications
+  declare -a  small=("crmpt12" "crmpt18-a" "crmpt18-b" "glc1-a" "glc1-b")
+  declare -a medium=("lilk-a" "lilk-b" "klun-a" "klun-b" "sprg")
+  declare -a  large=("twds-a" "twds-b" "fish" "klut-a" "klut-b")
+  # Declare a nested arrays containing the sub-arrays
+  declare -a groups=("small" "medium" "large")
 
 
+  local run_make_sif=false
 
-  #parse_args $*
-#
-# OFF=-1.5
-#
-# echo "test \"${OFF}\" "
+  # Check if we are running one of our special functions from the command line
+  case $1 in
+    # make the individual sif file
+    'make_sif') run_make_sif=true; shift ;;
+  esac
+
+  if [ $run_make_sif = true ]; then
+    parse_make_sif_args "$@"
+
+    # If all the check are passed, finally actually call the function
+    make_sif $dx $dt $TT $KEY $FIT $OFFSET $SIF
+  else
+    parse_prepare_args "$@"
+
+    prepare2submit $size $FORCE $MEM $RUN_TIME
+  fi
+
+}
+
+#run the whole thing.
+main "$@"
