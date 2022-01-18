@@ -141,6 +141,7 @@ class PDD_melt_model:
 
         Outputs:
             MB     (ndarray) --> Nodal surface mass balance     [m i.e. / y]
+            
         Optional Outputs (Set by `parts` kwarg):
             A_snow (ndarray) --> Snow accumulation (optional)   [m i.e. / y]
             R      (ndarray) --> Refreezing                     [m i.e. / y]
