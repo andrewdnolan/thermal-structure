@@ -484,7 +484,7 @@ main(){
   declare -a medium=("lilk-a" "lilk-b" "klun-a" "klun-b" "sprg")
   declare -a  large=("twds-a" "twds-b" "fish" "klut-a" "klut-b")
   # Declare a nested arrays containing the sub-arrays
-  declare -a groups=("small" "medium" "large")
+  # declare -a groups=("small" "medium" "large")
 
 
   local run_make_sif=false

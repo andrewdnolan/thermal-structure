@@ -5,19 +5,28 @@
 # 		https://stackoverflow.com/a/3077254/10221482
 ################################################################################
 
-template = run/group.in run/group.out run/group_spline_init.sh
+out_temp = run/group.in run/group.out run/group_spline_init.sh
+param_temp = params/glac.json
 
-small  = $(subst group,small,$(template))
-medium = $(subst group,medium,$(template))
-large  = $(subst group,large,$(template))
+small_out = $(subst group,small,$(out_temp))
+small_glacs = crmpt12 crmpt18-a crmpt18-b glc1-a glc1-b
+small_params = $(foreach glac,$(small_glacs),$(subst glac,$(glac),$(param_temp)))
 
-all: $(small) $(medium) $(large)
+medium_out= $(subst group,medium,$(out_temp))
+medium_glacs = lilk-a lilk-b klun-a klun-b sprg
+medium_params = $(foreach glac,$(medium_glacs),$(subst glac,$(glac),$(param_temp)))
 
-$(subst .,%,$(small)): prepare2submit
+large_out = $(subst group,large,$(out_temp))
+large_glacs = twds-a twds-b fish klut-a klut-b
+large_params = $(foreach glac,$(large_glacs),$(subst glac,$(glac),$(param_temp)))
+
+all: $(small_out) $(medium_out) $(large_out)
+
+$(subst .,%,$(small_out)): prepare2submit $(small_params)
 	./prepare2submit --force --time="1:15:00" --mem="200MB" --group="small"
 
-$(subst .,%,$(medium)): prepare2submit
+$(subst .,%,$(medium_out)): prepare2submit $(medium_params)
 	./prepare2submit --force --time="2:30:00" --mem="500MB" --group="medium"
 
-$(subst .,%,$(large)): prepare2submit
+$(subst .,%,$(large_out)): prepare2submit $(large_params)
 	./prepare2submit --force --time="3:30:00" --mem="1GB" --group="large"
