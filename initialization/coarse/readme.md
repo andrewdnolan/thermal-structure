@@ -2,6 +2,24 @@
 
 Here follows run scripts, results, and figures from uncoupled initialization experiments.
 
+```
+.
+├── coarse_gridsearch.py
+├── figs
+├── make_meshes.py
+├── makefile
+├── params         - folder containing .json parameter files for each glacier
+├── prepare2submit
+├── readme.md
+├── result
+  ├──${glac_key}
+    ├──nc
+    ├──mesh_dx${DX}
+├── run           - 
+├── sample_run.sh
+└── sifs        
+```
+
 ## `prepare2submit.sh`:
   - This script create necessary files to submit `SLURM` job array on cedar.
   - Geometries and submission scripts are group by size since runtime and memory

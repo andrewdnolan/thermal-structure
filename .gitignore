@@ -27,6 +27,7 @@ __pycache__/
 *.png
 *.eps
 *.mp4
+*.pdf
 
 # include topograhy files
 !input_data/*.dat
