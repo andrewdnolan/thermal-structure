@@ -1,18 +1,14 @@
 #!/usr/bin/env python3
 
 import theano
+import warnings
 import numpy as np
 import theano.tensor as tt
-import theano.sandbox.rng_mrg as RNG_MRG
 
-theano_random = RNG_MRG.MRG_RandomStream(seed=23455)
-# set a fixed number initializing RandomSate for repeatable experiments
+warnings.filterwarnings(action='ignore')
+theano.config.compute_test_value = 'warn'
 
-class theano_forward:
-    def __compile(self):
-        pass
-
-class PDD_melt_model:
+class PDD_LA:
     """ Forward model used for hierarchical MCMC paramter inversion.
 
     __TO DO__:
@@ -20,6 +16,9 @@ class PDD_melt_model:
     """
 
     def __init__(self, α, T_ma, ΔTΔz, T_p, ref_z, T_m, T_rs, T_σ, A_mean):
+        # These a arguments which all models will need. Any of the model
+        # pamaeters which are dependent on the model formulation are passed
+        # as kwargs.
         self.α      = α       # anual air temp. amplitude    [K]
         self.T_ma   = T_ma    # Mean annual air temp @ ref_z [K]
         self.ΔTΔz   = ΔTΔz    # air temp lapse rate          [K m^-1]
@@ -28,7 +27,7 @@ class PDD_melt_model:
         self.T_m    = T_m     # Melting temp. threshold      [K]
         self.T_rs   = T_rs    # T_
         self.T_σ    = T_σ
-        self.A_mean = A_mean  # Mean annual accum.   @ ref_z [kg m^-2 yr^-1]
+        self.A_mean = A_mean
 
         # Compile theano forward model
         self.__compiled = self.__compile_forward()
@@ -51,7 +50,13 @@ class PDD_melt_model:
 
         return Temp
 
-    def __tt_component(self, z, f_snow, C, grad_a, f_r):
+    def __tt_accumulation(self, z, grad_a, T):
+        A_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
+        A_snow = tt.maximum((A_days*self.A_mean)*(1+(z-self.ref_z)*grad_a), 0.0)
+
+        return A_snow
+
+    def __tt_component(self, z, f_snow, C, f_r, grad_a):
         """Theano implementation of the forward model which supports shared
            variables as input.
 
@@ -63,31 +68,22 @@ class PDD_melt_model:
             f_snow (float) --> degree-day factor for snow      [kg m^-2 yr^-1 K^-1]
             C      (float) --> factor relating f_ice to f_snow [-]
                                 1 <= C < ?
-            grad_a (float) --> alititudinal precip factor      [m^-1]
             f_r    (float) --> refreezing factor               [-]
-
+            **kwargs
         Outputs:
             [A_snow, R, M_melt]  ([theano.tt, theano.tt, theano.tt]) -->
                 List of theano tensors without numeric values for each component
                 of the mass balance model [m i.e yr^-1]
         """
-        f_ice = C*f_snow
-        T     = self._air_temp(z) #+ T_bias
 
-        PDDs = tt.switch(tt.gt(T, self.T_m), T, 0.0).sum(axis=0)
+        f_ice  = C*f_snow
 
-        accum_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
+        # temperature and PDDs calc
+        T      = self._air_temp(z)
+        PDDs   = tt.switch(tt.gt(T, self.T_m), T, 0.0).sum(axis=0)
 
-        # # Rounce et al. 2020 / Huss and Hock 2014
-        # tmp = tt.switch(tt.lt(self.T_rs-1, T) & tt.gt(T, self.T_rs+1),
-        #                 0.5+(T-self.T_rs)/2, T)
-        # tmp = tt.switch(tt.le(tmp, self.T_rs - 1), 1 , tmp)
-        # tmp = tt.switch(tt.ge(tmp, self.T_rs + 1), 0 , tmp)
-        # accum_days = (tmp / 365.).sum(axis=0)
-
-        # calculate snow accumulation
-        A_snow = tt.maximum((accum_days*self.A_mean)* (1+(z-self.ref_z)*grad_a),
-                            0.0)
+        # accumulation calc
+        A_snow = self.__tt_accumulation(z, grad_a, T)
 
         # calculate local surface melt assuming f_m = f_snow
         melt_local = PDDs * f_snow
@@ -105,9 +101,9 @@ class PDD_melt_model:
         M_melt = f_m*PDDs
 
         # Return individual components of the mass balance model in [m i.e. / y]
-        return [A_snow * (1/910), R * (1/910), M_melt * (1/910)]
+        return A_snow * (1/910), R * (1/910), M_melt * (1/910), f_m, r_s2m
 
-    def tt_forward(self, z, f_snow, C, grad_a, f_r):
+    def tt_forward(self, z, f_snow, C, f_r, grad_a):
         """Wrapper for the individual component model. Computes the sum of the
            individual components, resulting in the net balance (i.e. target value
            in tunning procedure).
@@ -124,7 +120,7 @@ class PDD_melt_model:
             MB (theano.tt) -->  theano tensor without numeric values [m i.e. / y]
 
         """
-        A_snow_tt, R_tt, M_melt_tt = self.__tt_component(z, f_snow, C, grad_a, f_r)
+        A_snow_tt, R_tt, M_melt_tt, f_m, r_s2m = self.__tt_component(z, f_snow, C, f_r, grad_a)
 
         # Return the net balance
         return A_snow_tt + R_tt - M_melt_tt
@@ -135,15 +131,15 @@ class PDD_melt_model:
         z      = tt.vector('z')
         f_snow = tt.dscalar('f_s')
         C      = tt.dscalar('C')
-        grad_a = tt.dscalar('grad_a')
         f_r    = tt.dscalar('f_r')
+        grad_A = tt.dscalar('grad_A')
 
-        compiled = theano.function([z, f_snow, C, grad_a, f_r],
-                            self.__tt_component(z, f_snow, C, grad_a, f_r))
+        compiled = theano.function([z, f_snow, C, f_r, grad_A],
+                            self.__tt_component(z, f_snow, C, f_r, grad_A))
 
         return compiled
 
-    def eval_forward(self, z, f_snow, C, grad_a, f_r, parts=True):
+    def eval_forward(self, z, f_snow, C, f_r, grad_a, parts=True):
         """Compiled version of the forward model which takes numeric inputs as
            arguments and output numeric arguments.
 
@@ -167,12 +163,186 @@ class PDD_melt_model:
         """
 
         # Evaluate individual components of MB model
-        A_snow, R, M_melt = self.__compiled(z, f_snow, C, grad_a, f_r)
+        A_snow, R, M_melt, f_m, r_s2m = self.__compiled(z, f_snow, C, f_r, grad_a)
         # Calculate the net balance from components
         MB = A_snow + R - M_melt
 
         if parts:
-            return MB, A_snow, R, M_melt
+            return MB, A_snow, R, M_melt, f_m, r_s2m
+        else:
+            return MB
+
+class PDD_PWA:
+    """ Forward model used for hierarchical MCMC paramter inversion.
+
+    __TO DO__:
+        - implenent along "range" accumulation gradient
+    """
+
+    def __init__(self, α, T_ma, ΔTΔz, T_p, ref_z, T_m, T_rs, T_σ, z_ELA):
+        # These a arguments which all models will need. Any of the model
+        # pamaeters which are dependent on the model formulation are passed
+        # as kwargs.
+        self.α      = α       # anual air temp. amplitude    [K]
+        self.T_ma   = T_ma    # Mean annual air temp @ ref_z [K]
+        self.ΔTΔz   = ΔTΔz    # air temp lapse rate          [K m^-1]
+        self.T_p    = T_p     # DOY of annual temp peak      [DOY]
+        self.ref_z  = ref_z   # reference surface elevation  [m a.s.l.]
+        self.T_m    = T_m     # Melting temp. threshold      [K]
+        self.T_rs   = T_rs    # T_
+        self.T_σ    = T_σ
+        self.z_ELA  = z_ELA
+
+        # Compile theano forward model
+        self.__compiled = self.__compile_forward()
+
+    def _air_temp(self, z):
+        """"Evaluate the surface air temperature at a given evlevation for a given
+            day of the year
+
+        Inputs:
+            z   (float or Nx1 ndarry) ---> Nodal surface elevation [m a.s.l.]
+
+        Outputs:
+            T   (floar or Nx365 ndarray) ---> Nodal surface elevation for each
+                                              day of the yeat      [C]
+        """
+        doy  = np.arange(1,366)[:, np.newaxis]
+        Temp = self.α*np.cos( 2*np.pi*(doy-self.T_p)/365 ) + \
+               self.ΔTΔz*(self.ref_z-z)+self.T_ma + \
+               np.random.normal(0, self.T_σ, (365,1))
+
+        return Temp
+
+    def __tt_accumulation(self, z, T):
+
+        # params from the lstq fitting
+        p = (3.07000000e+03, 5.72227470e+02, 2.01113866e-01, 3.64528312e+00, 3.63923039e+03)
+
+        # unpack lstq params
+        z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max = p
+
+        A = tt.switch(tt.lt(self.z_ELA,z) & tt.lt(z, z_max), ΔPΔz_2*z + P0-ΔPΔz_2*self.z_ELA, z)
+        A = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA, A)
+        A = tt.switch(tt.le(z_max, z), P_max, A)
+
+        # A_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
+
+        return A
+
+    def __tt_component(self, z, f_snow, C, f_r):
+        """Theano implementation of the forward model which supports shared
+           variables as input.
+
+           This is an intermidiate function which returns a list of the three
+           components of the PDD model (i.e. Accumulation, Refreezing and melt).
+
+        Inputs:
+            z    (ndarray) --> Nx1 array of elevations         [m a.s.l.]
+            f_snow (float) --> degree-day factor for snow      [kg m^-2 yr^-1 K^-1]
+            C      (float) --> factor relating f_ice to f_snow [-]
+                                1 <= C < ?
+            f_r    (float) --> refreezing factor               [-]
+            **kwargs
+        Outputs:
+            [A_snow, R, M_melt]  ([theano.tt, theano.tt, theano.tt]) -->
+                List of theano tensors without numeric values for each component
+                of the mass balance model [m i.e yr^-1]
+        """
+
+        f_ice  = C*f_snow
+
+        # PDDs and accumulation calc
+        T      = self._air_temp(z)
+        PDDs   = tt.switch(tt.gt(T, self.T_m), T, 0.0).sum(axis=0)
+
+        A_snow = self.__tt_accumulation(z, T)
+
+        # calculate local surface melt assuming f_m = f_snow
+        melt_local = PDDs * f_snow
+
+        # calculate refreezing
+        R = tt.minimum(f_r*A_snow, melt_local)
+
+        r_s2m = tt.switch(tt.eq(melt_local, 0.0), 1.0, A_snow/melt_local)
+
+        f_m = tt.switch(tt.ge(r_s2m, 1.), f_snow,
+                        f_ice - (f_ice - f_snow)*r_s2m)
+
+        # calculate surface melt [kg m^{-2} yr^{-1}] with f_m
+        M_melt = f_m*PDDs
+
+        # Return individual components of the mass balance model in [m i.e. / y]
+        return A_snow * (1/910), R * (1/910), M_melt * (1/910), f_m, r_s2m
+
+    def tt_forward(self, z, f_snow, C, f_r):
+        """Wrapper for the individual component model. Computes the sum of the
+           individual components, resulting in the net balance (i.e. target value
+           in tunning procedure).
+
+        Inputs:
+            z    (ndarray) --> Nx1 array of elevations         [m a.s.l.]
+            f_snow (float) --> degree-day factor for snow      [kg m^-2 yr^-1 K^-1]
+            C      (float) --> factor relating f_ice to f_snow [-]
+                                1 <= C < ?
+            grad_a (float) --> alititudinal precip factor      [m^-1]
+            f_r    (float) --> refreezing factor               [-]
+
+        Outputs:
+            MB (theano.tt) -->  theano tensor without numeric values [m i.e. / y]
+
+        """
+        A_snow_tt, R_tt, M_melt_tt, f_m, r_s2m = self.__tt_component(z, f_snow, C, f_r)
+
+        # Return the net balance
+        return A_snow_tt + R_tt - M_melt_tt
+
+    def __compile_forward(self):
+        """Function to compile the theano implementation of the forward model.
+        """
+        z      = tt.vector('z')
+        f_snow = tt.dscalar('f_s')
+        C      = tt.dscalar('C')
+        f_r    = tt.dscalar('f_r')
+        # grad_A = tt.dscalar('grad_A')
+
+        compiled = theano.function([z, f_snow, C, f_r],
+                            self.__tt_component(z, f_snow, C, f_r))
+
+        return compiled
+
+    def eval_forward(self, z, f_snow, C, f_r, parts=True):
+        """Compiled version of the forward model which takes numeric inputs as
+           arguments and output numeric arguments.
+
+        Inputs:
+            z    (ndarray) --> Nx1 array of elevations         [m a.s.l.]
+            f_snow (float) --> degree-day factor for snow      [kg m^-2 yr^-1 K^-1]
+            C      (float) --> factor relating f_ice to f_snow
+                                1 <= C < ?                     [-]
+            grad_a (float) --> alititudinal precip factor      [m^-1]
+            f_r    (float) --> refreezing factor               [-]
+            parts  (bool)  --> whether to return individual
+                               componetns of MB model.
+
+        Outputs:
+            MB     (ndarray) --> Nodal surface mass balance     [m i.e. / y]
+
+        Optional Outputs (Set by `parts` kwarg):
+            A_snow (ndarray) --> Snow accumulation (optional)   [m i.e. / y]
+            R      (ndarray) --> Refreezing                     [m i.e. / y]
+            M_melt (ndarray) --> Melting                        [m i.e. / y]
+        """
+
+
+
+        # Evaluate individual components of MB model
+        A_snow, R, M_melt, f_m, r_s2m = self.__compiled(z, f_snow, C, f_r)
+        # Calculate the net balance from components
+        MB = A_snow + R - M_melt
+
+        if parts:
+            return MB, A_snow, R, M_melt, f_m, r_s2m
         else:
             return MB
 
@@ -218,9 +388,8 @@ class Accumulation_default:
         accum_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
 
         # calculate snow accumulation
-        A_snow = tt.maximum((accum_days*self.A_mean)* (1+(z-self.ref_z)*ΔPΔz),
-                            0.0)
-        return A_snow * (1/910)
+        A_snow = tt.maximum((accum_days*self.A_mean)* (1+(z-self.ref_z)*ΔPΔz), 0.0)
+        return A_snow
 
     def __compile_forward(self):
         """Function to compile the theano implementation of the forward model.
@@ -229,8 +398,7 @@ class Accumulation_default:
         ΔPΔz   = tt.dscalar('ΔPΔz')
         # A_mean = tt.dscalar('A_mean')
 
-        compiled = theano.function([z, ΔPΔz],
-                            self.tt_forward(z, ΔPΔz))
+        compiled = theano.function([z, ΔPΔz], self.tt_forward(z, ΔPΔz))
 
         return compiled
 
@@ -254,20 +422,49 @@ class Accumulation_default:
 
 class Accumulation_piecewise:
 
-    def __init__(self, z_ELA):
+
+    def __init__(self, α, T_ma, ΔTΔz, T_p, ref_z, T_m, T_rs, T_σ, z_ELA):
+        self.α      = α       # anual air temp. amplitude    [K]
+        self.T_ma   = T_ma    # Mean annual air temp @ ref_z [K]
+        self.ΔTΔz   = ΔTΔz    # air temp lapse rate          [K m^-1]
+        self.T_p    = T_p     # DOY of annual temp peak      [DOY]
+        self.ref_z  = ref_z   # reference surface elevation  [m a.s.l.]
+        self.T_m    = T_m     # Melting temp. threshold      [K]
+        self.T_rs   = T_rs    # T_
+        self.T_σ    = T_σ
         self.z_ELA = z_ELA   # ELA elevation (known a prior only in the test case)
 
         # Compile theano forward model
         self.__compiled = self.__compile_forward()
 
+    def _air_temp(self, z):
+        """"Evaluate the surface air temperature at a given evlevation for a given
+            day of the year
+
+        Inputs:
+            z   (float or Nx1 ndarry) ---> Nodal surface elevation [m a.s.l.]
+
+        Outputs:
+            T   (floar or Nx365 ndarray) ---> Nodal surface elevation for each
+                                              day of the yeat      [C]
+        """
+        doy  = np.arange(1,366)[:, np.newaxis]
+        Temp = self.α*np.cos( 2*np.pi*(doy-self.T_p)/365 ) + \
+               self.ΔTΔz*(self.ref_z-z)+self.T_ma + \
+               np.random.normal(0, self.T_σ, (365,1))
+
+        return Temp
 
     def tt_forward(self, z, z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max):
-        # # Rounce et al. 2020 / Huss and Hock 2014
-        Accum = tt.switch(tt.lt(self.z_ELA, z) & tt.gt(z, z_max), ΔPΔz_2*z + P0-ΔPΔz_2*self.z_ELA, z)
-        Accum = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA , Accum)
-        Accum = tt.switch(tt.ge(z, z_max), P_max, Accum)
+        
+        T = self._air_temp(z) #+ T_bias
+        accum_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
 
-        return Accum
+        A = tt.switch(tt.lt(self.z_ELA,z) & tt.lt(z, z_max), ΔPΔz_2*z + P0-ΔPΔz_2*self.z_ELA, z)
+        A = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA, A)
+        A = tt.switch(tt.le(z_max, z), P_max, A)
+
+        return A*accum_days
 
     def __compile_forward(self):
         """Function to compile the theano implementation of the forward model.
@@ -284,7 +481,7 @@ class Accumulation_piecewise:
 
         return compiled
 
-    def eval_forward(self, z, ΔPΔz):
+    def eval_forward(self, z, z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max):
         """Compiled version of the forward model which takes numeric inputs as
            arguments and output numeric arguments.
 
