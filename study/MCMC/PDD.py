@@ -217,7 +217,8 @@ class PDD_PWA:
     def __tt_accumulation(self, z, T):
 
         # params from the lstq fitting
-        p = (3.07000000e+03, 5.72227470e+02, 2.01113866e-01, 3.64528312e+00, 3.63923039e+03)
+        p = (3019.7734424749615, 0.784043880486348,
+             0.0001186873855910587, 0.004474847563744234, 4.353929926953426)
 
         # unpack lstq params
         z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max = p
@@ -226,9 +227,9 @@ class PDD_PWA:
         A = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA, A)
         A = tt.switch(tt.le(z_max, z), P_max, A)
 
-        # A_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
+        A_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
 
-        return A
+        return A*A_days*910
 
     def __tt_component(self, z, f_snow, C, f_r):
         """Theano implementation of the forward model which supports shared
@@ -456,7 +457,7 @@ class Accumulation_piecewise:
         return Temp
 
     def tt_forward(self, z, z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max):
-        
+
         T = self._air_temp(z) #+ T_bias
         accum_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
 
@@ -464,7 +465,7 @@ class Accumulation_piecewise:
         A = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA, A)
         A = tt.switch(tt.le(z_max, z), P_max, A)
 
-        return A*accum_days
+        return A*accum_days*910
 
     def __compile_forward(self):
         """Function to compile the theano implementation of the forward model.
