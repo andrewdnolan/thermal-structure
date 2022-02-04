@@ -123,7 +123,7 @@ class PDD_LA:
         A_snow_tt, R_tt, M_melt_tt, f_m, r_s2m = self.__tt_component(z, f_snow, C, f_r, grad_a)
 
         # Return the net balance
-        return A_snow_tt + R_tt - M_melt_tt
+        return A_snow_tt, R_tt, M_melt_tt
 
     def __compile_forward(self):
         """Function to compile the theano implementation of the forward model.
@@ -216,13 +216,13 @@ class PDD_PWA:
 
     def __tt_accumulation(self, z, T, z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max):
 
-        accum_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
-
         A = tt.switch(tt.lt(self.z_ELA,z) & tt.lt(z, z_max), ΔPΔz_2*z + P0-ΔPΔz_2*self.z_ELA, z)
         A = tt.switch(tt.le(z, self.z_ELA), ΔPΔz_1*z + P0-ΔPΔz_1*self.z_ELA, A)
         A = tt.switch(tt.le(z_max, z), P_max, A)
 
-        return A*accum_days*910
+        A_days = tt.switch(tt.lt(T, self.T_rs), 1/365., 0.0).sum(axis=0)
+
+        return A*A_days*910
 
     def __tt_component(self, z, f_snow, C, f_r, z_max, P0, ΔPΔz_1, ΔPΔz_2, P_max):
         """Theano implementation of the forward model which supports shared
@@ -293,7 +293,7 @@ class PDD_PWA:
                                                  ΔPΔz_1, ΔPΔz_2, P_max)
 
         # Return the net balance
-        return A_snow_tt + R_tt - M_melt_tt
+        return A_snow_tt, R_tt, M_melt_tt
 
     def __compile_forward(self):
         """Function to compile the theano implementation of the forward model.
