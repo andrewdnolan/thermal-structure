@@ -122,7 +122,6 @@ class PDD_LA:
         """
         A_snow_tt, R_tt, M_melt_tt, f_m, r_s2m = self.__tt_component(z, f_snow, C, f_r, grad_a)
 
-        # Return the net balance
         return A_snow_tt, R_tt, M_melt_tt
 
     def __compile_forward(self):
