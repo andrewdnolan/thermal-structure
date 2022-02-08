@@ -111,8 +111,12 @@ def simultaneous_fit_LA(z_obs, A_obs, M_obs, B_obs, z_ELA, draws=4000, tune=2000
     A_mean = A_obs.mean()*910.
 
     # dictionary of PDD model parameters
+    p = [ 8.26271970e-05, -3.43758022e-02,  6.29687147e+00]
+    doy = np.arange(1,366)
+    fancy_std = np.polyval(p, doy)[:, np.newaxis]
+
     const =  dict(T_m = 0.0, T_rs = 1.0, α = 10.5, T_ma = -7.77, ΔTΔz  = 6.5E-3,
-                  T_p = 196, ref_z = 2193, T_σ = 8.6, A_mean = A_mean)
+                  T_p = 196, ref_z = 2193, T_σ = fancy_std, A_mean = A_mean)
 
     # initialize the PDD melt model class
     PDD_LA = PDD.PDD_LA(**const)
@@ -179,8 +183,12 @@ def netbalance_fit_LA(z_obs, A_obs,  B_obs, draws=4000, tune=2000, cores=1):
     A_mean = A_obs.mean()*910.
 
     # dictionary of PDD model parameters
+    p = [ 8.26271970e-05, -3.43758022e-02,  6.29687147e+00]
+    doy = np.arange(1,366)
+    fancy_std = np.polyval(p, doy)[:, np.newaxis]
+
     const =  dict(T_m = 0.0, T_rs = 1.0, α = 10.5, T_ma = -7.77, ΔTΔz  = 6.5E-3,
-                  T_p = 196, ref_z = 2193, T_σ = 8.6, A_mean = A_mean)
+                  T_p = 196, ref_z = 2193, T_σ = fancy_std, A_mean = A_mean)
 
     # initialize the PDD melt model class
     PDD_LA = PDD.PDD_LA(**const)
@@ -239,6 +247,10 @@ def fit_PWA(z_obs, A_obs, M_obs, B_obs, z_ELA, draws=4000, tune=2000, cores=1):
     """
 
     # dictionary of PDD model parameters
+    # p = [ 8.26271970e-05, -3.43758022e-02,  6.29687147e+00]
+    # doy = np.arange(1,366)
+    # fancy_std = np.polyval(p, doy)[:, np.newaxis]
+
     const =  dict(T_m = 0.0, T_rs = 1.0, α = 10.5, T_ma = -7.77, ΔTΔz  = 6.5E-3,
                   T_p = 196, ref_z = 2193, T_σ = 8.6, z_ELA = z_ELA)
 
@@ -323,32 +335,31 @@ def run_LA(fit_type, draws=4000, tune=2000, cores=1):
 
     if simul:
         # fit the PWA model with MCMC
-        model, trace,
-        pp_B, pp_A, pp_M = simultaneous_fit_LA(z_obs, A_obs, M_obs,
-                                               B_obs, z_ELA, draws,
-                                               tune, cores)
+        model, trace, pp_B, pp_A, pp_M = simultaneous_fit_LA(z_obs, A_obs, M_obs,
+                                                             B_obs, z_ELA, draws,
+                                                             tune, cores)
     elif net:
         model, trace, pp_B = netbalance_fit_LA(z_obs, A_obs, B_obs,
                                                draws, tune, cores)
 
     # plot the traces
     vars   = ['f_s', 'C', 'f_r', 'grad_a']
-    out_fp = f'./result/LA/trace_LA_{fit_type}.png'
+    out_fp = f'./result/LA/std(t)/trace_LA_{fit_type}.png'
 
     plot_posterior(trace, vars=vars, out_fp=out_fp)
 
     # plot the mass balance results and components
-    out_fp = f'./result/LA/trace_LA_{fit_type}.png'
+    out_fp = f'./result/LA/std(t)/trace_LA_{fit_type}.png'
     if simul:
-        out_fp = f'./result/LA/BAM_LA_{fit_type}.png'
+        out_fp = f'./result/LA/std(t)/BAM_LA_{fit_type}.png'
         plot_BAM(z_obs, (pp_B, pp_A, pp_M), (B_obs, A_obs, M_obs), out_fp=out_fp)
     elif net:
-        out_fp = f'./result/LA/NET_LA_{fit_type}.png'
+        out_fp = f'./result/LA/std(t)/NET_LA_{fit_type}.png'
         plot_NET(z_obs, B_obs, pp_B, out_fp=out_fp)
 
 
     # save the trace
-    out_fp = f'./result/LA/trace_LA_{fit_type}.nc'
+    out_fp = f'./result/LA/std(t)/trace_LA_{fit_type}.nc'
     az.to_netcdf(trace, out_fp)
 
 def run_PWA(draws=4000, tune=2000, cores=1):
@@ -362,18 +373,18 @@ def run_PWA(draws=4000, tune=2000, cores=1):
 
     # plot the traces
     vars   = ['z_max', 'P0', 'ΔPΔz_1', 'ΔPΔz_2', 'P_max', 'f_s', 'C', 'f_r']
-    out_fp = './result/PWA/trace_PWA_simultaneouss.png'
+    out_fp = './result/PWA/1sigma/trace_PWA_simultaneous.png'
     plot_posterior(trace, vars=vars, out_fp=out_fp)
 
     # plot the mass balance results and components
-    out_fp = './result/PWA/BAM_PWA_simultaneous.png'
+    out_fp = './result/PWA/1sigma/BAM_PWA_simultaneous.png'
     plot_BAM(z_obs, (pp_B, pp_A, pp_M), (B_obs, A_obs, M_obs), out_fp=out_fp)
 
     # save the trace
-    az.to_netcdf(trace,'./result/PWA/trace_PWA_simultaneous.nc')
+    az.to_netcdf(trace,'./result/PWA/1sigma/trace_PWA_simultaneous.nc')
 
 if __name__ == '__main__':
 
-    # run_PWA(2000, 2000, 2)
+    run_PWA(2000, 2000, 2)
     # fit_type = 'net'
     # run_LA(fit_type, 2000, 2000, 2)
