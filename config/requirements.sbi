@@ -1,8 +1,0 @@
-sbi==0.17.2
-pandas>=1.0
-numpy>=1.17
-importlib_metadata>=1.4
-typing_extensions>=3.7
-xarray
-netCDF4
-scipy
