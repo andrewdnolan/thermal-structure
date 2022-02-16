@@ -21,7 +21,7 @@ CREATE=$( sed -n "${SLURM_ARRAY_TASK_ID}p" <in_fp> )
 SIF=$(awk '{split($0, array, " "); print $NF}' <<< "$CREATE")
 
 # create the .sif file
-prepare2submit $CREATE
+./prepare2submit $CREATE
 
 # Get the command to convert from .result to NetCDF
 CONVERT=$( sed -n "${SLURM_ARRAY_TASK_ID}p" <in_fp> )

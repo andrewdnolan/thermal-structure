@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --array=1-55%10                  # 55 jobs that run 10 at a time
 #SBATCH --job-name=small_spline_init           # base job name for the array
-#SBATCH --mem-per-cpu=200MB                     # maximum 200MBMB per job
-#SBATCH --time=1:15:00                      # maximum walltime per job
+#SBATCH --mem-per-cpu=300MB                     # maximum 300MBMB per job
+#SBATCH --time=1:45:00                      # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -21,7 +21,7 @@ CREATE=$( sed -n "${SLURM_ARRAY_TASK_ID}p" <in_fp> )
 SIF=$(awk '{split($0, array, " "); print $NF}' <<< "$CREATE")
 
 # create the .sif file
-prepare2submit $CREATE
+./prepare2submit $CREATE
 
 # Get the command to convert from .result to NetCDF
 CONVERT=$( sed -n "${SLURM_ARRAY_TASK_ID}p" <in_fp> )

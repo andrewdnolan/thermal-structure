@@ -46,7 +46,7 @@ FUNCTION quadratic(  Model, Node, z) RESULT(accum)
 END FUNCTION quadratic
 
 
-FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
+FUNCTION spline(  Model, Node, z) RESULT(accum)
   ! provides you with most Elmer functionality
   USE DefUtils
   USE fitpack_interface
@@ -61,10 +61,15 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
   !----------------------------------------------------------------------------
   ! internal variables
   !----------------------------------------------------------------------------
-  integer, parameter :: nn=9     ! number of knots in spline
+  integer, parameter :: nn=9, &     ! number of knots in spline
+                        k=2         ! order of the spline
+
   character(len=*), parameter ::   &
-  knots_fp="../../input_data/mass_balance/cubic_spline_knots_s_1500_weighted.dat",   &
-  coefs_fp="../../input_data/mass_balance/cubic_spline_coefs_s_1500_weighted.dat"
+  knots_fp="../../input_data/mass_balance/KMR_MB_k_2_s_2500_knots.dat", &
+  coefs_fp="../../input_data/mass_balance/KMR_MB_k_2_s_2500_coefs.dat"
+
+  ! knots_fp="../../input_data/mass_balance/cubic_spline_knots_s_1500_weighted.dat",   &
+  ! coefs_fp="../../input_data/mass_balance/cubic_spline_coefs_s_1500_weighted.dat"
 
   LOGICAL :: FirstTime=.TRUE., GotIt
   REAL*8  :: Delta_mb                    ! mass balance offset [m i.e.q. yr^{-1}]
@@ -101,7 +106,7 @@ FUNCTION cubic_spline(  Model, Node, z) RESULT(accum)
   x(1) = z
 
   ! evaluate the spline
-  call splev(knots,nn,coefs,3,x,y,1,0,spl_err)
+  call splev(knots,nn,coefs,k,x,y,1,0,spl_err)
   ! make sure the spline evaluation worked
   if (spl_err/=0) then
     CALL FATAL('cubic_spline', 'splev raised error')

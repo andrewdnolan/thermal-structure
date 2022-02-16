@@ -87,7 +87,7 @@ parse_prepare_args()
   # check the size is passed correctly
   local ok_size=false
   for s in "small" "medium" "large"; do
-    if [ $s == $size ]; then
+    if [ $s = $size ]; then
       local ok_size=true
     fi
   done
@@ -134,6 +134,7 @@ parse_make_sif_args()
       -T | --tt   ) length of the simulation                [y]
       -k | --key  ) glacier id key
       -f | --fit  ) fit type to Young et al 2020. MB data
+      -k | --ord  ) Order of spline used to prescribe MB
       -o | --off  ) offset to mass balance curve            [m i.e.q yr^-1]
       -s | --sif  ) path to template sif file
 
@@ -150,6 +151,7 @@ parse_make_sif_args()
       -T | --tt   ) TT="$2";     shift 2;;
       -k | --key  ) KEY="$2";    shift 2;;
       -f | --fit  ) FIT="$2";    shift 2;;
+      -k | --ord  ) k="$2";      shift 2;;
       -o | --off  ) OFFSET="$2"; shift 2;;
       -s | --sif  ) SIF="$2";    shift 2;;
       -- ) shift; break ;;
@@ -157,7 +159,7 @@ parse_make_sif_args()
     esac
   done
 
-  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF"
+  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF k"
 }
 
 parse_json()
@@ -204,6 +206,11 @@ parse_json()
     $params = decode_json $_;
     say $params->{fit}
     ' $1 )
+  # parse MB curve fit type
+  k=$(   perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{k}
+    ' $1 )
 }
 
 make_RUN_name()
@@ -219,9 +226,9 @@ make_RUN_name()
   # $FIT       --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
 
-  check_vars_defined "make_RUN_name" "KEY TT dt dx OFFSET FIT"
+  check_vars_defined "make_RUN_name" "KEY TT dt dx OFFSET FIT k"
 
-  local RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${FIT}"
+  local RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${FIT}_k${k}"
   echo $RUN
 }
 
@@ -244,15 +251,15 @@ make_sif()
   # $SIF      --->   path to template sif file
   #-----------------------------------------------------------------------------
 
-  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF"
+  check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF k"
 
 
   # File paths to input topography data
-  local Zb_fp="../../input_data/${KEY}_bed.dat"
-  local Zs_fp="../../input_data/${KEY}_surf.dat"
+  local Zb_fp="../../input_data/topography/${KEY}_bed.dat"
+  local Zs_fp="../../input_data/topography/${KEY}_surf.dat"
 
   # Given the passed parametes make the `RUN` name variable
-  local RUN=$( make_RUN_name $KEY $TT $dt $dx $OFFSET $FIT )
+  local RUN=$( make_RUN_name $KEY $TT $dt $dx $OFFSET $FIT $k)
   # Calculate total number of time steps (NT) from dt and TT
   local NT=$( awk -v TT=$3 -v dt=$2 "BEGIN { print TT/dt }" )
 
@@ -307,11 +314,11 @@ make_input_file()
   # $FIT   --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
 
-  check_vars_defined "make_input_file" "MB_0 MB_f MB_s dx TT dt KEY FIT"
+  check_vars_defined "make_input_file" "MB_0 MB_f MB_s dx TT dt KEY FIT k"
 
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
     echo "make_sif --dx ${dx} --dt ${dt} --tt ${TT} --key ${KEY} --fit ${FIT}"\
-         " --off \"${OFFSET}\" --sif \"./sifs/simple_spinup.sif\" " \
+         " --ord ${k} --off \"${OFFSET}\" --sif \"./sifs/simple_spinup.sif\" " \
          >> "./run/${group}.in"
   done
 
@@ -330,12 +337,12 @@ make_output_file()
   # $FIT   --->   fit type to Young et al 2020. MB data
   #-----------------------------------------------------------------------------
 
-  check_vars_defined "make_output_file" "MB_0 MB_f MB_s KEY TT dt dx FIT"
+  check_vars_defined "make_output_file" "MB_0 MB_f MB_s KEY TT dt dx FIT k"
 
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
 
     # Given the passed parametes and the current offset make `RUN` name variable
-    local RUN=$( make_RUN_name $KEY $TT $dt $dx $OFFSET $FIT )
+    local RUN=$( make_RUN_name $KEY $TT $dt $dx $OFFSET $FIT $k)
 
     echo  ../../src/elmer2nc/elmer2nc.sh  -r "./result/${KEY}/mesh_dx${dx}/${RUN}.result" \
                                           -m "./result/${KEY}/mesh_dx${dx}/" \
@@ -455,10 +462,10 @@ prepare2submit()
     parse_json "./params/${KEY}.json"
 
     # Add the `.sif` creation command to the input .txt file
-    make_input_file $MB_0 $MB_s $MB_f $dx $TT $dt $KEY
+    make_input_file $MB_0 $MB_s $MB_f $dx $TT $dt $KEY $k
 
     # Add the  NetCDF creation command to the output .txt file
-    make_output_file $MB_0 $MB_s $MB_f $KEY $TT $dt $dx $FIT
+    make_output_file $MB_0 $MB_s $MB_f $KEY $TT $dt $dx $FIT $k
   done
 
   # Needs to find number of jobs per group

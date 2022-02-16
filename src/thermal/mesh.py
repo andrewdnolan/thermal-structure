@@ -81,7 +81,7 @@ def make_mesh(key, dx, out_fp, force=False):
 
 
     # find the x coordinate of the approraite bed file
-    x = np.loadtxt(os.path.join(git_top,f'input_data/{key}_bed.dat'))[:,0]
+    x = np.loadtxt(os.path.join(git_top,f'input_data/topography/{key}_bed.dat'))[:,0]
     L  = x.max() - x.min()
     Nx = int(round(L/dx))
 
