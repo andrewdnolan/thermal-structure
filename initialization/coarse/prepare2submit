@@ -118,12 +118,12 @@ parse_make_sif_args()
   #https://stackoverflow.com/a/7948533/10221482
   #https://www.bahmanm.com/2015/01/command-line-options-parse-with-getopt.html
 
-  OPTS=`getopt -o hx:t:T:k:f:o:s: --long help,dx:,dt:,tt:,key:,fit:,off:,sif: -n 'parse-options' -- "$@"`
+  OPTS=`getopt -o hx:t:T:k:f:p:o:s: --long help,dx:,dt:,tt:,key:,fit:,ord:,off:,sif: -n 'parse-options' -- "$@"`
 
   if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
   usage="
-  $(basename "$0") make_sif [-h] [--dx dx --dt dt --tt tt --key key --fit fit  --off off --sif sif ]
+  $(basename "$0") make_sif [-h] [--dx dx --dt dt --tt tt --key key --fit fit --ord ord --off off --sif sif ]
   --
   program to create exectuable .sif file from template based of params passed
 
@@ -134,7 +134,7 @@ parse_make_sif_args()
       -T | --tt   ) length of the simulation                [y]
       -k | --key  ) glacier id key
       -f | --fit  ) fit type to Young et al 2020. MB data
-      -k | --ord  ) Order of spline used to prescribe MB
+      -p | --ord  ) Order of spline used to prescribe MB
       -o | --off  ) offset to mass balance curve            [m i.e.q yr^-1]
       -s | --sif  ) path to template sif file
 
@@ -151,13 +151,16 @@ parse_make_sif_args()
       -T | --tt   ) TT="$2";     shift 2;;
       -k | --key  ) KEY="$2";    shift 2;;
       -f | --fit  ) FIT="$2";    shift 2;;
-      -k | --ord  ) k="$2";      shift 2;;
+      -p | --ord  ) k="$2";      shift 2;;
       -o | --off  ) OFFSET="$2"; shift 2;;
       -s | --sif  ) SIF="$2";    shift 2;;
       -- ) shift; break ;;
       * ) break ;;
     esac
   done
+
+  SIF=$(sed -e 's/^"//' -e 's/"$//' <<<"$SIF")
+  OFFSET=$(sed -e 's/^"//' -e 's/"$//' <<<"$OFFSET")
 
   check_vars_defined "make_sif" "dx dt TT KEY FIT OFFSET SIF k"
 }
@@ -384,7 +387,7 @@ make_group_name()
 make_submit_scipt()
 {
 
-  check_vars_defined "check_vars_defined" "njobs JS MEM RUN_TIME JOB_NAME"
+  check_vars_defined "check_vars_defined" "njobs JS MEM RUN_TIME JOB_NAME group"
 
 
   # For formating to work correctly, this variable has to be printed within quotes
@@ -415,10 +418,22 @@ SIF=\$(awk '{split(\$0, array, " "); print \$NF}' <<< "\$CREATE")
 ./prepare2submit \$CREATE
 
 # Get the command to convert from .result to NetCDF
-CONVERT=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <in_fp> )
+CONVERT=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <out_fp> )
+
+# Start the timer
+start=\$(date +%s.%N)
 
 # Execute the .sif file
 ElmerSolver \$SIF
+
+# End the timer
+end=\$(date +%s.%N)
+
+# Execution time of the solver
+runtime=\$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+
+# Log the execution time
+../../src/utils/elmer_log.sh \$CONVERT --ET \$runtime
 
 # Do post-processing file conversion
 \$CONVERT
@@ -431,9 +446,15 @@ EOF
   # write the template submit script to a temp file
   echo "$template" > "./run/tmp.sh"
 
+  # intermidate variables: in and out command files
+  IN_fp="./run/${group}.in"
+  OUT_fp="./run/${group}.in"
+
   sed "s#<NJ>#"$njobs"#g;
        s#<JS>#"$JS"#g;
        s#<MEM>#"$MEM"#g;
+       s#<in_fp>#"$IN_fp"#g;
+       s#<out_fp>#"$OUT_fp"#g;
        s#<RUN_TIME>#"$RUN_TIME"#g;
        s#<JOB_NAME>#"$JOB_NAME"#g;" "./run/tmp.sh" > "./run/${JOB_NAME}.sh"
 
@@ -475,7 +496,7 @@ prepare2submit()
   JOB_NAME=$(make_group_name $group)
 
   # Make job submission script
-  make_submit_scipt $njobs $JS $RUN_TIME $MEM $JOB_NAME
+  make_submit_scipt $njobs $JS $RUN_TIME $MEM $JOB_NAME $group
 
 }
 
