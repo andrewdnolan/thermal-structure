@@ -144,4 +144,4 @@ contains
     close(funit)
   end subroutine read_vector
   !-----------------------------------------------------------------------------
-END FUNCTION cubic_spline
+END FUNCTION spline
