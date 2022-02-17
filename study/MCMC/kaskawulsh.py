@@ -79,29 +79,31 @@ def read_observation():
     # file paths to the NetCDF files
     nc_fp = "../MB_tune/Young_etal_2020_ref_MB.nc"
 
-    with xr.open_dataset(nc_fp) as MB_ref:
+    with xr.open_dataset(nc_fp) as MB_obs:
         # average over the 25 reference model runs and stack along elevation
-        stacked = MB_ref.mean('ref_run').stack(z=('x','y'))
+        stacked = MB_obs.stack(z=('x','y'))
 
         # Sort the indexes by elevation
         idxs  = stacked.dropna('z').z.values
-        elev  = stacked.Elevation.dropna('z').values
+        elev  = stacked.Z.dropna('z').values
         idxs  = idxs[np.argsort(elev)]
 
         # Calculate the Kaskawulsh ELA
-        ELA_idxs = np.argpartition(np.abs(stacked.MB.values), 5)
+        ELA_idxs = np.argpartition(np.abs(stacked.B.values), 5)
         z_ELA    = float(stacked.isel(z=ELA_idxs[:5]).Elevation.mean())
 
         # surface elevation of observed values
-        z_obs = stacked.Elevation.sel(z=idxs).values
+        z_obs = stacked.Z.sel(z=idxs).values
+        # Observed Refreezing   [m  i.e. / yr]
+        R_obs = stacked.R.sel(z=idxs).values
         # Observed Accumulation [ m i.e. / yr ]
-        A_obs = stacked.Accumulation.sel(z=idxs).values
+        A_obs = stacked.A.sel(z=idxs).values
         # Observed melt         [ m i.e. / yr ]
-        M_obs = stacked.Melt.sel(z=idxs).values
+        M_obs = stacked.M.sel(z=idxs).values
         # Observed mass balance [m i.e. / yr ]
         B_obs = stacked.MB.sel(z=idxs).values
 
-    return z_obs, A_obs, M_obs, B_obs, z_ELA
+    return z_obs, R_obs, A_obs, M_obs, B_obs, z_ELA
 
 def simultaneous_fit_LA(z_obs, A_obs, M_obs, B_obs, z_ELA, draws=4000, tune=2000, cores=1):
     """Simultaneous fitting the linear accumulation model
@@ -331,7 +333,7 @@ def run_LA(fit_type, draws=4000, tune=2000, cores=1):
         raise AssertionError('invalid fit type')
 
     # load observations
-    z_obs, A_obs, M_obs, B_obs, z_ELA = read_observation()
+    z_obs, R_obs, A_obs, M_obs, B_obs, z_ELA = read_observation()
 
     if simul:
         # fit the PWA model with MCMC
@@ -365,7 +367,7 @@ def run_LA(fit_type, draws=4000, tune=2000, cores=1):
 def run_PWA(draws=4000, tune=2000, cores=1):
 
     # load observations
-    z_obs, A_obs, M_obs, B_obs, z_ELA = read_observation()
+    z_obs, R_obs, A_obs, M_obs, B_obs, z_ELA = read_observation()
 
     # fit the PWA model with MCMC
     model, trace, pp_B, pp_A, pp_M = fit_PWA(z_obs, A_obs, M_obs, B_obs,
