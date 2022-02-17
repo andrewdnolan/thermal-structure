@@ -447,7 +447,7 @@ EOF
 
   # intermidate variables: in and out command files
   IN_fp="./run/${group}.in"
-  OUT_fp="./run/${group}.in"
+  OUT_fp="./run/${group}.out"
 
   sed "s#<NJ>#"$njobs"#g;
        s#<JS>#"$JS"#g;
