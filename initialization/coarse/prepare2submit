@@ -118,7 +118,7 @@ parse_make_sif_args()
   #https://stackoverflow.com/a/7948533/10221482
   #https://www.bahmanm.com/2015/01/command-line-options-parse-with-getopt.html
 
-  OPTS=`getopt -o hx:t:T:k:f:p:o:s: --long help,dx:,dt:,tt:,key:,fit:,ord:,off:,sif: -n 'parse-options' -- "$@"`
+  OPTS=`getopt -o hx:t:T:k:f:p:o:s: --long help,dx:,dt:,tt:,key:,fit:,ord:,off:,sif:, -n 'parse-options' -- "$@"`
 
   if [ $? != 0 ] ; then echo "Failed parsing options." >&2 ; exit 1 ; fi
 
@@ -276,6 +276,8 @@ make_sif()
        s#<Zs_fp>#"$Zs_fp"#g;
        s#<Zb_fp>#"$Zb_fp"#g;
        s#<OFFSET>#"$OFFSET"#g" "$SIF" > "./sifs/${RUN}.sif"
+
+  echo "./sifs/${RUN}.sif"
 }
 
 check_inout_files()
@@ -411,11 +413,8 @@ source ../../config/modulefile.cc.cedar
 # Get the command to create run specific .sif file
 CREATE=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <in_fp> )
 
-# strip .sif file name from the creation command
-SIF=\$(awk '{split(\$0, array, " "); print \$NF}' <<< "\$CREATE")
-
-# create the .sif file
-./prepare2submit \$CREATE
+# create the .sif file, filename is 'returend' (kinda) by the function
+SIF=\$(./prepare2submit \$CREATE)
 
 # Get the command to convert from .result to NetCDF
 CONVERT=\$( sed -n "\${SLURM_ARRAY_TASK_ID}p" <out_fp> )
@@ -433,7 +432,7 @@ end=\$(date +%s.%N)
 runtime=\$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
 
 # Log the execution time
-../../src/utils/elmer_log.sh \$CONVERT --ET \$runtime
+../../src/utils/elmer_log.sh \$CREATE --ET \$runtime
 
 # Do post-processing file conversion
 \$CONVERT

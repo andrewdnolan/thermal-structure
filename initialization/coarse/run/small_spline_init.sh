@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --array=1-60%10                  # 60 jobs that run 10 at a time
 #SBATCH --job-name=small_spline_init           # base job name for the array
-#SBATCH --mem-per-cpu=300MB                     # maximum 300MBMB per job
+#SBATCH --mem-per-cpu=300M                     # maximum 300MMB per job
 #SBATCH --time=1:45:00                      # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
@@ -17,11 +17,8 @@ source ../../config/modulefile.cc.cedar
 # Get the command to create run specific .sif file
 CREATE=$( sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/small.in )
 
-# strip .sif file name from the creation command
-SIF=$(awk '{split($0, array, " "); print $NF}' <<< "$CREATE")
-
-# create the .sif file
-./prepare2submit $CREATE
+# create the .sif file, filename is 'returend' (kinda) by the function
+SIF=$(./prepare2submit $CREATE)
 
 # Get the command to convert from .result to NetCDF
 CONVERT=$( sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/small.in )
@@ -39,7 +36,7 @@ end=$(date +%s.%N)
 runtime=$(awk -v start= -v end= 'BEGIN {print end - start}')
 
 # Log the execution time
-../../src/utils/elmer_log.sh $CONVERT --ET $runtime
+../../src/utils/elmer_log.sh $CREATE --ET $runtime
 
 # Do post-processing file conversion
 $CONVERT
