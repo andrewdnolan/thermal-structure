@@ -21,7 +21,7 @@ CREATE=$( sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/small.in )
 SIF=$(./prepare2submit $CREATE)
 
 # Get the command to convert from .result to NetCDF
-CONVERT=$( sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/small.in )
+CONVERT=$( sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/small.out )
 
 # Start the timer
 start=$(date +%s.%N)
@@ -33,7 +33,7 @@ ElmerSolver $SIF
 end=$(date +%s.%N)
 
 # Execution time of the solver
-runtime=$(awk -v start= -v end= 'BEGIN {print end - start}')
+runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
 
 # Log the execution time
 ../../src/utils/elmer_log.sh $CREATE --ET $runtime

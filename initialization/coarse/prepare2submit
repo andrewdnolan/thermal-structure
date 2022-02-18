@@ -344,6 +344,9 @@ make_output_file()
 
   check_vars_defined "make_output_file" "MB_0 MB_f MB_s KEY TT dt dx FIT k"
 
+  # Calculate total number of time steps (NT) from dt and TT
+  local NT=$( awk -v TT=$TT -v dt=$dt "BEGIN { print TT/dt }" )
+
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
 
     # Given the passed parametes and the current offset make `RUN` name variable
@@ -429,7 +432,7 @@ ElmerSolver \$SIF
 end=\$(date +%s.%N)
 
 # Execution time of the solver
-runtime=\$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+runtime=\$(awk -v start=\$start -v end=\$end 'BEGIN {print end - start}')
 
 # Log the execution time
 ../../src/utils/elmer_log.sh \$CREATE --ET \$runtime
