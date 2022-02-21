@@ -265,8 +265,8 @@ Solver 5
 
    Steady State Convergence Tolerance      = 1.0e-6
 
-   !Stabilization Method                    = Stabilized
-   Stabilization Method                    = String "Bubbles"
+   Stabilization Method                    = String "Stabilized"
+   ! Stabilization Method                    = String "Bubbles"
 
    ! Needed to update the Accumulation b/w itterations
    Nonlinear Update Exported Variables     = Logical True
