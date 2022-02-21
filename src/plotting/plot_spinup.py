@@ -9,6 +9,7 @@ import re
 import os
 import sys
 import glob
+import json
 import argparse
 import numpy as np
 import xarray as xr
@@ -135,41 +136,17 @@ def plot_final_z_s(mf_dataset, precision=3, title=''):
     ax.set_aspect(abs((xright-xleft)/(ybottom-ytop))*ratio)
     return fig, ax
 
-def main(argv):
 
-    #---------------------------------------------------------------------------
-    # Specify command line arguments
-    #---------------------------------------------------------------------------
-    parser = argparse.ArgumentParser()
-    parser.add_argument("src_path", metavar="path", type=str, nargs='+',
-                        help = "Path to .nc files to be plotted"\
-                               "enclose in quotes, accepts * as wildcard for directories or filenames")
-    parser.add_argument('-mb','--mb_range', nargs='+',
-                        help = "mimics 'seq' unix commands where:"\
-                               " first value is start"\
-                               " middle values is stride"\
-                               " last value is stop")
-    parser.add_argument('-T','--title', type=str,
-                        help = "string for the title of the plot")
-    parser.add_argument('-V','--plot_volume', action='store_true',
-                        help = "volume convergence plots after mass balance grid search")
-    parser.add_argument('-Z_s','--plot_Z_s',  action='store_true',
-                        help = "final z_s after mass balance grid search")
-    parser.add_argument('-out_fn','--output_filename', type=str,
-                        help = "full path to the output figure")
-    parser.add_argument('-TeX','--use_LaTeX', action='store_true',
-                        help = "use LaTeX for text rendeing ")
 
-    args, _ = parser.parse_known_args(argv)
-
+def plot_from_src_path(args):
+    """ Function to plot spin-up for the old way of calling this script.
+        Path to input .nc files is given and all the
+    """
+    # read command line arguments
     volume_plot = args.plot_volume
     z_s_plot    = args.plot_Z_s
     out_fn      = args.output_filename
     title       = args.title
-    #---------------------------------------------------------------------------
-
-    if args.use_LaTeX:
-        plt.rcParams['text.usetex'] = True
 
     #---------------------------------------------------------------------------
     # Load and concatenate the .nc files
@@ -268,6 +245,147 @@ def main(argv):
 
     # Don't know if I actually need this
     plt.close()
+
+
+def plot_from_json(args):
+    """ Plot both volume and z_s based on values parsed from the passed
+        json param file.
+    """
+
+    # make sure the path exists before reading
+    if not os.path.exists(args.params):
+        raise OSError('value passed for "params" is invalid')
+
+    # parse the key name from the json file-path
+    key = args.params.split('/')[-1].split('.')[0]
+
+    with open(args.params) as f:
+        params = json.loads(f.read())
+
+    # unpack the mass balance params
+    MB0, MBS, MBF = params['MB']['range']
+    # get the number of sig figs in the MB stride
+    sigfigs = len(str(MBS).split('.')[-1])
+    # Number of MB values
+    NMB = int(np.round((MBF - MB0) / np.round(MBS, sigfigs), 0))
+
+    # Create array of mass balance values used in spin-up
+    MB, dx = np.linspace(np.round(MB0, sigfigs),
+                         np.round(MBF, sigfigs),
+                         NMB+1,
+                         retstep=True)
+
+    # Check the the MB stride is the same as the stride that was specified
+    if not np.isclose(dx, params['MB']['range'][1]):
+        print(dx)
+        raise OSError('MB stride from .json does not match that of created')
+
+    # file path to .nc file based on general repo strucutre
+    nc_fp = f"result/{key}/nc/"
+
+    # glob all the files in the NetCDF folder
+    files = glob.glob(nc_fp+"*.nc")
+
+    # get rest of the params from the dictinary for filtering
+    sub_strings = [str(params[key]) for key in ['dx', 'dt', 'TT', 'fit', 'k']]
+    # cull files based on params from json file, make sure to loop over copy
+    # of list for this to work properly
+    for file in files[:]:
+        # cull files based on .json params
+        if not all(sub_str in file for sub_str in sub_strings):
+            files.remove(file)
+
+        # cull files based on MB offsets
+        elif not any(str(np.round(off, sigfigs)) in file for off in MB):
+            files.remove(file)
+
+    # Sorting the files based of regex pattern
+    regex = re.search('MB_-*\d*\d\.\d*\d_OFF', files[0])
+    if regex:
+        files.sort(key = lambda x: float(x.split('MB_')[-1].split('_OFF')[0]),
+                   reverse = True)
+
+    # Make an empty list to store the read in .nc files
+    xarrays = []
+
+    # Iterate over each .nc file and read in with xarray
+    for file in files:
+        with xr.open_dataset(file) as src:
+                # correct for minimum ice thickness
+                src["height"] = xr.where(src.height <= 10, 0, src.height)
+                # apply sigma coordinate transform for vertical coordinate
+                src["z_s"]     = src.zbed + src.Z * src.height
+                # Calculate the magnitude of the velocity vectors
+                src['vel_m'] = np.sqrt(src['velocity 1']**2 + src['velocity 2']**2)
+
+        xarrays.append(src)
+
+    # Concatenate the .nc files via their mass balance offset
+    mf_dataset = xr.concat(xarrays,
+                           pd.Index(data = MB, name='Delta_MB'))
+
+    dx = params['dx']; dt = params['dt']
+    title = rf"{key} $\Delta t = {dt:.1f} \rm{{a}} \;\; \Delta x = {dx:.0f} \rm{{m}}$"
+
+    fig, _  = plot_volume( mf_dataset,
+                       precision=sigfigs,
+                       title=title)
+
+    out_fn = f"figs/{key}/Vol_{MB[0]:.{sigfigs}f}__{MB[-1]:.{sigfigs}f}_dx{dx:.0f}_dt{dt:.1f}.png"
+    # Write the plot to a file
+    fig.savefig(out_fn, dpi=400, bbox_inches='tight', facecolor='w')
+
+    # Don't know if I actually need this
+    plt.close()
+
+    fig, _  = plot_final_z_s( mf_dataset,
+                          precision=sigfigs,
+                          title=title)
+    out_fn = f"figs/{key}/Zs_{MB[0]:.{sigfigs}f}__{MB[-1]:.{sigfigs}f}_dx{dx:.0f}_dt{dt:.1f}.png"
+
+    # Write the plot to a file
+    fig.savefig(out_fn, dpi=400, bbox_inches='tight', facecolor='w')
+
+    # Don't know if I actually need this
+    plt.close()
+
+
+def main(argv):
+
+    #---------------------------------------------------------------------------
+    # Specify command line arguments
+    #---------------------------------------------------------------------------
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-p','--params', type=str,
+                        help = "filepath of the param file. ")
+    parser.add_argument("-nc", metavar="path", type=str, nargs='+',
+                        help = "Path to .nc files to be plotted"\
+                               "enclose in quotes, accepts * as wildcard for directories or filenames")
+    parser.add_argument('-mb','--mb_range', nargs='+',
+                        help = "mimics 'seq' unix commands where:"\
+                               " first value is start"\
+                               " middle values is stride"\
+                               " last value is stop")
+    parser.add_argument('-T','--title', type=str,
+                        help = "string for the title of the plot")
+    parser.add_argument('-V','--plot_volume', action='store_true',
+                        help = "volume convergence plots after mass balance grid search")
+    parser.add_argument('-Z_s','--plot_Z_s',  action='store_true',
+                        help = "final z_s after mass balance grid search")
+    parser.add_argument('-out_fn','--output_filename', type=str,
+                        help = "full path to the output figure")
+    parser.add_argument('-TeX','--use_LaTeX', action='store_true',
+                        help = "use LaTeX for text rendeing ")
+
+    args, _ = parser.parse_known_args(argv)
+
+    if args.use_LaTeX:
+        plt.rcParams['text.usetex'] = True
+
+    if args.nc:
+        plot_from_src_path(args)
+    elif args.params:
+        plot_from_json(args)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
