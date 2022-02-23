@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --array=1-29%20                  # 29 jobs that run 20 at a time
+#SBATCH --array=1-95%30                  # 95 jobs that run 30 at a time
 #SBATCH --job-name=small_spline_init           # base job name for the array
 #SBATCH --mem-per-cpu=1250M                     # maximum 1250MMB per job
-#SBATCH --time=5:00:00                      # maximum walltime per job
+#SBATCH --time=5:15:00                      # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
