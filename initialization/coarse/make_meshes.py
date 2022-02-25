@@ -6,14 +6,19 @@ sys.path.append('../../src')
 import thermal.mesh as meshing
 
 # input glaciers and desired mesh resolutions for coarse grid searches
-glaciers = { 'crmpt12'   : 50,  # Δx [m]
+glaciers = { # small
+             'crmpt12'   : 50,  # Δx [m]
              'crmpt18-a' : 50,  # Δx [m]
              'crmpt18-b' : 50,  # Δx [m]
              'glc1-a'    : 50,  # Δx [m]
              'glc1-b'    : 50,  # Δx [m]
-             # 'lilk-a'    : 200, # Δx [m]
-             # 'klun-a'    : 200, # Δx [m]
-             # 'sprg'      : 200, # Δx [m]
+             # medium
+             'lilk-a'    : 100, # Δx [m]
+             'lilk-b'    : 100, # Δx [m]
+             'klun-a'    : 100, # Δx [m]
+             'klun-b'    : 100, # Δx [m]
+             'sprg'      : 100, # Δx [m]
+             # large
              # 'fish'      : 500, # Δx [m]
              # 'klut-b'    : 500, # Δx [m]
              # 'twds-b'    : 250, # Δx [m]

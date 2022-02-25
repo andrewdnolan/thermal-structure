@@ -23,10 +23,10 @@ large_params = $(foreach glac,$(large_glacs),$(subst glac,$(glac),$(param_temp))
 all: $(small_out) $(medium_out) $(large_out)
 
 $(subst .,%,$(small_out)): prepare2submit $(small_params)
-	./prepare2submit --force --time="5:15:00" --mem="1250M" --group="small" -s 30
+	./prepare2submit --force --time="5:45:00" --mem="1250M" --group="small" -s 30
 
 $(subst .,%,$(medium_out)): prepare2submit $(medium_params)
-	./prepare2submit --force --time="2:30:00" --mem="500M" --group="medium"
+	./prepare2submit --force --time="8:00:00" --mem="2G" --group="medium"
 
 $(subst .,%,$(large_out)): prepare2submit $(large_params)
 	./prepare2submit --force --time="3:30:00" --mem="1G" --group="large"
