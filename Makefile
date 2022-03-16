@@ -1,15 +1,15 @@
 # folder to store compiled files
 BIN_DIR = bin
 # folder with fortran source
-SRC_DIR = src
+SRC_DIR = src/elmer_UDF
 # Find all the source files
-SRC  := $(wildcard src/*.f90)
+SRC  := $(wildcard src/elmer_UDF/*.f90)
 # compiled executables used in .sif files
-EXEC := $(SRC:src/%.f90=$(BIN_DIR)/%)
+EXEC := $(SRC:src/elmer_UDF/%.f90=$(BIN_DIR)/%)
 # compiled fitpack source code
 F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 
-all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance
+all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary
 
 # compile the net balance boundary conditions functions, while linking to the
 # necessary interface and fitpack source code objects
@@ -20,9 +20,17 @@ $(BIN_DIR)/mass_balance: $(SRC_DIR)/mass_balance.f90 $(BIN_DIR)/fitpack_interfac
 $(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90
 	$(MAKE) -C include/fitpack
 
+# compile surface temperature module neeed for surface boundary conditions
+$(BIN_DIR)/SurfaceTemperature.o : $(SRC_DIR)/SurfTemp_mod.f90
+	elmerf90 $^ -o $@
+
+# compile surface boundary condtions and link surf temp module
+$(BIN_DIR)/SurfaceBoundary: $(SRC_DIR)/SurfaceBoundary.f90 $(BIN_DIR)/SurfaceTemperature.o
+	elmerf90 $^ -o $@
+
 # compile the *.F90 files with the `elmerf90` alias
 $(BIN_DIR)/%: $(SRC_DIR)/%.f90
-	@if [ $@ = "bin/mass_balance" ]; then\
+	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ]; then\
 		continue; \
 	 else \
 		elmerf90 $^ -o $@ ; \
