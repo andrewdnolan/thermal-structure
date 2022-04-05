@@ -35,11 +35,11 @@ gridsearch(){
 
   for OFFSET in $(seq -w $MB_0 $MB_s $MB_f);do
     # Model RUN identifier
-    RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${FIT}"
+    RUN="${KEY}_${TT}a_dt_${dt}_dx_${dx}_MB_${OFFSET}_OFF_${FIT}_K_${k}"
 
     # File paths to input data
-    Zb_fp="../../input_data/${KEY}_bed.dat"
-    Zs_fp="../../input_data/${KEY}_surf.dat"
+    Zb_fp="../../input_data/topography/${KEY}_bed.dat"
+    Zs_fp="../../input_data/topography/${KEY}_surf.dat"
 
     # Update the .SIF FILE with the model run specifc params
     sed "s#<dt>#"$dt"#g;
@@ -126,22 +126,23 @@ plot_gridsearch() {
 #-------------------------------------------------------------------------------
 # grid search parameters
 #-------------------------------------------------------------------------------
-dx=500                                  # mesh resolution
+dx=100                                  # mesh resolution
 dt=0.5                                  # time step size
 TT=1000                                 # number of time step
-MB_0=1.0                                # MB offset start
-MB_f=1.5                                # MB offset finish
-MB_s=0.1                                # MB offset stride
+MB_0=0.0                              # MB offset start
+MB_f=0.0                              # MB offset finish
+MB_s=0.025                              # MB offset stride
 SIF='./sifs/simple_spinup.sif'          # template SIF file
-KEY='klut-b'                            # glacier key for input data
-FIT='cubic_spline'                      # type of fit to Young et al. 2020 data
+KEY='klun-a'                            # glacier key for input data
+FIT='spline'                            # type of fit to Young et al. 2020 data
+k=2                                     # order of the spline
 PLOT=1                                  # plot gridsearch results (0 false, 1 true)
 PROFILE=1                               # profile individual run  (0 false, 1 true)
 
-# # Run the mass balance gridsearch
-# gridsearch $dx $dt $TT $MB_0 $MB_f $MB_s $SIF $KEY $FIT
-#
-# plot the gridsearch data
-if [ $PLOT -eq 1 ]; then
-  plot_gridsearch dx $dt $TT $MB_0 $MB_f $MB_s $KEY $FIT
-fi
+# Run the mass balance gridsearch
+gridsearch $dx $dt $TT $MB_0 $MB_f $MB_s $SIF $KEY $FIT $k
+
+# # plot the gridsearch data
+# if [ $PLOT -eq 1 ]; then
+#   plot_gridsearch dx $dt $TT $MB_0 $MB_f $MB_s $KEY $FIT $k
+# fi
