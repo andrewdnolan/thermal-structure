@@ -4,28 +4,42 @@ Here follows run scripts, results, and figures from uncoupled initialization exp
 
 ```
 .
-├── coarse_gridsearch.py
 ├── figs
-├── make_meshes.py
-├── makefile
-├── params         - folder containing .json parameter files for each glacier
-├── prepare2submit
-├── readme.md
+  ├──${glac_key}/
+├── params               # folder w/ .json param files for each glacier
+  ├──${glac_key}.json    # json dictionary with param values
 ├── result
-  ├──${glac_key}
-    ├──nc
-    ├──mesh_dx${DX}
-├── run           - 
-├── sample_run.sh
-└── sifs        
+  ├──${glac_key}  
+    ├──nc/
+    ├──mesh_dx${DX}/
+└── sifs
+    ├──simple_spinup.sif #
+├── make_meshes.py       # 
+├── makefile
+├── prepare2submit       #
+├── readme.md
+├── run                  #
+├── sample_run.sh        #
+
 ```
 
 ## `prepare2submit.sh`:
-  - This script create necessary files to submit `SLURM` job array on cedar.
-  - Geometries and submission scripts are group by size since runtime and memory
-    usage should be similar within the groups.
 
-__TO DO__:
+- This script create necessary files to submit `SLURM` job array on cedar.
+- Geometries and submission scripts are group by size since runtime and memory
+  usage should be similar within the groups.
+
+__Example usage__:
+```
+./prepare2submit --force          \ # overwrite .in/.out files if already exist
+                 --mem "2250M"    \ # mem  request per job in array
+                 --time "9:30:00" \ # time request per job in array
+                 --group "medium" \ # glacier size class
+                 --stride 20        # num jobs in the SLURM array to run at once
+```
+
+
+<!-- __TO DO__:
   - [x] Folder structure to create hold the 10+ `.sif` files generated per glacier.
   - [x] Can we set this up so that the `.sif` files are only created as needed:
       1. To not clutter up the repo
@@ -49,4 +63,4 @@ __TO DO__:
     - [ ] `makefile` with rule for each group size
 
   - [ ] Can we plot, but only after all the runs are completed for a single glacier?
-    - maybe this needs to be it's own script which waits for the job arrays to complete?
+    - maybe this needs to be it's own script which waits for the job arrays to complete? -->
