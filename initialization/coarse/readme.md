@@ -3,12 +3,12 @@
 This folder contains run scripts, and the base directory structure for storing results and figures from uncoupled initialization experiments.
 Here we seek to find the appropriate mass balance offset to the KMR curve which produces a glacier of the same size as the initial condition (i.e. observed).  
 
+---
 
 The basic workflow for how these results are as follows:
 
 First, execute
 ```bash
-# should executed in environment with Elmer executables available
 python3 make_meshes.py
 ```
 in an environment with `Elmer` executables available (i.e. within the docker container).
@@ -17,7 +17,6 @@ This script will create the meshes and appropriate directory structure for each 
 
 Then on either server side or locally `make` runscripts by executing:
 ```bash
-# calls prepare2submit which produces *.in/*,out files to executed on cedar
 make
 ```
 which creates the `.in`/`.out` files and submission scripts for each size class, by calling the `prepare2submit` script. To change the runtime or memory allocation either change the `makefile` or run the `prepare2submit` script directly:
@@ -28,7 +27,7 @@ which creates the `.in`/`.out` files and submission scripts for each size class,
                  --group  "medium"  \ # glacier size class
                  --stride 20          # num jobs in the SLURM array to run at once
 ```
-If either of the previous two commands were run local, then the changes need to transferred onto cedar (i.e. commit locally and pull on cedar).
+If either of the previous two commands were run locally, then the changes need to transferred onto cedar (i.e. commit locally and pull on cedar).
 
 
 Once you're on cedar navigate back to this directory. To run the initialization
@@ -37,17 +36,22 @@ experiment for one size class (in this case medium) execute:
 # must be executed on cedar
 sbatch run/medium_init_spline.sh
 ```
-which queues our job submission scripts. Edit appropriate files to include your
-email to receive information about when jobs begin and end.
+which queues our job submission scripts. Edit appropriate (`prepare2submit`) to include your email to receive information about when jobs begin and end.
 
-
-
+To get results back on your local computer, run:
 ```bash
-# get results back on local computer
-rsync -avP anolan@cedar.computecanada.ca:/home/anolan/scratch/thermal-structure/initialization/coarse/result/k
+fp2src="/home/user/scratch/thermal-structure/initialization/coarse/result"
+rsync -avP user@cedar.computecanada.ca:${fp2src}/${glac_key}/nc/*.nc  result/${glac_key}/nc/
 ```
+where `${glac_key}` should be replaced with whatever glacier you'd like to pull results for. (Easy enough to write for loop over glacier keys).
 
-## `prepare2submit.sh`:
+Finally, if you'd like to visualize the spin-up results run:
+```
+python3 ../../src/plotting/plot_spinup.py -p "params/${glac_key}.json"
+```
+where `${glac_key}` is replaced with the glacier which you want to plot. This script will produce both relative volume and final free surface plots, named based on the model run params in the `fig/${glac_key}` directory.
+
+<!-- ## `prepare2submit.sh`:
 
 - This script create necessary files to submit `SLURM` job array on Cedar.
 - Submission scripts are group by size since runtime and memory
@@ -67,7 +71,7 @@ For quick visualization of the of the model results use:
 ```bash
 python3 ../../src/plotting/plot_spinup.py -p "params/${glac_key}.json"
 ```
-where `${glac_key}` is replaced with the glacier which you want to plot.
+where `${glac_key}` is replaced with the glacier which you want to plot. -->
 
 <!-- ```
 .
