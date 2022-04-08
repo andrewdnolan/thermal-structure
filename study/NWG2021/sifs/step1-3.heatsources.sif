@@ -13,8 +13,8 @@
 !-------------------------------------------------------------------------------
 ! Flow Law Parameters from  Cuffey and Paterson (2010)
 !-------------------------------------------------------------------------------
-#A1 = 2.89165e-13*yearinsec*1.0e18         ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
-#A2 = 2.42736e-02*yearinsec*1.0e18         ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A1 = 2.89165e-13*spy*1.0e18               ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A2 = 2.42736e-02*spy*1.0e18               ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
 ! Values below are in SI units. No problem, as long as the gas constant (R) also is
 #Q1 = 60.0e3                               ! -- [J mol^{-1}]
 #Q2 = 115.0e3                              ! -- [J mol^{-1}]
@@ -156,11 +156,11 @@ End
 Initial Condition 2
   Zs      = Variable Coordinate 1
             Real cubic
-               include   "../../input_data/lilk-a_surf.dat"
+               include   "../../input_data/topography/lilk-a_surf.dat"
              End
   Ref Zs = Variable Coordinate 1
             Real cubic
-               include   "../../input_data/lilk-a_surf.dat"
+               include   "../../input_data/topography/lilk-a_surf.dat"
              End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -487,11 +487,11 @@ Boundary Condition 1
   Compute Normals   = Logical True
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include   "../../input_data/lilk-a_bed.dat"
+                         include   "../../input_data/topography/lilk-a_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include   "../../input_data/lilk-a_bed.dat"
+                         include   "../../input_data/topography/lilk-a_bed.dat"
                       End
   Velocity 1        = Real 0.0
   Velocity 2        = Real 0.0

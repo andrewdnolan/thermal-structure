@@ -13,8 +13,8 @@
 !-------------------------------------------------------------------------------
 ! Flow Law Parameters from  Cuffey and Paterson (2010)
 !-------------------------------------------------------------------------------
-#A1 = 2.89165e-13*yearinsec*1.0e18      ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
-#A2 = 2.42736e-02*yearinsec*1.0e18      ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A1 = 2.89165e-13*spy*1.0e18            ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A2 = 2.42736e-02*spy*1.0e18            ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
 ! Values below are in SI units. No problem, as long as the gas constant (R) also is
 #Q1 = 60.0e3                            ! -- [J mol^{-1}]
 #Q2 = 115.0e3                           ! -- [J mol^{-1}]
@@ -77,13 +77,34 @@ Constants
   P_surf                          = real 0.1013                 ![MPa] Surface atmospheric pressure
   T_triple                        = Real 273.16                 ![K]       Temperature of water triple point
   beta_clapeyron                  = real 0.0974                 ![K MPa-1] Clausus clapeyron relationship (Gilbert et al. 2014)
-  !Pressure Variable               = String "Hydro Pressure"
+  Pressure Variable               = String "Hydro Pressure"
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ! Percolation Model Parameters:
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   rho_ice = real #rhoi_si
   rho_w   = real #rhow_si
   Sr      = real 0.03
+
+  z_ref =  real 2193.0    ! Reference surface elevation  [m a.s.l.]
+  T_mean = real -9.02     ! Mean annual air temp @ z_ref [C]
+  T_peak = real 196       ! DOY of annual temp peak      [DOY]
+  dTdz   = real 6.5E-3    ! Air temp lapse rate          [K m^-1]
+  alpha  = real 10.8      ! Anual air temp. amplitude    []
+  ! Time dependent air temp s.t.d. related parameters. Evaluated as:
+  !       T_sigma(d) = std_c0 * d**2 + std_c1 * d + std_c2
+  std_c0 = real  8.29376332e-05
+  std_c1 = real -3.45256005e-02
+  std_c2 = real  6.31076200e+00
+
+
+  A_mean = real 800         ! mean annual precip           [kg m-2 yr-1]
+  dPdz   = real 2.5E-4      ! precipitation lapse rate     [ [-] m-1]
+  T_r2s  = real 1.0         ! rain to snow threshold       [C]
+  T_melt = real 0.0         ! Melting temp. threshold      [C]
+  f_r    = real 0.0875      ! refreezing factor            [-]
+  f_ice  = real 8.2         ! degree-day factor for ice    [kg m-2 yr-1 K-1]
+  f_snow = real 4.1         ! degree-day factor for snow   [kg m-2 yr-1 K-1]
+
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END CONSTANTS
@@ -156,11 +177,11 @@ End
 Initial Condition 2
   Zs      = Variable Coordinate 1
             Real cubic
-               include   "../../input_data/lilk-a_surf.dat"
+               include   "../../input_data/topography/lilk-a_surf.dat"
              End
   Ref Zs = Variable Coordinate 1
             Real cubic
-               include   "../../input_data/lilk-a_surf.dat"
+               include   "../../input_data/topography/lilk-a_surf.dat"
              End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -180,7 +201,7 @@ Body Force 1
 
   ! Deformational Heat Source
   Heat Source = Variable "W"
-               real MATC "if (tx<0.0) (0.0); else (tx*1e6/917.0)" !Convert to J yr-1 kg-1
+               real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)" !Convert to J yr-1 kg-1
 
   ! Enthalpy Limiters
   Enthalpy_h Upper Limit = Variable Phase Change Enthalpy
@@ -381,7 +402,7 @@ End
 
 ! Deformational Heat
 Solver 7
-  Exec Interval                            = 9
+  !Exec Interval                            = 9
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1
@@ -445,7 +466,7 @@ End
 
 
 Solver 10
-  Exec Interval = 9
+  !Exec Interval = 9
 
   !Exec Solver = String "Always"
   Equation    = String "percolation"
@@ -489,11 +510,11 @@ Boundary Condition 1
   Compute Normals   = Logical True
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include   "../../input_data/lilk-a_bed.dat"
+                         include   "../../input_data/topography/lilk-a_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include   "../../input_data/lilk-a_bed.dat"
+                         include   "../../input_data/topography/lilk-a_bed.dat"
                       End
   Velocity 1        = Real 0.0
   Velocity 2        = Real 0.0
@@ -509,12 +530,11 @@ Boundary Condition 2
   Target Boundaries    = 2
   Top Surface          = Equals "Zs"
   Depth                = Real 0.0
+
+  Surf_melt            = Equals Melting
+
   Enthalpy_h           = Variable Coordinate 2
                          Real Procedure  "../../bin/SurfaceBoundary" "getSurfaceEnthalpy"
-  ! ! Prescribe melt for percolation model
-  Surf_melt = Equals "Melting"
-
-  ! <surf_melt>
 End
 
 ! Front of the glacier
