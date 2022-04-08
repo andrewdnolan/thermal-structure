@@ -1,0 +1,419 @@
+!echo on
+
+! Physical Constants
+#spy         = 365.25*24*60*60              ! -- [s a^-1]
+! SI base units
+#rhoi_si     = 910.0                        ! -- [kg m^-3]
+#rhow_si     = 1000.0                       ! -- [kg m^-3]
+#gravity_si  = -9.81                        ! -- [m s^-2]
+! Elmer Base units
+#rhoi        = rhoi_si*1.0e-06*spy^(-2.0)
+#rhow        = rhow_si*1.0e-06*spy^(-2.0)   ! -- [MPa m^-2 a^2] <--- [kg m^-3]
+#gravity     = gravity_si*spy^2             ! -- [m a^-1]       <--- [m s^-2]
+!-------------------------------------------------------------------------------
+! Flow Law Parameters from  Cuffey and Paterson (2010)
+!-------------------------------------------------------------------------------
+#A1 = 2.89165e-13*spy*1.0e18  ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+#A2 = 2.42736e-02*spy*1.0e18  ! -- [MPa^{-3} a^{-1}] <--- [Pa^{-3} s^{-1}]
+! Values below are in SI units. No problem, as long as the gas constant (R) also is
+#Q1 = 60.0e3                  ! -- [J mol^{-1}]
+#Q2 = 115.0e3                 ! -- [J mol^{-1}]
+#R  = 8.314                   ! -- [J mol^{-1} K^{-1}]
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Header
+  CHECK KEYWORDS Warn
+  Mesh DB           "./crmpt18-b/" "mesh_dx50"        !\"
+  Include Path      "./crmpt18-b/"                    !\"
+  Results Directory "./crmpt18-b/"                    !\"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END HEADER
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                           BEGIN CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Constants
+  include "./params/ref_params.sif"
+
+  !Physical Constants:
+  Gas Constant  = real #R           ! [J mol^{-1} K^{-1}]
+
+  rho_ice             = real 910.0
+  f_snow              = real 4.1
+  Mass Balance Offset = Real -0.250 ! m y^{-1}
+  ! T_mean              = real -5.02  ! Mean annual air temp @ z_ref [C]
+
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ! Thermodynamic parameters:
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~
+  t_ref_enthalpy                  = real 200.0     ![K]
+  L_heat                          = real 334000.0  ![J kg-1]
+  !   Cp(T) = A*T + B
+  Enthalpy Heat Capacity A        = real 7.253     ![J kg-1 K-2]
+  Enthalpy Heat Capacity B        = real 146.3     ![J kg-1 K-1]
+  P_surf                          = real 0.1013    ![MPa] Surface atmospheric pressure
+  !   K(rho) = A*rho^2 + B*rho + C
+  Enthalpy Heat Conductivity A    = Real 2.5e-6    ![W m^5 K^-1 kg^-2]
+  Enthalpy Heat Conductivity B    = Real 1.23e-4   ![W m^2 K^-1 kg^-1]
+  Enthalpy Heat Conductivity C    = Real 0.024     ![W kg-1 m-1]
+  ! P_triple                        = real 0.061173  !real 6.1173e-4 ![MPa] Triple point pressure for water
+  P_triple                        = real 6.1173e-4 ![MPa] Triple point pressure for water
+  P_surf                          = real 0.1013    ![MPa] Surface atmospheric pressure
+  T_triple                        = Real 273.16    ![K]       Temperature of water triple point
+  beta_clapeyron                  = real 0.0974    ![K MPa-1] Clausus clapeyron relationship (Gilbert et al. 2014)
+  ! Pressure Variable               = String "Hydro Pressure"
+  Pressure Variable               = String "Pressure"
+
+  Sr                              = real 0.03
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END CONSTANTS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                            BEGIN SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Simulation
+  Coordinate System           = "Cartesian 2D"
+  Simulation Type             = "Steady"
+  Timestepping Method         = "BDF"
+  BDF order                   = 2
+
+  Steady State Min Iterations = 1
+  Steady State Max Iterations = 25
+
+  ! Timestep Intervals          = <NT>  ![a]
+  ! Timestep Sizes              = <dt>  ![a]
+  Output Intervals            = 1
+
+  Post File                   = "VTU/heat_sources_<step>.vtu"
+  Output File                 = "heat_sources_<step>.result"               !\"
+  Max Output Level            = 3
+  Output Intervals            = 1
+
+  Restart File                = "crmpt18-b_3000a_dt_1_dx_50_MB_-0.250_OFF_spline_k2.result"
+  Restart Position            = 0
+  Restart Time                = Real 0.0
+  Restart Before Initial Conditions = Logical False
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                              END SIMULATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                 BEGIN BODIES (i.e., domains to compute on)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body 1
+  Name              = "Glacier"
+  Body Force        = 1
+  Equation          = 1
+  Material          = 1
+  Initial Condition = 1
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODIES
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Initial Condition 1
+  Velocity 1 = Equals Velocity 1
+  Velocity 2 = Equals Velocity 2
+
+  Firn       = real 0.0
+  Densi      = real 0.0
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END INITIAL CONDITIONS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Material 1
+  Name                       = String "ice"
+  Density                    = Real #rhoi_si*1.0E-06*(spy)^(-2.0)  ! [kg m-3] ---> [MPa a2 m-2]
+
+  Viscosity Model            = String "Glen"
+  ! Viscosity has to be set to a dummy value to avoid warning output from Elmer
+  Viscosity                  = Real 1.0
+  Glen Exponent              = Real 3.0
+  Critical Shear Rate        = Real 1.0e-10
+  Rate Factor 1              = Real #A1         ! -- [MPa^-3a^-1']
+  Rate Factor 2              = Real #A2         ! -- [MPa^-3a^-1']
+  ! these are in SI units - no problem, as long as the gas constant also is
+  Activation Energy 1        = Real #Q1         ! -- [J mol^{-1}]
+  Activation Energy 2        = Real #Q2         ! -- [J mol^{-1}]
+  Glen Enhancement Factor    = Real 1.0
+  ! the temperature to switch between the two regimes in the flow law
+  Limit Temperature          = Real -10.0       ! [C]
+
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  ! Thermodynamic Properties for Enthalpy:
+  !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  Enthalpy Density           = Equals "Densi"        ! [kg m-3]
+  Enthalpy Water Diffusivity = real #1.045e-4*spy    ! [kg m-1 a-1] <--- [kg m-1 s-1] (Gilbert et al. 2014, Table 1)
+  ! NOTE: the enthalpy heat Diffusivity should be a function of temperature and
+  !       density
+  Enthalpy Heat Diffusivity  = Variable Temperature
+                               Real procedure "../../bin/thermodynamics" "Diffusivity"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END MATERIALs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                               BEGIN SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Solver 1
+  Exec Solver              = "before Simulation"
+  Equation                 = "MapCoordinate"
+  Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
+  Active Coordinate        = Integer 2 ! the mesh-update is y-direction
+! For time being this is currently externally allocated
+  Mesh Velocity Variable   = String "Mesh Velocity 2"
+! The 1st value is special as the mesh velocity could be unrelistically high
+  Mesh Velocity First Zero = Logical True
+! The accuracy applied to vector-projections
+  Dot Product Tolerance    = Real 0.01
+End
+
+Solver 2
+  Equation                   = "HeightDepth"
+  Exec Solver                = "Before Timestep"
+  Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
+  Active Coordinate          = Integer 2
+  Operator 1                 = Depth
+  Operator 2                 = Height
+End
+
+Solver 3
+  Equation                                 = "Navier-Stokes"
+  Optimize Bandwidth                       = Logical True
+  ! Linear System Solver                     = Direct
+  ! Linear System Direct Method              = "UMFPACK"
+  Linear System Solver                     = "Iterative"
+  Linear System Iterative Method           =  "GCR"     !"BICGStab"
+  Linear System Max Iterations             = 5000
+  Linear System Convergence Tolerance      = 1.0E-08
+  Linear System Abort Not Converged        = Logical True
+  Linear System Preconditioning            = "ILU2"
+  ! Linear System Residual Output            = 10
+
+  Steady State Convergence Tolerance       = 1.0E-06
+  !  Stabilization Method = [Stabilized,P2/P1,Bubbles]
+  Stabilization Method                     = String "Bubbles"
+
+  Nonlinear System Convergence Tolerance   = 1.0E-07
+  Nonlinear System Max Iterations          = 25
+  Nonlinear System Newton After Iterations = 10
+  Nonlinear System Newton After Tolerance  = 1.0E-04
+  Nonlinear System Reset Newton            = Logical True
+
+  Exported Variable 1                      = -dofs 2 "Mesh Velocity"
+  Exported Variable 2                      = -dofs 1 "Densi"
+  Exported Variable 3                      = -dofs 1 "Firn"
+  ! Exported Variable 4                      = -dofs 1 "Melt"
+  ! Exported Variable 5                      = -dofs 1 "Zs Accumulation Flux 2"
+End
+
+! Export time dependent Hydrostatic Pressure
+Solver 4
+   Equation = "UpdateExport"
+   Procedure = File "ElmerIceSolvers" "UpdateExport"
+   Variable = -nooutput "dumy"
+
+   Exported Variable 1 = -dofs 1 "Hydro Pressure"
+   Exported Variable 2 = -dofs 1 "test"
+
+End
+
+Solver 5
+  Equation         = String "DataToFieldSolver"
+  Procedure        = File "DataToFieldSolver" "DataToFieldSolver"
+  Variable         = String "Mass Balance"
+  Target Variable  = String "test"
+End
+
+
+! Surface Heating Solver
+Solver 6
+  Equation              = String "Wilson and FLowers"
+  Procedure             = File "../../bin/SurfaceBoundary" "Wilson_and_Flowers_2013"
+
+  ! Variable              = String "Surface Enthalpy"
+  Variable              = String "Q_lat"
+
+  Exported Variable 1   = -dofs 1 "Densi"
+  Exported Variable 2   = -dofs 1 "Firn"
+End
+
+! Deformational Heat
+Solver 7
+  Equation                                 = "DeformationalHeat"
+  Variable                                 = "W"
+  Variable DOFs                            = 1
+  procedure                                = File "ElmerIceSolvers" "DeformationalHeatSolver"
+
+  Linear System Solver                     = "Iterative"
+  Linear System Iterative Method           = "BiCGStab"
+  Linear System Max Iterations             = 500
+  Linear System Convergence Tolerance      = 1.0E-07
+  Linear System Abort Not Converged        = Logical True
+  Linear System Preconditioning            = "ILU0"
+
+  Steady State Convergence Tolerance       = 1.0E-06
+
+  Nonlinear System Convergence Tolerance   = 1.0E-06
+  Nonlinear System Max Iterations          = 50
+  Nonlinear System Relaxation Factor       = Real 1.0
+End
+
+! Enthalpy Solver
+Solver 8
+  Equation                                 = String "Enthalpy Equation"
+  Procedure                                = File "ElmerIceSolvers" "EnthalpySolver"
+  Variable                                 = String "Enthalpy_h"
+
+  Linear System Solver                     = "Iterative"
+  Linear System Iterative Method           = "BiCGStab"
+  Linear System Preconditioning            = "ILU0"
+  Linear System Max Iterations             = 500
+  Linear System Convergence Tolerance      = 1.0E-10
+  Linear System Abort Not Converged        = Logical True
+
+  Nonlinear System Newton After Tolerance  = 1.0e-04
+  Nonlinear System Convergence Tolerance   = 1.0E-06
+  Nonlinear System Max Iterations          = 50
+  Nonlinear System Relaxation Factor       = Real 1.0
+  Nonlinear System Convergence Measure     = String "solution"
+  Steady State Convergence Tolerance       = 1.0E-06
+
+  Apply Limiter                            = Logical True
+  Apply Dirichlet                          = Logical True
+  Stabilize                                = Logical True
+  !Nonlinear Update Exported Variables      = Logical True
+  ! Before Linsolve                          = "EliminateDirichlet" "EliminateDirichlet"
+
+  Exported Variable 1                      = String "Phase Change Enthalpy" ! (J kg-1)
+  Exported Variable 1 DOFs                 = 1
+  Exported Variable 2                      = String "Water Content"         ! (%)
+  Exported Variable 2 DOFs                 = 1
+  Exported Variable 3                      = String "Temperature"           ! (°C)
+  Exported Variable 3 DOFs                 = 1
+
+  Flow Solver Name                         = String "Flow Solution"
+  Flow Loads Name                          = String "Flow Solution Loads"
+  Pressure Variable                        = String "Pressure"
+End
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!                             END SOLVERS
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Equation 1
+  Name               = "Equation1"
+  Convection         = "Computed"
+  Flow Solution Name = String "Flow Solution"
+  Active Solvers(8)  = 1 2 3 4 5 6 7 8
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END EQUATION
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BODY FORCEs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+Body Force 1
+  Flow BodyForce 1       = Real 0.0
+  Flow BodyForce 2       = Real #gravity   ![m a^-1]
+  Flow Solution Passive  = Variable depth, height
+                           Real lua "((tx[0] + tx[1]) < 10.0)"
+
+  ! Deformational (mass) Heat Source (Convert to J yr-1 kg-1)
+  Heat Source = Variable "W"
+                real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)"
+
+  ! http://www.elmerfem.org/forum/viewtopic.php?p=24801&hilit=volumetric+heat+source#p24801
+  ! Latent Heat Source (J kg-1 yr-1)
+  Heat Source = Variable Q_lat, Densi
+                Real lua "(tx[0] / tx[1])"
+
+  ! Enthalpy Limiters
+  Enthalpy_h Upper Limit = Variable Phase Change Enthalpy
+                           real MATC "tx +0.03*334000.0"
+  Enthalpy_h Lower Limit = real 0.0
+
+  ! Can't Call the variable hydrostatic pressure, since that already seems to be
+  ! a keyword arugment
+  Hydro Pressure = Variable depth
+                        Real lua "(rhoi*-gravity*tx[0])"
+
+  test   = Variable Coordinate 2
+                        Real Procedure "../../bin/mass_balance" "spline"
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BODY FORCE
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! BEGIN BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Bedrock
+Boundary Condition 1
+  Name              = "bedrock"
+  Target Boundaries = 1
+  Compute Normals   = Logical True
+
+  ! No sliding
+  Velocity 1        = Real 0.0e0
+  Velocity 2        = Real 0.0e0
+  Bottom Surface    = Variable Coordinate 1
+                      Real cubic
+                         include "../../input_data/topography/crmpt18-b_bed.dat"
+                      End
+  Zbed              = Variable Coordinate 1
+                      Real cubic
+                         include "../../input_data/topography/crmpt18-b_bed.dat"
+                      End
+
+  ! < Heat_Flux>
+  Enthalpy Heat Flux BC = logical True
+  Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
+End
+
+Boundary Condition 2
+  Name                 = "surface"
+  ! Body Id              = 2
+  Target Boundaries    = 2
+  Top Surface          = Equals "Zs"
+  Depth                = Real 0.0
+  ! Enthalpy_h           = Equals "Surface Enthalpy"
+  Enthalpy_h           = Variable Coordinate 2
+                         Real Procedure  "../../bin/SurfaceBoundary" "getSurfaceEnthalpy"
+  ! ! Prescribe melt for percolation model
+  ! Surf_melt = Equals "Melting"
+End
+
+! Front of the glacier
+Boundary Condition 3
+  Target Boundaries = 3
+End
+
+! Upper limit of the glacier
+Boundary Condition 4
+  Target Boundaries = 4
+  Velocity 1        = real 0.0
+End
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! END BOUNDARY CONDITIONs
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

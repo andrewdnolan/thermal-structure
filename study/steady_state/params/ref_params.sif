@@ -1,0 +1,40 @@
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! General Params
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+rho_i = real 910.0   ! ice          density         [kg m^{-3}]
+rho_s = real 350.0   ! snow/surface density         [kg m^{-3}]!
+rho_w = real 1000.0  ! water        density         [kg m^{-3}]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Air temperature related parameters
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+z_ref =  real 2193.0    ! Reference surface elevation  [m a.s.l.]
+T_mean = real -9.02     ! Mean annual air temp @ z_ref [C]
+T_peak = real 196       ! DOY of annual temp peak      [DOY]
+dTdz   = real 6.5E-3    ! Air temp lapse rate          [K m^-1]
+alpha  = real 10.8      ! Anual air temp. amplitude    []
+! Time dependent air temp s.t.d. related parameters. Evaluated as:
+!       T_sigma(d) = std_c0 * d**2 + std_c1 * d + std_c2
+std_c0 = real  8.29376332e-05
+std_c1 = real -3.45256005e-02
+std_c2 = real  6.31076200e+00
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Degree Day Melt Model related params
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+A_mean = real 800         ! mean annual precip           [kg m-2 yr-1]
+dPdz   = real 2.5E-4      ! precipitation lapse rate     [ [-] m-1]
+T_r2s  = real 1.0         ! rain to snow threshold       [C]
+T_melt = real 0.0         ! Melting temp. threshold      [C]
+f_r    = real 0.0875      ! refreezing factor            [-]
+f_ice  = real 8.2         ! degree-day factor for ice    [kg m-2 yr-1 K-1]
+f_snow = real 4.1         ! degree-day factor for snow   [kg m-2 yr-1 K-1]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Firn / Percolation related params
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+d_firn = real 0.03        ! firn regularization          [kg m^{-2} y^{-1}]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
