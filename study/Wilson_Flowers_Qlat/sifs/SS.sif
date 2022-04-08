@@ -25,9 +25,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./<KEY>/" "mesh_dx50"        !\"
-  Include Path      "./<KEY>/"                    !\"
-  Results Directory "./<KEY>/"                    !\"
+  Mesh DB           "./klun-b/" "mesh_dx100"        !\"
+  Include Path      "./klun-b/"                    !\"
+  Results Directory "./klun-b/"                    !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -86,14 +86,14 @@ Simulation
 
   ! Timestep Intervals          = <NT>  ![a]
   ! Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = 1
+  Output Intervals            = 50
 
   ! Post File                   = "VTU/heat_sources_step4_T_-7.02.vtu"
   ! Output File                 = "heat_sources_step4_T_-7.02.result"               !\"
   Max Output Level            = 3
   Output Intervals            = 1
 
-  Restart File                = "<RESTART>"
+  Restart File                = "klun-b_2000a_dt_0.5_dx_100_MB_-0.20_OFF_spline_k2.result"
   Restart Position            = 0
   Restart Time                = Real 0.0
   Restart Before Initial Conditions = Logical False
@@ -383,11 +383,11 @@ Boundary Condition 1
   Velocity 2        = Real 0.0e0
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/<KEY>_bed.dat"
+                         include "../../input_data/topography/klun-b_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/<KEY>_bed.dat"
+                         include "../../input_data/topography/klun-b_bed.dat"
                       End
 
   ! < Heat_Flux>
