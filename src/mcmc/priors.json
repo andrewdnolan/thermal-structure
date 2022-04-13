@@ -1,0 +1,21 @@
+{
+  "f_s": {"type"  : "TruncatedNormal",
+          "kwargs": { "mu": 4.1, "sigma": 1.5, "lower": 0.0}
+         },
+
+  "C": {"type"  : "TruncatedNormal",
+        "kwargs": { "mu": 2.0, "sigma": 0.75, "lower": 1.0}
+       },
+
+  "grad_A": {"type"  : "Uniform",
+             "kwargs": { "lower": 0.5e-4, "upper": 5e-4}
+            },
+
+  "A_mean":  {"type"  : "Normal",
+              "kwargs": {"mu": 1300, "sigma": 75}
+            },
+
+  "f_r": {"type": "TruncatedNormal",
+          "kwargs": {"mu":0.5, "sigma":0.2, "lower":0.0, "upper":1}
+         }
+}
