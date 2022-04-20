@@ -29,4 +29,4 @@ $(subst .,%,$(medium_out)): prepare2submit $(medium_params)
 	./prepare2submit --force --time="9:30:00" --mem="2250M" --group="medium" -s 25
 
 $(subst .,%,$(large_out)): prepare2submit $(large_params)
-	./prepare2submit --force --time="3:30:00" --mem="1G" --group="large"
+	./prepare2submit --force --time="10:00:00" --mem="2250M" --group="large" -s 25
