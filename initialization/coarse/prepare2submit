@@ -512,7 +512,7 @@ main(){
   # Declare arrays for the individual size classifications
   declare -a  small=("crmpt12" "crmpt18-a" "crmpt18-b" "glc1-a" "glc1-b")
   declare -a medium=("lilk-a" "lilk-b" "klun-a" "klun-b" "sprg")
-  declare -a  large=("twds-a" "twds-b" "fish" "klut-a" "klut-b")
+  declare -a  large=("twds-b" "fish" "klut-a" "klut-b")
   # Declare a nested arrays containing the sub-arrays
   # declare -a groups=("small" "medium" "large")
 

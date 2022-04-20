@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-85%25                  # 85 jobs that run 25 at a time
+#SBATCH --array=1-74%25                  # 74 jobs that run 25 at a time
 #SBATCH --job-name=large_spline_init           # base job name for the array
 #SBATCH --mem-per-cpu=2250M                     # maximum 2250MMB per job
 #SBATCH --time=10:00:00                      # maximum walltime per job
