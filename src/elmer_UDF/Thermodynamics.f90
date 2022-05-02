@@ -46,3 +46,25 @@ function  Diffusivity(Model, Node, Temp) result(EnthalpyDiffusivity)
   ! Diffusivity [kg m^-1 a^-1]
   EnthalpyDiffusivity = HeatConductivity / Heat_Capacity
 end function Diffusivity
+
+! function Enthalpy_of_Fusion(Model, Node, pressure) result(EnthalpyFusion)
+!
+!   use DefUtils
+!   implicit none
+!
+!   type(Model_t) :: Model
+!   type(Variable_t), pointer :: Density
+!
+!   integer :: Node                        ! current node number
+!
+!   real(kind=dp) :: T_ptr,    &           ! [K] Temp. (of water) at triple point
+!                    P_ptr,    &           ! [MPa] Pressure. (of water) at triple point
+!                    T_ref,    &           ! [K] Reference temperature
+!                    T_m,      &           ! [K] Melting temperature
+!                    rho,      &           ! [kg m^-3]
+!                    CapA,     &           ! [J kg-1 K-2]
+!                    CapB,     &           ! [J kg-1 K-1]
+!                    Pressure, &
+!                    Beta
+!
+! end function Enthalpy_of_Fusion

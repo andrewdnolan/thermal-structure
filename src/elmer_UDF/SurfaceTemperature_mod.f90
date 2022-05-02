@@ -2,10 +2,6 @@ module SurfaceTemperature
 
   implicit none
 
-  private
-
-  public SurfTemp
-
 contains
 
   subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak, coefs)
@@ -18,7 +14,7 @@ contains
     implicit none
 
     ! input params
-    integer, intent(in)       :: T_peak     ! DOY of annual temp peak [DOY]
+    Integer, intent(in)       :: T_peak     ! DOY of annual temp peak [DOY]
     real(kind=dp), intent(in) :: z,       & ! nodal surface elevation [m]
                                  alpha,   & ! Anual air temp. amp.    [C]
                                  grad_T,  & ! Air temp lapse rate     [K m^-1]

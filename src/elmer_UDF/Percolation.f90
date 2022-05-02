@@ -30,13 +30,15 @@ subroutine Percolation(Model, Solver, dt, Transient)
   type(Model_t)  :: Model
   type(Solver_t) :: Solver
   type(Element_t),   pointer :: Element
-  type(Variable_t),  pointer :: Depth, Enthalpy, H_f
+  type(Variable_t),  pointer :: Depth, Enthalpy, H_f, Q_lat
   type(ValueList_t), pointer :: Material, BC
   integer,           pointer :: NodeIndexes(:)
 
   integer ::       i, j,         & ! Loop indexes
                    k,            & ! Vertical node indexes
-                   N,            & ! Total number of nodes within mesh
+                   N_n,          & ! Total number of nodes within mesh
+                   N_s,          & ! number of surface  nodes
+                   N_v,          & ! number of vertical nodes
                    NN,           & ! number of nodes for an individual element
                    Nsurf           ! number of surface nodes
 
@@ -61,42 +63,44 @@ subroutine Percolation(Model, Solver, dt, Transient)
 
   character(len=*), parameter :: Caller = "Percolation"
 
-  save first_time, N, Nsurf
+  save first_time, N_n, N_s, N_v
 
   ! Pointers to variable fields
   ! ----------------------------------------------------------------------------
   Depth    => VariableGet( Model % Variables, "Depth")
   Enthalpy => VariableGet( Model % Variables, "enthalpy_h")
+  Q_lat    => VariableGet( Model % Variables, "Q_lat")
   H_f      => VariableGet( Model % Variables, "Phase Change Enthalpy")
 
-  ! First time loop:  find number of nodes and read constants from .sif
-  ! ----------------------------------------------------------------------------
-  if (first_time) then
+  ! Variable declaration that only needs to be run once (i.e. first time)
+  IF (first_time) THEN
+    ! set first_time to false for all subsequent time steps
     first_time=.false.
 
-    N     = Model % NumberOfNodes
-    Nsurf = 0
+    ! Loop over all model nodes
+    DO i=1,model % NumberOfNodes
+      IF (model%nodes%x(i+1) < model%nodes%x(i)) THEN
+        EXIT
+      ENDIF
+    ENDDO
 
-    ! Find the number of surface nodes
-    do i = 1, N
-      if ( Depth % Values ( Depth % perm(i) ) == 0.0) Nsurf = Nsurf + 1
-    end do
+    N_n = Model % NumberOfNodes ! Number of Nodes in Models
+    N_s = i                     ! Number of surface nodes
+    N_v = N_n/i                 ! Number of vertical nodes
+  ENDIF
 
-    ! Read constants from .sif file
-    Sr     = GetConstReal( Model % Constants, "Sr")
-    rho_w  = GetConstReal( Model % Constants, "rho_w"  )
-    rho_i  = GetConstReal( Model % Constants, "rho_ice")
-    L_heat = GetConstReal( Model % Constants, "L_heat" )
-
-  ! end first_time loop
-  end if
+  ! Read constants from .sif file
+  Sr     = GetConstReal( Model % Constants, "Sr")
+  rho_w  = GetConstReal( Model % Constants, "rho_w"  )
+  rho_i  = GetConstReal( Model % Constants, "rho_i")
+  L_heat = GetConstReal( Model % Constants, "L_heat" )
 
   ! Density in SI units [kg m^-3] is defined as a material parameter, assigned
   ! to the variable "Enthalpy Density". Therefore, to access the values we need
   ! read the material values, instead of the normal (and more compact) pointer
   ! "VariableGet(...)" method
   ! ----------------------------------------------------------------------------
-  allocate(Density(N))
+  allocate(Density(N_n))
   allocate(Dens(Model % MaxElementNodes))
 
   do i = 1, Solver % NumberOfActiveElements
@@ -110,7 +114,6 @@ subroutine Percolation(Model, Solver, dt, Transient)
       call WARN(Caller, "Problem reading ""Enthalpy Denisty"" from Material Section")
       return
     endif
-
     Density(NodeIndexes) = Dens(1:NN)
   end do
 
@@ -119,53 +122,89 @@ subroutine Percolation(Model, Solver, dt, Transient)
   ! for "Enthalpy Density", but instead of looping over the material we will loop
   ! over the boundary elements
   ! ----------------------------------------------------------------------------
-  allocate(Melt(N))
+  allocate(Melt(N_n))
   allocate(Melting(Model % MaxElementNodes))
-  do i = 1, Model % NumberOfBoundaryElements
+  do i = 1, Solver % Mesh % NumberOfBoundaryElements
     Element     => GetBoundaryElement(i)
-    BC          => GetBC(Element)
+    NN          =  GetElementNOFNodes(Element)
     NodeIndexes => Element % NodeIndexes
+    BC          => GetBC(Element)
 
-    NN = GetElementNOFNodes(Element)
     Melting(1:NN) = ListGetReal( BC, "Surf_melt", NN, NodeIndexes, GotIt)
     if (.not.GotIt) then
-      call WARN(Caller, "Problem reading ""Surf_melt"" from Boundary Condition Section")
-      return
+      !call WARN(Caller, "Problem reading ""Surf_melt"" from Boundary Condition Section")
+    else
+      Melt(NodeIndexes) = Melting(1:NN)/(1.0)
     endif
-
-    Melt(NodeIndexes) = Melting(1:NN)
   end do
 
   ! ----------------------------------------------------------------------------
   ! Actually Do Calculation:
   ! ----------------------------------------------------------------------------
 
+  ! ! Outter Most Loop: Itterate of model nodes
+  ! DO n=1,N_n
+  !   ! Check if depth == 0.0 for node, i.e. is it a surface node
+  !   IF (Depth%Values(Depth%perm(n))==0.0) THEN
+  !     ! vertical node loop number
+  !     j = 0
+  !
+  !     ! Surface Melting [kg m-2]
+  !     melt_surf = Melt(n) * rho_w
+  !
+  !     ! Continue loop while there is still surface melt to refreeze, once all the
+  !     ! melt has refrozen the loop breaks
+  !     do while (melt_surf .ne. 0.0)
+  !       ! get vertically aligned node number
+  !       k  = N+1-i-j*Nsurf
+  !
+  !       ! Get current vertical layer thickness
+  !       dz = Depth % Values(Depth % perm(k-N_s))-Depth % Values(Depth % perm(k))
+  !
+  !       ! pore close off at ~800 kg m^-3 [Stevens et al. 2020 / Gregory et al., 2014]
+  !       if (Density(k) < 800.0) then
+  !         ! Maximum residual water content in kg m^-3
+  !         wres = Sr*(1.0 - Density(k)/rho_i)*rho_w
+  !
+  !
+  !       end if
+  !     end do
+  !   ELSE
+  !     Q_lat%values(Q_lat%perm(n)) = 0.0 ! [J yr-1 kg-1]
+  !   ENDIF
+  ! ENDDO
+
+
+
   ! Loop over surface nodes
-  do i = 1, Nsurf
+  do i = 1, N_s
     ! vertical node loop number
     j = 0
+
     ! Surface Melting [kg m-2]
-    melt_surf = Melt(N+1-i) * rho_w
+    melt_surf = Melt(N_n+1-i) * rho_w
 
     ! Continue loop while there is still surface melt to refreeze, once all the
     ! melt has refrozen the loop breaks
     do while (melt_surf .ne. 0.0)
-      ! get vertically aligned node number
-      k  = N+1-i-j*Nsurf
-      ! Get current vertical layer thickness
-      dz = Depth % Values(Depth % perm(k-Nsurf))-Depth % Values(Depth % perm(k))
 
-      ! pore close off at ~800 kg m^-3 ??
+      ! get vertically aligned node number
+      k  = N_n+1-i-j*N_s
+
+      ! Get current vertical layer thickness
+      dz = Depth % Values(Depth % perm(k-N_s))-Depth % Values(Depth % perm(k))
+
+      ! pore close off at ~800 kg m^-3 [Stevens et al. 2020 / Gregory et al., 2014]
       if (Density(k) < 800.0) then
 
         ! Maximum residual water content in kg m^-3
         wres = Sr*(1.0 - Density(k)/rho_i)*rho_w
 
-        write(*,*) wres
-        ! Enthalpy of fusion for maximum residual water content
-        H_limit = Enthalpy % values(Enthalpy % perm(k)) + wres/Density(k)*L_heat
+        ! write(*,*) wres
+        ! Enthalpy of fusion for maximum residual water content [J kg-1]
+        H_limit = H_f % values(H_f % perm(k)) + wres/Density(k)*L_heat
 
-        ! Latent heat released from meltwater refreezing
+        ! Latent heat released from meltwater refreezing [J kg-1]
         Enthalpy % values( Enthalpy % perm(k)) = Enthalpy % values( Enthalpy % perm(k)) &
                                                  + L_heat*melt_surf/dz/Density(k)
 
@@ -173,6 +212,9 @@ subroutine Percolation(Model, Solver, dt, Transient)
         ! If we've reached the enthalpy of fusion then reduce the amount of
         ! meltwater available for refreezing
         if (Enthalpy % values( Enthalpy % perm(k)) > H_limit) then
+
+          ! write(*,*) i
+          ! [kg  m-2]
           melt_surf = (Enthalpy % values( Enthalpy % perm(k)) - H_limit) * &
                        dz*Density(k)/L_heat
           Enthalpy % values( Enthalpy % perm(k)) = H_limit
@@ -187,7 +229,7 @@ subroutine Percolation(Model, Solver, dt, Transient)
       j = j + 1
 
       ! If we've iterated through all the vertical nodes, then break the while loop
-      if ( j == N/Nsurf-1 ) then
+      if ( j == N_n/N_s-1 ) then
         melt_surf = 0.0
       end if
 
