@@ -231,13 +231,6 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
   END DO
 END SUBROUTINE SurfaceMassBalance
 
-! function GetModelConstant(constant_name, GotIt)
-!   constant = GetConstReal(Model % Constants, constant_name, GotIt)
-!   if (.not. GotIt) then
-!     call fatal('SurfaceMassBalance ---> GetModelConstant', 'Could not find ')
-!   end if
-! end function GetModelConstant
-
 FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   ! Elmer modules
   USE DefUtils
@@ -260,7 +253,8 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
                    Timestep(1), & ! vector of timestep size            [a]
                    z              ! surface elevation of current node  [m a.s.l.]
   integer       :: DOY            ! number of timesteps in a year
-  logical       :: Found,       &
+  logical       :: GotIt,       &
+                   Found,       &
                    Transient
 
   ! air temp related
@@ -277,21 +271,24 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   ! Enthalpy related params
   REAL(KIND=dp) :: T_ref, CapA, CapB
 
+  ! Figure out if simulation is diagnostic or prognostic
   Transient = GetString(GetSimulation(), "Simulation type", Found)=='transient'
 
   ! Enthalpy related constants
-  T_ref     = GetConstReal(Model % Constants, "t_ref_enthalpy")            ! [K]
-  CapA      = GetConstReal(Model % Constants, "Enthalpy Heat Capacity A")  ! [J kg-1 K-2]
-  CapB      = GetConstReal(Model % Constants, "Enthalpy Heat Capacity B")  ! [J kg-1 K-1]
+  T_ref  = GetConstReal(Model % Constants, "t_ref_enthalpy")            ! [K]
+  CapA   = GetConstReal(Model % Constants, "Enthalpy Heat Capacity A")  ! [J kg-1 K-2]
+  CapB   = GetConstReal(Model % Constants, "Enthalpy Heat Capacity B")  ! [J kg-1 K-1]
   ! Air temperature related constants
-  alpha     = GetConstReal(Model % Constants, "alpha")    ! [K]
-  dTdz      = GetConstReal(Model % Constants, "dTdz" )    ! [K m^{-1}]
-  T_mean    = GetConstReal(Model % Constants, "T_mean")  ! [K]
-  T_peak    = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
-  z_ref     = GetConstReal(Model % Constants, "z_ref" )   ! [m a.s.l.]
-  std_c0    = GetConstReal(Model % Constants, "std_c0")   ! [K?]
-  std_c1    = GetConstReal(Model % Constants, "std_c1")   ! [K?]
-  std_c2    = GetConstReal(Model % Constants, "std_c2")   ! [K?]
+  alpha  = GetConstReal(Model % Constants, "alpha")                 ! [K]
+  dTdz   = GetConstReal(Model % Constants, "dTdz" )                 ! [K m^{-1}]
+  T_mean = GetConstReal(Model % Constants, "T_mean")                ! [K]
+  T_peak = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
+  z_ref  = GetConstReal(Model % Constants, "z_ref" )                ! [m a.s.l.]
+  std_c0 = GetConstReal(Model % Constants, "std_c0")                ! [K?]
+  std_c1 = GetConstReal(Model % Constants, "std_c1")                ! [K?]
+  std_c2 = GetConstReal(Model % Constants, "std_c2")                ! [K?]
+  ! Firn Heating Parameters
+
 
   ! unpack surface elevation of current surface node [m]
   z = InputArray(1)
@@ -321,14 +318,32 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   Enthalpy  = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
 
   RETURN
+
+  contains
+
+  ! subfunction for reading constants and error checking
+  function GetModelConstant(Model, constant_name, GotIt) result(constant)
+    USE DefUtils
+    implicit none
+
+    real :: constant
+    logical, intent(in) :: GotIt
+    TYPE(Model_t), intent(in) :: Model
+    character(len=2000), intent(in) :: constant_name
+
+    constant = GetConstReal(Model % Constants, trim(constant_name), GotIt)
+
+    if (.not. GotIt) then
+      call fatal('getSurfaceEnthalpy ---> GetModelConstant', &
+                 'Could not find '//trim(constant_name) )
+    end if
+
+  end function GetModelConstant
 END FUNCTION getSurfaceEnthalpy
 
-SUBROUTINE SurfaceMelt( Model, Solver, dt, TransientSimulation )
-  !-----------------------------------------------------------------------------
-  !> Implementation of surface heating ($Q_m$) scheme (Eqn. 9) from
-  !> Wilson and Flowers (2013).
-  !-----------------------------------------------------------------------------
-  USE DefUtils       ! provides you with most Elmer functionality
+SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
+  !------------------------------------------------------------------------------
+  USE DefUtils
   USE SolverUtils
   USE ElementUtils
 
@@ -346,336 +361,63 @@ SUBROUTINE SurfaceMelt( Model, Solver, dt, TransientSimulation )
   TYPE(Solver_t)            :: Solver
   TYPE(Element_t),  POINTER :: Element
 
-  TYPE(Variable_t), POINTER :: Melt,    &
-                               Depth,   &
-                               TimeVar, &
-                               MB
+  TYPE(Variable_t), POINTER :: Surf_Enthalpy,    &
+                               Firn,             &  ! firn thickness      [m]
+                               Depth,            &  ! Depth below surf    [m]
+                               TimeVar,          &  ! Time                [yr]
+                               MB,               &  ! Mass Balance (i.e.) [m yr]
+                               Dens                 ! Ice Depth           [m]
 
   !----------------------------------------------------------------------------
   ! Local variables
   !----------------------------------------------------------------------------
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  ! Misc. internal integers
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  INTEGER       :: i, n,        &  ! index counter
+                   cont,        &  ! vertically alligned node index counter
+                   d,           &  ! julian calendar day  counter
+                   N_n,         &  ! number of model    nodes
+                   N_s,         &  ! number of surface  nodes
+                   N_v,         &  ! number of vertical nodes
+                   doy_i,       &  ! day of year of current timestep
+                   doy_ip1         ! day of year of next timesteps
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! air temp related
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   INTEGER       :: T_peak         ! DOY of annual temp peak      [DOY]
   REAL(KIND=dp) :: z_ref,       & ! reference surface elevation  [m a.s.l.]
                    alpha,       & ! Anual air temp. amp          [K]
                    dTdz,        & ! air temp lapse rate          [K m-1]
-                   T_mean,      & ! mean annual surf. air. temp  [K]
+                   T_mean,      & ! mean annual surf. air. temp  [C]
                    T(365),      & ! surface air temperature      [K]
+                   T_surf,      & ! intermediate result          [K]
+                   H_surf,      & ! intermediate result          [J kg-1]
                    std_c0,      &
                    std_c1,      &
                    std_c2
-  ! internal integers
-  INTEGER       :: i, n,        &  ! index counter
-                   cont,        &  ! vertically alligned node index counter
-                   d,           &  ! julian calendar day  counter
-                   N_n,         &  ! number of model    nodes
-                   N_s,         &  ! number of surface  nodes
-                   N_v,         &  ! number of vertical nodes
-                   doy_i,       &
-                   doy_ip1
-
-  REAL(KIND=dp) :: z,           &
-                   Time,        &
-                   T_melt,      &
-                   f_snow,      &  ! Degree-day factor  [m K^-1 a^-1]
-                   rho_i,       &  ! denisty of ice     [Kg m^-3]
-                   PDD(365) = 0    ! + degrees. for DOY [K]
-
-  LOGICAL :: GotIt,first_time=.true.
-
-  !-------------------------
-  ! First time loop
-  !-------------------------
-  save first_time,N_v,N_s,N_n
-
-
-  ! Variable declaration that only needs to be run once (i.e. first time)
-  IF (first_time) THEN
-    ! set first_time to false for all subsequent time steps
-    first_time=.false.
-
-
-    ! Loop over all model nodes
-    DO i=1,model % NumberOfNodes
-      IF (model%nodes%x(i+1) < model%nodes%x(i)) THEN
-        EXIT
-      ENDIF
-    ENDDO
-
-    N_n = Model % NumberOfNodes ! Number of Nodes in Models
-    N_s = i                     ! Number of surface nodes
-    N_v = N_n/i                 ! Number of vertical nodes
-  ENDIF
-  ! End "first_time" loop
-
-  ! Pointer to the model variables
-  Melt   => VariableGet( Model % Variables, "Melting")
-  Depth  => VariableGet( Model % Variables, "Depth")
-  MB     => VariableGet( Model % Variables, "mass balance")
-
-  ! Physical params
-  rho_i  = GetConstReal(Model % Constants, "rho_i")    ![kg m-3]
-  ! Melt params
-  f_snow = GetConstReal(Model % Constants, "f_snow")   ![kg m-2 yr-1]
-  T_melt = GetConstReal(Model % Constants, "T_melt")   ![K]
-  ! Air temperature related constants
-  alpha  = GetConstReal(Model % Constants, "alpha")    ! [K]
-  dTdz   = GetConstReal(Model % Constants, "dTdz" )    ! [K m^{-1}]
-  T_mean = GetConstReal(Model % Constants, "T_mean")   ! [K]
-  T_peak = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
-  z_ref  = GetConstReal(Model % Constants, "z_ref" )   ! [m a.s.l.]
-  std_c0 = GetConstReal(Model % Constants, "std_c0")   ! [K?]
-  std_c1 = GetConstReal(Model % Constants, "std_c1")   ! [K?]
-  std_c2 = GetConstReal(Model % Constants, "std_c2")   ! [K?]
-
-
-  if (TransientSimulation) then
-    ! if transient get current timestep
-    TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-    ! Get current time
-    Time     =  TimeVar % Values(1)
-    ! Find DOY of current timestep
-    doy_i   = NINT((Time - floor(Time)) * 365.0)
-    ! find DOY of next    timestep
-    doy_ip1 = NINT(((Time+dt) - floor(Time)) * 365.0)
-
-    write(*,*) doy_ip1-doy_i
-  else
-    ! if steady state get yearly amount of melt
-    doy_i   = 1
-    doy_ip1 = 365
-  endif
-
-  ! Outter Most Loop: Itterate of model nodes
-  DO n=1,N_n
-    ! Check if depth == 0.0 for node, i.e. is it a surface node
-    IF (Depth%Values(Depth%perm(n))==0.0) THEN
-
-      z = model%nodes%y(n)
-
-      ! Calculate nodal air temperature curve
-      call SurfTemp(z, T, alpha, dTdz, &
-                    z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /))
-
-      ! only loop over DOY within current timestep
-      DO d=doy_i,doy_ip1
-        ! Subtract the melting temperature to find the daily positive degrees
-        PDD(d) = MAX(T(d)-T_melt, 0.0) ! [K]
-      END DO
-
-      ! Test if 2nd coord (z) is greater then Z_ELA
-      IF (MB % values (MB % perm(n)) > 0.0) THEN
-        ! Calculate the amount of melt
-        Melt % values (Melt % perm(n)) = f_snow*SUM(PDD) * (1/rho_i) ! [m yr-1]
-      ElSE
-        ! Set the firn thickness and melt to 0 everywhere else
-        Melt % values (Melt % perm(n)) = 0.0
-      ENDIF
-    ENDIF
-  ENDDO
-END SUBROUTINE SurfaceMelt
-
-SUBROUTINE UpdateFirn( Model, Solver, dt, TransientSimulation )
-  !------------------------------------------------------------------------------
-  USE DefUtils       ! provides you with most Elmer functionality
-  USE SolverUtils    ! not totally sure about this, but adrian does it so....
-  USE ElementUtils   ! not totally sure about this, but adrian does it so....
-  !------------------------------------------------------------------------------
-
-
-  IMPLICIT NONE      ! saves you from stupid errors
-
-  !----------------------------------------------------------------------------
-  ! external variables
-  !----------------------------------------------------------------------------
-  LOGICAL                   :: TransientSimulation  ! Should be .FAlSE. always for now
-  REAL(KIND=dp)             :: dt                   ! Should be 0 for now
-  TYPE(Model_t)             :: Model
-  TYPE(Solver_t)            :: Solver
-  TYPE(Element_t),  POINTER :: Element
-
-  TYPE(Variable_t), POINTER :: Firn,    &           ! firn thickness        [m]
-                               Depth,   &
-                               Height,  &
-                               TimeVar, &
-                               MB,      &
-                               Dens   ! Ice Depth       [m]
-
-  !----------------------------------------------------------------------------
-  ! Local variables
-  !----------------------------------------------------------------------------
-  ! internal integers
-  INTEGER       :: i, n,        &  ! index counter
-                   cont,        &  ! vertically alligned node index counter
-                   d,           &  ! julian calendar day  counter
-                   N_n,         &  ! number of model    nodes
-                   N_s,         &  ! number of surface  nodes
-                   N_v,         &  ! number of vertical nodes
-                   doy_i,       &
-                   doy_ip1
-  real(kind=dp) :: test
-
-  REAL(KIND=dp) :: z,           &
-                   Time,        &
-                   T_melt,      &
-                   f_snow,      &  ! Degree-day factor  [m K^-1 a^-1]
-                   rho_i,       &  ! denisty of ice     [Kg m^-3]
-                   rho_s,       &  ! denisty of water   [Kg m^-3]
-                   PDD(365) = 0    ! + degrees. for DOY [K]
-
-  LOGICAL :: GotIt,first_time=.true.
-
-  !-------------------------
-  ! First time loop
-  !-------------------------
-  save first_time,N_v,N_s,N_n
-
-
-  ! Variable declaration that only needs to be run once (i.e. first time)
-  IF (first_time) THEN
-    ! set first_time to false for all subsequent time steps
-    first_time=.false.
-
-
-    ! Loop over all model nodes
-    DO i=1,model % NumberOfNodes
-      IF (model%nodes%x(i+1) < model%nodes%x(i)) THEN
-        EXIT
-      ENDIF
-
-    N_n = Model % NumberOfNodes ! Number of Nodes in Models
-    N_s = i                     ! Number of surface nodes
-    N_v = N_n/i                 ! Number of vertical nodes
-    ENDDO
-  ENDIF
-  ! End "first_time" loop
-
-  ! Pointer to the model variables
-  Firn   => VariableGet( Model % Variables, "Firn")
-  Height => VariableGet( Model % Variables, "Height")
-  Depth  => VariableGet( Model % Variables, "Depth")
-  Dens   => VariableGet( Model % Variables, "Densi")
-  MB     => VariableGet( Model % Variables, "mass balance")
-
-  ! Physical params
-  rho_i  = GetConstReal(Model % Constants, "rho_i")    ![kg m-3]
-  rho_s  = GetConstReal(Model % Constants, "rho_s")    ![kg m-3]
-
-
-  ! Outter Most Loop: Itterate of model nodes
-  DO n=1,N_n
-
-    ! Check if depth == 0.0 for node, i.e. is it a surface node
-    IF (Depth%Values(Depth%perm(n))==0.0) THEN
-
-      z = model%nodes%y(n)
-
-      ! Test if 2nd coord (z) is greater then Z_ELA
-      IF (MB % values (MB % perm(n)) > 0.0) THEN
-        ! Set the firn thickness
-        Firn % values (Firn % perm(n)) = MB % values (MB % perm(n)) /  0.05! [m]
-        !Firn % values (Firn % perm(n)) = 50 ! [m]
-
-        ! If firn thickness exceeds ice-thickness, then set firn thickness to
-        ! ice thickness
-        IF (Firn%values(Firn%perm(n)) > Height%values(Height%perm(n))) THEN
-          Firn % values (Firn % perm(n)) = Height%values(Height%perm(n))
-        ENDIF
-
-      ElSE
-        ! Set the firn thickness and melt to 0 everywhere else
-        Firn % values (Firn % perm(n)) = 0.0
-      ENDIF
-
-      ! iterate over vertically aligned nodes to set firn density
-      do i=1,N_v
-
-        ! index of ith vertically aligned node
-        cont=n-(i-1)*N_s
-
-        ! Check if within firn aquifer, if so set linear density profile
-        if (Firn % values (Firn % perm(n)) > 1.0) then
-
-          ! Cuffey and paterson EQN 2.2
-          Dens % values ( Dens % perm(cont)) = &
-          rho_i - (rho_i - rho_s) * exp( -1.0 * Depth % values (Depth % perm(cont)) / &
-                                         (Firn % values (Firn  % perm(n)) / 2.1))
-
-        else
-          Dens % values ( Dens % perm(cont)) = rho_i
-        endif
-
-        ! Make sure density isn't greater than the ice density
-        if (Dens % values ( Dens % perm(cont)) > rho_i) then
-          Dens % values ( Dens % perm(cont)) = rho_i
-        endif
-
-      end do
-    ENDIF
-  ENDDO
-END SUBROUTINE UpdateFirn
-
-
-SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
-!------------------------------------------------------------------------------
-  USE DefUtils       ! provides you with most Elmer functionality
-  USE SolverUtils    ! not totally sure about this, but adrian does it so....
-  USE ElementUtils   ! not totally sure about this, but adrian does it so....
-
-  ! Local modules
-  USE SurfaceTemperature
-
-  IMPLICIT NONE      ! saves you from stupid errors
-
-  !----------------------------------------------------------------------------
-  ! external variables
-  !----------------------------------------------------------------------------
-  LOGICAL                   :: TransientSimulation  ! Should be .FAlSE. always for now
-  REAL(KIND=dp)             :: dt                   ! Should be 0 for now
-  TYPE(Model_t)             :: Model
-  TYPE(Solver_t)            :: Solver
-  TYPE(Element_t),  POINTER :: Element
-
-  TYPE(Variable_t), POINTER :: Q_lat,    &
-                               Firn,     &  ! firn thickness        [m]
-                               Depth,    &
-                               TimeVar,  &
-                               MB,       &
-                               Dens         ! Ice Depth       [m]
-
-  !----------------------------------------------------------------------------
-  ! Local variables
-  !----------------------------------------------------------------------------
-  ! air temp related
-  INTEGER       :: T_peak         ! DOY of annual temp peak      [DOY]
-  REAL(KIND=dp) :: z_ref,       & ! reference surface elevation  [m a.s.l.]
-                   alpha,       & ! Anual air temp. amp          [K]
-                   dTdz,        & ! air temp lapse rate          [K m-1]
-                   T_mean,      & ! mean annual surf. air. temp  [K]
-                   T(365),      & ! surface air temperature      [K]
-                   std_c0,      &
-                   std_c1,      &
-                   std_c2
-  ! internal integers
-  INTEGER       :: i, n,        &  ! index counter
-                   cont,        &  ! vertically alligned node index counter
-                   d,           &  ! julian calendar day  counter
-                   N_n,         &  ! number of model    nodes
-                   N_s,         &  ! number of surface  nodes
-                   N_v,         &  ! number of vertical nodes
-                   doy_i,       &
-                   doy_ip1
-  real(kind=dp) :: test
-
-  REAL(KIND=dp) :: z,           &
-                   Time,        &
-                   T_melt,      &
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  ! Surface heating (i.e. latent heat) related variables
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  REAL(KIND=dp) :: z,           &  ! nodal surface elev.   [m a.s.l.]
+                   Time,        &  ! Simulation time       [a]
+                   T_melt,      &  ! Melting threshold     [K]
                    L_heat,      &  ! Latnet heat of fusion [J kg-1]
-                   f_snow,      &  ! Degree-day factor     [m K^-1 a^-1]
+                   f_dd,        &  ! Degree-day factor     [m K^-1 a^-1]
+                   h_aq,        &  ! Firn aquifer thick    [m]
+                   r_frac,      &  ! Runoff fraction       [-]
+                   Q_lat,       &  ! latent heat approx.   [J kg-1]
                    rho_i,       &  ! denisty of ice        [Kg m^-3]
                    rho_w,       &  ! denisty of water      [Kg m^-3]
                    rho_s,       &  ! denisty of snow       [Kg m^-3]
+                   C_firn,      &  ! Surf. Dens. const.    [-]
                    PDD(365) = 0    ! + degrees. for DOY    [K]
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  ! Enthalpy related params
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  REAL(KIND=dp) :: T_ref,       &  ! reference temp.      [K]
+                   CapA,        &  ! Heat cap. const 1    [J kg-1 K-2]
+                   CapB            ! Heat cap. const 1    [J kg-1 K-1]
 
   LOGICAL :: GotIt,first_time=.true.
 
@@ -703,31 +445,36 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
   ! End "first_time" loop
 
   ! Pointer to the model variables
-  Q_lat    => VariableGet( Model % Variables, "Q_lat")
-  Firn     => VariableGet( Model % Variables, "Firn")
-  Depth    => VariableGet( Model % Variables, "Depth")
-  Dens     => VariableGet( Model % Variables, "Densi")
-  MB       => VariableGet( Model % Variables, "mass balance")
-
+  Firn          => VariableGet( Model % Variables, "Firn")
+  Depth         => VariableGet( Model % Variables, "Depth")
+  Dens          => VariableGet( Model % Variables, "Densi")
+  MB            => VariableGet( Model % Variables, "mass balance")
+  Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
   ! Physical Parameters
-  rho_i  = GetConstReal(Model % Constants,  "rho_i")   ![kg m-3]
-  rho_s  = GetConstReal(Model % Constants,  "rho_s")   ![kg m-3]
-  rho_w  = GetConstReal(Model % Constants,  "rho_w")   ![kg m-3]
+  rho_i  = GetParam(Model,  "rho_i")                   ![kg m-3]
+  rho_s  = GetParam(Model,  "rho_s")                   ![kg m-3]
+  rho_w  = GetParam(Model,  "rho_w")                   ![kg m-3]
   ! Physical constants
-  L_heat = GetConstReal( Model % Constants, "L_heat")  ![J kg-1]
+  L_heat = GetParam(Model, "L_heat")                   ![J kg-1]
+  T_ref  = GetParam(Model, "t_ref_enthalpy")           ! [K]
+  CapA   = GetParam(Model, "Enthalpy Heat Capacity A") ! [J kg-1 K-2]
+  CapB   = GetParam(Model, "Enthalpy Heat Capacity B") ! [J kg-1 K-1]
   ! Melt Parameters
-  f_snow = GetConstReal(Model % Constants, "f_snow")   ![kg m-2 yr-1]
-  T_melt = GetConstReal(Model % Constants, "T_melt")   ![K]
+  f_dd   = GetParam(Model % Constants, "f_dd")         ![m K-1 yr-1]
+  T_melt = GetParam(Model % Constants, "T_melt")       ![K]
+  ! Firn Aquifer Parameters
+  h_aq   = GetParam(Model % Constants, "h_aq")         ![m]
+  r_frac = GetParam(Model % Constants, "r_frac")       ![-]
+  C_firn = GetParam(Model % Constants, "C_firn")       ![-]
   ! Air temperature related Parameters
-  alpha  = GetConstReal(Model % Constants, "alpha")    ! [K]
-  dTdz   = GetConstReal(Model % Constants, "dTdz" )    ! [K m^{-1}]
-  T_mean = GetConstReal(Model % Constants, "T_mean")   ! [K]
-  T_peak = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
-  z_ref  = GetConstReal(Model % Constants, "z_ref" )   ! [m a.s.l.]
-  std_c0 = GetConstReal(Model % Constants, "std_c0")   ! [K?]
-  std_c1 = GetConstReal(Model % Constants, "std_c1")   ! [K?]
-  std_c2 = GetConstReal(Model % Constants, "std_c2")   ! [K?]
-
+  alpha  = GetParam(Model, "alpha")                    ! [K]
+  dTdz   = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
+  T_mean = GetParam(Model, "T_mean")                   ! [K]
+  T_peak = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
+  z_ref  = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
+  std_c0 = GetParam(Model, "std_c0")                   ! [K?]
+  std_c1 = GetParam(Model, "std_c1")                   ! [K?]
+  std_c2 = GetParam(Model, "std_c2")                   ! [K?]
 
 
   if (TransientSimulation) then
@@ -735,7 +482,7 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
     ! Get current time
     Time    =   TimeVar % Values(1)
-    ! Find DOY of current timestep
+    ! Find DOY of current timestep [d]
     doy_i   = NINT(MOD(time, 1.0) * 365.0)
 
     ! B/C round off error ith doy sometimes is 365 instead of 0. Check and fix
@@ -743,11 +490,8 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
       doy_i = 0
     end if
 
-    ! find DOY of next    timestep
+    ! find DOY of next timestep [d]
     doy_ip1 = NINT(MOD(time+dt, 1.0) * 365.0)
-    ! write(*,*) Time,  Time+dt, dt
-    ! write(*,*) doy_i, doy_ip1, doy_ip1-doy_i
-    
   else
     ! set the "timestep" as one year
     dt = 1
@@ -758,9 +502,11 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
 
   ! Outter Most Loop: Itterate of model nodes
   DO n=1,N_n
+
     ! Check if depth == 0.0 for node, i.e. is it a surface node
     IF (Depth%Values(Depth%perm(n))==0.0) THEN
 
+      ! Get nodal surface elevation [m]
       z = model%nodes%y(n)
 
       ! Calculate nodal air temperature curve
@@ -773,36 +519,54 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
         PDD(d) = MAX(T(d)-T_melt, 0.0) ! [K]
       END DO
 
-      ! Test if 2nd coord (z) is greater then Z_ELA
-      IF (MB % values (MB % perm(n)) > 0.0) THEN
-        ! Set the firn thickness
-        Firn % values (Firn % perm(n)) = 3.0 ! [m]
-
-        ! set the heat source one layer below surface so as not to conflict with
-        ! direchlet boundary condition
-        cont=n-N_s
-        ! Calculate the volumtric latent heat source [J m-3 yr-1]
-        Q_lat % values (Q_lat % perm(cont)) = (1 - 0.3) * &
-                                           (rho_w/3.0) * L_heat * (1/rho_s) * f_snow*SUM(PDD)
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Calculate surface heating term
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Test if mass balance is positive (i.e. above the ELA)
+      IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
+        ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
+        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * f_dd * SUM(PDD)
       ElSE
-        ! Set the firn thickness and melt to 0 everywhere else
-        Firn  % values (Firn  % perm(n)) = 0.0
-        Q_lat % values (Q_lat % perm(n)) = 0.0
+        ! below the ELA so no latent heat source available
+        Q_lat = 0.0
       ENDIF
 
-      ! iterate over vertically aligned nodes to set firn density
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Convert surface air temperature to enthalpy
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+      ! Calculate mean annual airtemp over timestep and convert from [C] to [K]
+      T_surf = SUM(T(doy_i:doy_ip1))/(doy_ip1-doy_i) + 273.15
+
+      ! Temperature can't exced the melting point at the surface
+      if (T_surf > 273.15) then
+        T_surf = 273.15
+      endif
+
+      ! Convert surface air temp to enthalpy
+      H_surf =  (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+
+      ! Set the surface enthalpy based on temp and surface heating term
+      Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = Q_lat/rho_w + H_surf
+
+      !-------------------------------------------------------------------------
+      ! TO DO: Add check if surface enthalpy exceeds enthalpy upper limit
+      !-------------------------------------------------------------------------
+
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Set variable (w/ depth) surface density in the accumulation zone
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! iterate over vertically aligned nodes
       do i=1,N_v
 
         ! index of ith vertically aligned node
         cont=n-(i-1)*N_s
 
-        ! Check if within firn aquifer, if so set linear density profile
-        if (Firn % values (Firn % perm(n)) > 1.0) then
-
-          ! Cuffey and paterson EQN 2.2
-          Dens % values ( Dens % perm(cont)) = &
-          rho_i - (rho_i - rho_s) * exp( -0.05 * Depth % values (Depth % perm(cont)))
-
+        ! Check if mass balance of surface node is postive, i.e. in accumulation zone
+        if (MB % values (MB % perm(n)) .ge. 0.0) THEN
+          ! EQN (2.2) from Cuffey and Paterson
+          Dens % values ( Dens % perm(cont) ) = &
+          rho_i - (rho_i - rho_s) * exp(-C_firn * Depth % values (Depth % perm(cont)))
         else
           Dens % values ( Dens % perm(cont)) = rho_i
         endif
@@ -813,6 +577,9 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
         endif
       end do
 
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Set a seasonal snow layer, a crude approximation
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! if no melt occurs set the surface denisty to that of snow
       if ( SUM(PDD) == 0 ) then
         Dens % values ( Dens % perm(n)) = rho_s
@@ -820,235 +587,25 @@ SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
 
     ENDIF
   ENDDO
-END SUBROUTINE Wilson_and_Flowers_2013
 
+  contains
 
-! SUBROUTINE Wilson_and_Flowers_2013( Model, Solver, dt, TransientSimulation )
-! !------------------------------------------------------------------------------
-!   USE DefUtils       ! provides you with most Elmer functionality
-!   USE SolverUtils    ! not totally sure about this, but adrian does it so....
-!   USE ElementUtils   ! not totally sure about this, but adrian does it so....
-!
-!   ! Local modules
-!   USE SurfaceTemperature
-!
-!   IMPLICIT NONE      ! saves you from stupid errors
-!
-!   !----------------------------------------------------------------------------
-!   ! external variables
-!   !----------------------------------------------------------------------------
-!   LOGICAL                   :: TransientSimulation  ! Should be .FAlSE. always for now
-!   REAL(KIND=dp)             :: dt                   ! Should be 0 for now
-!   TYPE(Model_t)             :: Model
-!   TYPE(Solver_t)            :: Solver
-!   TYPE(Element_t),  POINTER :: Element
-!
-!   TYPE(Variable_t), POINTER :: SurfEnth, &
-!                                H_f,      &  ! Enthalpy of fusion (phase change enth)
-!                                Firn,     &  ! firn thickness        [m]
-!                                Depth,    &
-!                                TimeVar,  &
-!                                MB,       &
-!                                Dens         ! Ice Depth       [m]
-!
-!   !----------------------------------------------------------------------------
-!   ! Local variables
-!   !----------------------------------------------------------------------------
-!   ! air temp related
-!   INTEGER       :: T_peak         ! DOY of annual temp peak      [DOY]
-!   REAL(KIND=dp) :: z_ref,       & ! reference surface elevation  [m a.s.l.]
-!                    alpha,       & ! Anual air temp. amp          [K]
-!                    dTdz,        & ! air temp lapse rate          [K m-1]
-!                    T_mean,      & ! mean annual surf. air. temp  [K]
-!                    T(365),      & ! surface air temperature      [K]
-!                    std_c0,      &
-!                    std_c1,      &
-!                    std_c2
-!   ! internal integers
-!   INTEGER       :: i, n,        &  ! index counter
-!                    cont,        &  ! vertically alligned node index counter
-!                    d,           &  ! julian calendar day  counter
-!                    N_n,         &  ! number of model    nodes
-!                    N_s,         &  ! number of surface  nodes
-!                    N_v,         &  ! number of vertical nodes
-!                    doy_i,       &
-!                    doy_ip1
-!   real(kind=dp) :: test
-!
-!   REAL(KIND=dp) :: z,           &
-!                    Time,        &
-!                    T_melt,      &
-!                    L_heat,      &  ! Latnet heat of fusion [J kg-1]
-!                    f_snow,      &  ! Degree-day factor     [m K^-1 a^-1]
-!                    rho_i,       &  ! denisty of ice        [Kg m^-3]
-!                    rho_w,       &  ! denisty of water      [Kg m^-3]
-!                    rho_s,       &  ! denisty of snow       [Kg m^-3]
-!                    PDD(365)=0,  &  ! + degrees. for DOY    [K]
-!                    T_ref,       &
-!                    CapA,        &
-!                    CapB,        &
-!                    H_surf,      &  ! surface enthalpy
-!                    Q_m             ! latent heat souce
-!
-!   LOGICAL :: GotIt,first_time=.true.
-!
-!   !-------------------------
-!   ! First time loop
-!   !-------------------------
-!   save first_time,N_v,N_s,N_n
-!
-!
-!   ! Variable declaration that only needs to be run once (i.e. first time)
-!   IF (first_time) THEN
-!     ! set first_time to false for all subsequent time steps
-!     first_time=.false.
-!
-!
-!     ! Loop over all model nodes
-!     DO i=1,model % NumberOfNodes
-!       IF (model%nodes%x(i+1) < model%nodes%x(i)) THEN
-!         EXIT
-!       ENDIF
-!     ENDDO
-!     N_n = Model % NumberOfNodes ! Number of Nodes in Models
-!     N_s = i                     ! Number of surface nodes
-!     N_v = N_n/i                 ! Number of vertical nodes
-!   ENDIF
-!   ! End "first_time" loop
-!
-!   ! Pointer to the model variables
-!   SurfEnth => VariableGet( Model % Variables, "Surface Enthalpy")
-!   H_f      => VariableGet( Model % Variables, "Phase Change Enthalpy")
-!   Firn     => VariableGet( Model % Variables, "Firn")
-!   Depth    => VariableGet( Model % Variables, "Depth")
-!   Dens     => VariableGet( Model % Variables, "Densi")
-!   MB       => VariableGet( Model % Variables, "mass balance")
-!
-!   ! Physical Parameters
-!   rho_i  = GetConstReal(Model % Constants,  "rho_i")   ![kg m-3]
-!   rho_s  = GetConstReal(Model % Constants,  "rho_s")   ![kg m-3]
-!   rho_w  = GetConstReal(Model % Constants,  "rho_w")   ![kg m-3]
-!   ! Physical constants
-!   L_heat = GetConstReal( Model % Constants, "L_heat")  ![J kg-1]
-!   T_ref  = GetConstReal(Model % Constants, "t_ref_enthalpy")            ! [K]
-!   CapA   = GetConstReal(Model % Constants, "Enthalpy Heat Capacity A")  ! [J kg-1 K-2]
-!   CapB   = GetConstReal(Model % Constants, "Enthalpy Heat Capacity B")  ! [J kg-1 K-1]
-!   ! Melt Parameters
-!   f_snow = GetConstReal(Model % Constants, "f_snow")   ![kg m-2 yr-1]
-!   T_melt = GetConstReal(Model % Constants, "T_melt")   ![K]
-!   ! Air temperature related Parameters
-!   alpha  = GetConstReal(Model % Constants, "alpha")    ! [K]
-!   dTdz   = GetConstReal(Model % Constants, "dTdz" )    ! [K m^{-1}]
-!   T_mean = GetConstReal(Model % Constants, "T_mean")   ! [K]
-!   T_peak = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
-!   z_ref  = GetConstReal(Model % Constants, "z_ref" )   ! [m a.s.l.]
-!   std_c0 = GetConstReal(Model % Constants, "std_c0")   ! [K?]
-!   std_c1 = GetConstReal(Model % Constants, "std_c1")   ! [K?]
-!   std_c2 = GetConstReal(Model % Constants, "std_c2")   ! [K?]
-!
-!
-!
-!   if (TransientSimulation) then
-!     ! if transient get current timestep
-!     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-!     ! Get current time
-!     Time     =  TimeVar % Values(1)
-!     ! Find DOY of current timestep
-!     doy_i   = NINT((Time - floor(Time)) * 365.0)
-!     ! find DOY of next    timestep
-!     doy_ip1 = NINT(((Time+dt) - floor(Time)) * 365.0)
-!
-!     write(*,*) doy_ip1-doy_i
-!   else
-!     ! set the "timestep" as one year
-!     dt = 1
-!     ! if steady state get yearly amount of melt
-!     doy_i   = 1
-!     doy_ip1 = 365
-!   endif
-!
-!   ! Outter Most Loop: Itterate of model nodes
-!   DO n=1,N_n
-!     ! Check if depth == 0.0 for node, i.e. is it a surface node
-!     IF (Depth%Values(Depth%perm(n))==0.0) THEN
-!
-!       z = model%nodes%y(n)
-!
-!       ! Calculate nodal air temperature curve
-!       call SurfTemp(z, T, alpha, dTdz, &
-!                     z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /))
-!
-!       ! only loop over DOY within current timestep
-!       DO d=doy_i,doy_ip1
-!         ! Subtract the melting temperature to find the daily positive degrees
-!         PDD(d) = MAX(T(d)-T_melt, 0.0) ! [K]
-!       END DO
-!
-!       ! Calculate mean air temp of timestep [K]
-!       T_mean = SUM( T(doy_i:doy_ip1) ) / (doy_ip1-doy_i) + 273.15
-!       ! temperature of ice cannot exceed 0 C
-!       if (T_mean > 273.15) then
-!         T_mean = 273.15
-!       end if
-!       ! Calculate surface enthalpy from just direchlet condition [J kg-1]
-!       H_surf = (CapA/2.0*(T_mean**2 - T_ref**2) + CapB*(T_mean-T_ref))
-!
-!       ! Test if 2nd coord (z) is greater then Z_ELA
-!       IF (MB % values (MB % perm(n)) > 0.0) THEN
-!         ! Set the firn thickness
-!         Firn % values (Firn % perm(n)) = 3.0 ! [m]
-!
-!         ! Calculate the volumtric latent heat source [J m-3 yr-1]
-!         Q_m = (1 - 0.3)*(rho_w/3.0)*L_heat*(1/rho_s)*f_snow*SUM(PDD)
-!         ! Convert from volumetric heat source to enthalpy [J kg-1]
-!         Q_m = Q_m * (1/rho_s) * dt
-!
-!         ! Add the enthalpy released from meltwater refreezing
-!         H_surf = H_surf + Q_m
-!
-!         ! If the surface enthalpy from Dirichlet condition + heat source exceeds
-!         ! the enthalpy of fusion, then set surface enthalpy to H_f
-!         if (H_surf > H_f % values ( H_f % perm(n) ) ) then
-!           H_surf =  H_f % values ( H_f % perm(n) )
-!         end if
-!
-!         ! Set the value for the surface enthalpy
-!         SurfEnth % values ( SurfEnth % perm (n) ) = H_surf
-!
-!         ! ! set the heat source one layer below surface so as not to conflict with
-!         ! ! direchlet boundary condition
-!         ! cont=n-N_s
-!         ! ! Calculate the volumtric latent heat source [J m-3 yr-1]
-!         ! Q_lat % values (Q_lat % perm(cont)) = (1 - 0.3) * &
-!         !                                    (rho_w/3.0) * L_heat * (1/rho_s) * f_snow*SUM(PDD)
-!       ElSE
-!         ! Set the firn thickness and melt to 0 everywhere else
-!         Firn  % values (Firn  % perm(n)) = 0.0
-!         SurfEnth % values (SurfEnth % perm(n)) = H_surf
-!       ENDIF
-!
-!       ! iterate over vertically aligned nodes to set firn density
-!       do i=1,N_v
-!
-!         ! index of ith vertically aligned node
-!         cont=n-(i-1)*N_s
-!
-!         ! Check if within firn aquifer, if so set linear density profile
-!         if (Firn % values (Firn % perm(n)) > 1.0) then
-!
-!           ! Cuffey and paterson EQN 2.2
-!           Dens % values ( Dens % perm(cont)) = &
-!           rho_i - (rho_i - rho_s) * exp( -0.05 * Depth % values (Depth % perm(cont)))
-!
-!         else
-!           Dens % values ( Dens % perm(cont)) = rho_i
-!         endif
-!
-!         ! Make sure density isn't greater than the ice density
-!         if (Dens % values ( Dens % perm(cont)) > rho_i) then
-!           Dens % values ( Dens % perm(cont)) = rho_i
-!         endif
-!       end do
-!     ENDIF
-!   ENDDO
-! END SUBROUTINE Wilson_and_Flowers_2013
+  ! subfunction for reading constants and error checking
+  function GetParam(Model, constant_name,) result(constant)
+    USE DefUtils
+    implicit none
+
+    real :: constant
+    logical :: GotIt
+    TYPE(Model_t), intent(in) :: Model
+    character(len=2000), intent(in) :: constant_name
+
+    constant = GetConstReal(Model % Constants, trim(constant_name), GotIt)
+
+    if (.not. GotIt) then
+      call fatal('getSurfaceEnthalpy ---> GetModelConstant', &
+                 'Could not find '//trim(constant_name) )
+    end if
+
+  end function GetParam
+END SUBROUTINE Surface_Processes
