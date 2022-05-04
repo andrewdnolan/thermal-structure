@@ -9,7 +9,7 @@ EXEC := $(SRC:src/elmer_UDF/%.f90=$(BIN_DIR)/%)
 # compiled fitpack source code
 F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 
-all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary
+all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary $(BIN_DIR)/SurfaceHeating
 
 # compile the net balance boundary conditions functions, while linking to the
 # necessary interface and fitpack source code objects
@@ -20,17 +20,21 @@ $(BIN_DIR)/mass_balance: $(SRC_DIR)/mass_balance.f90 $(BIN_DIR)/fitpack_interfac
 $(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90
 	$(MAKE) -C include/fitpack
 
-# compile surface temperature module neeed for surface boundary conditions
-$(BIN_DIR)/SurfaceTemperature.o : $(SRC_DIR)/SurfTemp_mod.f90
-	elmerf90 $^ -o $@
+# compile surface boundary condtions and link surf temp module
+$(BIN_DIR)/SurfaceBoundary: $(SRC_DIR)/SurfaceBoundary.f90 $(BIN_DIR)/SurfaceTemperature_mod.o
+	elmerf90 $^ -o $@ -I$(BIN_DIR)
 
 # compile surface boundary condtions and link surf temp module
-$(BIN_DIR)/SurfaceBoundary: $(SRC_DIR)/SurfaceBoundary.f90 $(BIN_DIR)/SurfaceTemperature.o
-	elmerf90 $^ -o $@
+$(BIN_DIR)/SurfaceHeating: $(SRC_DIR)/SurfaceHeating.f90 $(BIN_DIR)/SurfaceTemperature_mod.o
+	elmerf90 $^ -o $@ -I$(BIN_DIR)
+
+# compile surface temperature module neeed for surface boundary conditions
+$(BIN_DIR)/SurfaceTemperature_mod.o: $(SRC_DIR)/SurfaceTemperature_mod.f90
+	elmerf90 -c $^ -o $@ -J $(BIN_DIR)
 
 # compile the *.F90 files with the `elmerf90` alias
 $(BIN_DIR)/%: $(SRC_DIR)/%.f90
-	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ]; then\
+	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ] || [ $@ = "bin/SurfaceTemperature_mod" ] || [ $@ = "bin/SurfaceHeating" ]; then\
 		continue; \
 	 else \
 		elmerf90 $^ -o $@ ; \
