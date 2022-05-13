@@ -355,18 +355,19 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !----------------------------------------------------------------------------
   ! external variables
   !----------------------------------------------------------------------------
-  LOGICAL                   :: TransientSimulation  ! Should be .FAlSE. always for now
-  REAL(KIND=dp)             :: dt                   ! Should be 0 for now
-  TYPE(Model_t)             :: Model
-  TYPE(Solver_t)            :: Solver
-  TYPE(Element_t),  POINTER :: Element
+  LOGICAL                    :: TransientSimulation  ! Should be .FAlSE. always for now
+  REAL(KIND=dp)              :: dt                   ! Should be 0 for now
+  TYPE(Model_t)              :: Model
+  TYPE(Solver_t)             :: Solver
+  TYPE(Element_t),   POINTER :: Element
+  TYPE(ValueList_t), POINTER :: BodyForce
 
-  TYPE(Variable_t), POINTER :: Surf_Enthalpy,    &
-                               Firn,             &  ! firn thickness      [m]
-                               Depth,            &  ! Depth below surf    [m]
-                               TimeVar,          &  ! Time                [yr]
-                               MB,               &  ! Mass Balance (i.e.) [m yr]
-                               Dens                 ! Ice Depth           [m]
+  TYPE(Variable_t), POINTER  :: Surf_Enthalpy, &
+                                H_f,           &  ! Phase Change Enthalpy [J kg-1]
+                                Depth,         &  ! Depth below surf      [m]
+                                TimeVar,       &  ! Time                  [yr]
+                                MB,            &  ! Mass Balance (i.e.)   [m yr]
+                                Dens              ! Ice Depth             [m]
 
   !----------------------------------------------------------------------------
   ! Local variables
@@ -376,6 +377,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   INTEGER       :: i, n,        &  ! index counter
                    cont,        &  ! vertically alligned node index counter
+                   e,           &  ! element counter
                    d,           &  ! julian calendar day  counter
                    N_n,         &  ! number of model    nodes
                    N_s,         &  ! number of surface  nodes
@@ -417,7 +419,12 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   REAL(KIND=dp) :: T_ref,       &  ! reference temp.      [K]
                    CapA,        &  ! Heat cap. const 1    [J kg-1 K-2]
-                   CapB            ! Heat cap. const 1    [J kg-1 K-1]
+                   CapB,        &  ! Heat cap. const 1    [J kg-1 K-1]
+                   w_max_aq,    &  ! max water content in frin aq [-]
+                   Enthalpy_max    ! Maximum Enthalpy     [J kg-1]
+
+  ! REAL(KIND=dp), allocatable    &
+  !               :: Enthalpy_max(:) ! Maximum Enthalpy     [J kg-1]
 
   LOGICAL :: GotIt,first_time=.true.
 
@@ -445,53 +452,80 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! End "first_time" loop
 
   ! Pointer to the model variables
-  Firn          => VariableGet( Model % Variables, "Firn")
   Depth         => VariableGet( Model % Variables, "Depth")
   Dens          => VariableGet( Model % Variables, "Densi")
   MB            => VariableGet( Model % Variables, "mass balance")
+  H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy")
   Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
   ! Physical Parameters
-  rho_i  = GetParam(Model,  "rho_i")                   ![kg m-3]
-  rho_s  = GetParam(Model,  "rho_s")                   ![kg m-3]
-  rho_w  = GetParam(Model,  "rho_w")                   ![kg m-3]
+  rho_i    = GetParam(Model,  "rho_i")                   ![kg m-3]
+  rho_s    = GetParam(Model,  "rho_s")                   ![kg m-3]
+  rho_w    = GetParam(Model,  "rho_w")                   ![kg m-3]
   ! Physical constants
-  L_heat = GetParam(Model, "L_heat")                   ![J kg-1]
-  T_ref  = GetParam(Model, "t_ref_enthalpy")           ! [K]
-  CapA   = GetParam(Model, "Enthalpy Heat Capacity A") ! [J kg-1 K-2]
-  CapB   = GetParam(Model, "Enthalpy Heat Capacity B") ! [J kg-1 K-1]
+  L_heat   = GetParam(Model, "L_heat")                   ![J kg-1]
+  T_ref    = GetParam(Model, "t_ref_enthalpy")           ! [K]
+  CapA     = GetParam(Model, "Enthalpy Heat Capacity A") ! [J kg-1 K-2]
+  CapB     = GetParam(Model, "Enthalpy Heat Capacity B") ! [J kg-1 K-1]
   ! Melt Parameters
-  f_dd   = GetParam(Model % Constants, "f_dd")         ![m K-1 yr-1]
-  T_melt = GetParam(Model % Constants, "T_melt")       ![K]
+  f_dd     = GetParam(Model, "f_dd")                     ![m K-1 yr-1]
+  T_melt   = GetParam(Model, "T_melt")                   ![K]
   ! Firn Aquifer Parameters
-  h_aq   = GetParam(Model % Constants, "h_aq")         ![m]
-  r_frac = GetParam(Model % Constants, "r_frac")       ![-]
-  C_firn = GetParam(Model % Constants, "C_firn")       ![-]
+  h_aq     = GetParam(Model, "h_aq")                     ![m]
+  r_frac   = GetParam(Model, "r_frac")                   ![-]
+  C_firn   = GetParam(Model, "C_firn")                   ![-]
+  w_max_aq = GetParam(Model, "w_max_aq")
   ! Air temperature related Parameters
-  alpha  = GetParam(Model, "alpha")                    ! [K]
-  dTdz   = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
-  T_mean = GetParam(Model, "T_mean")                   ! [K]
-  T_peak = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
-  z_ref  = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
-  std_c0 = GetParam(Model, "std_c0")                   ! [K?]
-  std_c1 = GetParam(Model, "std_c1")                   ! [K?]
-  std_c2 = GetParam(Model, "std_c2")                   ! [K?]
+  alpha    = GetParam(Model, "alpha")                    ! [K]
+  dTdz     = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
+  T_mean   = GetParam(Model, "T_mean")                   ! [K]
+  T_peak   = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
+  z_ref    = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
+  std_c0   = GetParam(Model, "std_c0")                   ! [K?]
+  std_c1   = GetParam(Model, "std_c1")                   ! [K?]
+  std_c2   = GetParam(Model, "std_c2")                   ! [K?]
+
+  ! ! Allocate Enthalpy Max Array
+  ! allocate(Enthalpy_max(N_n))
+  ! ! Access the Limit Enthalpy
+  ! do e = 1, Solver % NumberOfActiveElements
+  !   Element   => GetActiveElement(e)
+  !   BodyForce =>
+  ! end do
 
 
   if (TransientSimulation) then
-    ! if transient get current timestep
+    ! if transient get current timestep, which is really time at end of timestep
     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
     ! Get current time
     Time    =   TimeVar % Values(1)
-    ! Find DOY of current timestep [d]
-    doy_i   = NINT(MOD(time, 1.0) * 365.0)
+
+    ! find DOY of next timestep [d]
+    doy_i = NINT(MOD(time-dt, 1.0) * 365.0)
 
     ! B/C round off error ith doy sometimes is 365 instead of 0. Check and fix
     if (doy_i==365) then
       doy_i = 0
     end if
 
-    ! find DOY of next timestep [d]
-    doy_ip1 = NINT(MOD(time+dt, 1.0) * 365.0)
+    ! Find DOY of current timestep [d]
+    doy_ip1   = NINT(MOD(time, 1.0) * 365.0)
+
+    ! ! B/C round off error ith doy sometimes is 365 instead of 0. Check and fix
+    ! if (doy_i==365) then
+    !   doy_i = 0
+    ! end if
+
+    ! ! find DOY of next timestep [d]
+    ! doy_ip1 = NINT(MOD(time+dt, 1.0) * 365.0)
+
+    ! yearly timesteps give inf mean annual air temp due to division by zero
+    ! also don't prodcuce any melt by default
+    if ((doy_ip1-doy_i .eq. 0) .and. (MOD(dt, 1.0) .eq. 0.0)) then
+      doy_i   = 1
+      doy_ip1 = 365
+    end if
+
+    write(*,*)  Time, dt
   else
     ! set the "timestep" as one year
     dt = 1
@@ -516,7 +550,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! only loop over DOY within current timestep
       DO d=doy_i,doy_ip1
         ! Subtract the melting temperature to find the daily positive degrees
-        PDD(d) = MAX(T(d)-T_melt, 0.0) ! [K]
+        PDD(d) = MAX(T(d)-T_melt, T_melt) ! [K]
       END DO
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -534,9 +568,16 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Convert surface air temperature to enthalpy
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
       ! Calculate mean annual airtemp over timestep and convert from [C] to [K]
-      T_surf = SUM(T(doy_i:doy_ip1))/(doy_ip1-doy_i) + 273.15
+
+      ! yearly timesteps give inf mean annual air temp due to division by zero
+      if ((doy_ip1-doy_i .eq. 0) .and. (MOD(dt, 1.0) .eq. 0.0)) then
+        T_surf = SUM(T)/365.0 + 273.15
+      else
+        T_surf = SUM(T(doy_i:doy_ip1))/(doy_ip1-doy_i) + 273.15
+      end if
+
+      if (n .eq. N_n) write(*,*) doy_i, doy_ip1, doy_ip1-doy_i, T_surf-273.15
 
       ! Temperature can't exced the melting point at the surface
       if (T_surf > 273.15) then
@@ -544,14 +585,20 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       endif
 
       ! Convert surface air temp to enthalpy
-      H_surf =  (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+      H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+      ! Add the surface heating to the surface enthalpy
+      H_surf =  Q_lat/rho_w + H_surf
 
-      ! Set the surface enthalpy based on temp and surface heating term
-      Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = Q_lat/rho_w + H_surf
+      ! calculate maximum enthalpy
+      Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_aq * L_heat
 
-      !-------------------------------------------------------------------------
-      ! TO DO: Add check if surface enthalpy exceeds enthalpy upper limit
-      !-------------------------------------------------------------------------
+      if (H_surf .ge. Enthalpy_max) then
+        ! Limit the surface enthalpy based on max englacial water content
+        Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = Enthalpy_max
+      else
+        ! Set the surface enthalpy based on temp and surface heating term
+        Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = H_surf
+      end if
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set variable (w/ depth) surface density in the accumulation zone
@@ -577,13 +624,13 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         endif
       end do
 
-      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! Set a seasonal snow layer, a crude approximation
-      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! if no melt occurs set the surface denisty to that of snow
-      if ( SUM(PDD) == 0 ) then
-        Dens % values ( Dens % perm(n)) = rho_s
-      end if
+      ! !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! ! Set a seasonal snow layer, a crude approximation
+      ! !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! ! if no melt occurs set the surface denisty to that of snow
+      ! if ( SUM(PDD) == 0 ) then
+      !   Dens % values ( Dens % perm(n)) = rho_s
+      ! end if
 
     ENDIF
   ENDDO
@@ -591,19 +638,19 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   contains
 
   ! subfunction for reading constants and error checking
-  function GetParam(Model, constant_name,) result(constant)
+  function GetParam(Model, constant_name) result(constant)
     USE DefUtils
     implicit none
 
     real :: constant
     logical :: GotIt
-    TYPE(Model_t), intent(in) :: Model
-    character(len=2000), intent(in) :: constant_name
+    TYPE(Model_t) :: Model
+    character(len=*) :: constant_name
 
     constant = GetConstReal(Model % Constants, trim(constant_name), GotIt)
 
     if (.not. GotIt) then
-      call fatal('getSurfaceEnthalpy ---> GetModelConstant', &
+      call fatal('Surface_Processes ---> GetParam', &
                  'Could not find '//trim(constant_name) )
     end if
 
