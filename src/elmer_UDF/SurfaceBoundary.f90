@@ -624,13 +624,13 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         endif
       end do
 
-      ! !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! ! Set a seasonal snow layer, a crude approximation
-      ! !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! ! if no melt occurs set the surface denisty to that of snow
-      ! if ( SUM(PDD) == 0 ) then
-      !   Dens % values ( Dens % perm(n)) = rho_s
-      ! end if
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Set a seasonal snow layer, a crude approximation
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! if no melt occurs set the surface denisty to that of snow
+      if ( SUM(PDD) == 0 ) then
+        Dens % values ( Dens % perm(n)) = rho_s
+      end if
 
     ENDIF
   ENDDO

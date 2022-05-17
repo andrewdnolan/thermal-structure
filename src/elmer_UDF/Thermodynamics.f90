@@ -37,7 +37,7 @@ function  Diffusivity(Model, Node, Temp) result(EnthalpyDiffusivity)
 
   ! Conductivity  [J a^-1 kg^-1 K^-1] <-- [W K^-1 m^-1] == [J s^-1 K^-1 m^-1]
   ! accounting for both temp and denisty dependence [Eqn. 18 Zwinger et al. 2007]
-  HeatConductivity = (K_rho / K_rho_i * K_ice) * 3600.0*24.0*365.25
+  HeatConductivity = (K_rho / K_rho_i) * K_ice * 3600.0*24.0*365.25
 
   ! Diffusivity [kg m^-1 a^-1]
   EnthalpyDiffusivity = HeatConductivity / Heat_Capacity
