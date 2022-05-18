@@ -146,7 +146,6 @@ T_ma=-9.02
 # make a list of mass balance offsets
 offsets=($(seq -w $MB_0 $MB_s $MB_f))
 
-SLURM_ARRAY_TASK_ID=21
 # bash arrays zero indexed
 N=$((SLURM_ARRAY_TASK_ID-1))
 
