@@ -29,7 +29,7 @@ std_c2 = real  6.31076200e+00
 ! Surface heating (latent heat) related params
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 T_melt = real 0.0         ! Melting temp. threshold      [C]
-h_aq   = real 0.05        ! frin aquifer thickness       [m]
+h_aq   = real 3.00        ! frin aquifer thickness       [m]
 f_dd   = real 0.003       ! degree day factor            [m K-1 d-1]
 r_frac = real 0.3         ! melt fraction that runs off  [-]
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
