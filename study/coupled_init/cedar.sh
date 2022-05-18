@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --array=1-21%10                            # 21 jobs that run 10 at a time
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
-#SBATCH --mem-per-cpu=1000M                        # maximum 2250MMB per job
-#SBATCH --time=00:30:00                            # maximum walltime per job
+#SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
+#SBATCH --time=40:00:00                            # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -168,15 +168,14 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 # transient run
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=0.1
-NT=50
-TT=5
+NT=20000
+TT=2000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable
 RESTART="${run_name}.result"
 # prognostic run name
-run_name="${KEY}_dx_${dx}_${NT}_${dt}_MB_${offset}_OFF_prog"
-# run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_prog"
+run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_prog"
 
 # Start the timer
 start=$(date +%s.%N)
