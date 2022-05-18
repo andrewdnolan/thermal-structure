@@ -185,7 +185,7 @@ Material 1
   ! NOTE: the enthalpy heat Diffusivity should be a function of temperature and
   !       density
   Enthalpy Heat Diffusivity  = Variable Temperature
-                               Real procedure "../../bin/thermodynamics" "Diffusivity"
+                               Real procedure "../../bin/Thermodynamics" "Diffusivity"
 End
 
 ! Soft Limiters for Free Sufrace

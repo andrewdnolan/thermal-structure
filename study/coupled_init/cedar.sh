@@ -175,8 +175,8 @@ SS_itters=10
 # diagnostic run is now restart variable
 RESTART="${run_name}.result"
 # prognostic run name
-# run_name="${KEY}_dx_${dx}_${NT}_${dt}_MB_${offset}_OFF_prog"
-run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_prog"
+run_name="${KEY}_dx_${dx}_${NT}_${dt}_MB_${offset}_OFF_prog"
+# run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_prog"
 
 # Start the timer
 start=$(date +%s.%N)
