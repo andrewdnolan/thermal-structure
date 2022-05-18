@@ -64,13 +64,13 @@ diagnostic_run()
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<run_name>#"$run_name"#g;
-       s#<SS_itters>#"$SS_itters"#g;" "./sifs/diagnostic.sif" > "./sifs/SS.sif"
+       s#<SS_itters>#"$SS_itters"#g;" "./sifs/diagnostic.sif" > "./sifs/${run_name}.sif"
 
   # filepath to log file
   # log_file="${KEY}/logs/${run_name}.log"
 
   # Run the model
-  ElmerSolver "./sifs/SS.sif" #| tee $log_file
+  ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
   # number of steady state itteration required
   n_itter=$(tac "./${KEY}/mesh_dx${dx}/${run_name}.result" | \
@@ -83,7 +83,7 @@ diagnostic_run()
                                 -o "./${KEY}/nc/"
 
   # # Remove the sif file
-  rm "./sifs/SS.sif"
+  rm "./sifs/${run_name}.sif"
 
 }
 
@@ -98,13 +98,13 @@ prognostic_run()
        s#<T_mean>#"$T_ma"#g;
        s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
-       s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/diag.sif"
+       s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
 
   # filepath to log file
   log_file="${KEY}/logs/${run_name}.log"
 
   # Run the model
-  ElmerSolver "./sifs/diag.sif" #| tee $log_file
+  ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
   # Convert result files into NetCDFs
   ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
@@ -113,7 +113,7 @@ prognostic_run()
                                 -o "./${KEY}/nc/"
 
   # # Remove the sif file
-  rm "./sifs/diag.sif"
+  rm "./sifs/${run_name}.sif"
 
 }
 
