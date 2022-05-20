@@ -96,6 +96,7 @@ prognostic_run()
        s#<KEY>#"$KEY"#g;
        s#<FIT>#"$FIT"#g;
        s#<T_mean>#"$T_ma"#g;
+       s#<offset>#"$offset"#g;
        s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
        s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
