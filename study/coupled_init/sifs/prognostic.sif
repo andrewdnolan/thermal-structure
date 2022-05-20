@@ -46,7 +46,7 @@ Constants
 
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
-  Mass Balance Offset             = Real -1.175    ! m y^{-1}
+  Mass Balance Offset             = Real <offset>  ! m y^{-1}
   T_mean                          = real <T_mean>  ! Mean annual air temp @ z_ref [C]
 
   !~~~~~~~~~~~~~~~~~~~~~~~~~~
