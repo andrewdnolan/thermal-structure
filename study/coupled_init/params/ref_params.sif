@@ -4,10 +4,25 @@
 rho_i    = real 910.0   ! ice          density         [kg m^{-3}]
 rho_s    = real 350.0   ! snow/surface density         [kg m^{-3}]
 rho_w    = real 1000.0  ! water        density         [kg m^{-3}]
-rho_f    = real 810.0   ! pore close off density       [kg m^{-3}]
+rho_f    = real 830.0   ! pore close off density       [kg m^{-3}]
 ! Enthalpy Related Params
 w_max_en = real 0.03    ! max englacial water content  [-]
 w_max_aq = real 0.10    ! max water content in frin aq [-]
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! Thermodynamic parameters:
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+t_ref_enthalpy = real 200.0           ! Ref. temp. for Enthalpy calc    [K]
+P_surf         = real 0.1013          ! Surface atmospheric pressure    [MPa]
+P_triple       = real 6.1173e-4       ! Triple point pressure for water [MPa]
+! From Cuffey and Paterson 4th Ed. (2010)
+T_triple       = Real 273.16          ! Temp. @ triple point of water   [K]
+beta_clapeyron = real 0.098           ! Press. melting slope            [K MPa-1]
+L_heat         = real 333500.0        ! Latent heat of fusion           [J kg-1]
+!   Cp(T) = A*T + B
+Enthalpy Heat Capacity A = real 7.122 !                                 [J kg-1 K-2]
+Enthalpy Heat Capacity B = real 152.5 !                                 [J kg-1 K-1]
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

@@ -48,20 +48,6 @@ Constants
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
   Mass Balance Offset             = Real <offset>  ! m y^{-1}
   T_mean                          = real <T_mean>  ! Mean annual air temp @ z_ref [C]
-
-  !~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ! Thermodynamic parameters:
-  !~~~~~~~~~~~~~~~~~~~~~~~~~~
-  t_ref_enthalpy                  = real 200.0     ![K]
-  L_heat                          = real 334000.0  ![J kg-1]
-  !   Cp(T) = A*T + B
-  Enthalpy Heat Capacity A        = real 7.253     ![J kg-1 K-2]
-  Enthalpy Heat Capacity B        = real 146.3     ![J kg-1 K-1]
-  !
-  P_surf                          = real 0.1013    ![MPa] Surface atmospheric pressure
-  P_triple                        = real 6.1173e-4 ![MPa] Triple point pressure for water
-  T_triple                        = Real 273.16    ![K]       Temperature of water triple point
-  beta_clapeyron                  = real 0.0974    ![K MPa-1] Clausus clapeyron relationship (Gilbert et al. 2014)
   Pressure Variable               = String "Pressure"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -82,7 +68,7 @@ Simulation
 
   Timestep Intervals          = <NT>  ![a]
   Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = 10
+  Output Intervals            = 1
 
   ! Post File                   = "VTU/<run_name>.vtu"
   Output File                 = "<run_name>.result"               !\"
@@ -426,7 +412,7 @@ Solver 9
    ! needed for storing the initial shape (needed for updates)
    Exported Variable 2                     = -dofs 1 "RefZs"
    ! needed for save surface boundary conditions
-   ! Exported Variable 3                     = -dofs 1 "Zs Accumulation Flux 2"
+   Exported Variable 3                     = -dofs 1 "Zs Accumulation Flux 2"
 End
 
 ! Solver 10

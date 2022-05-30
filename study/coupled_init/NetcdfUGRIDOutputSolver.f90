@@ -66,7 +66,7 @@
 
       CHARACTER(MAX_NAME_LEN) :: BaseFile,OutputDirectory
 
-      LOGICAL :: ComputeLonLat=.FALSE.
+      LOGICAL :: ComputeLonLat=.FALSE., clober=.TRUE.
 ! #ifdef HAVE_PROJ
 !       TYPE(pjuv_object) :: coordp,coordg
 !       TYPE(pj_object) :: pj
@@ -150,7 +150,11 @@
 !         END IF
 ! #endif
 
-        CALL CreatNetcdfFile(NcFile,NumberOfDofNodes,NumberOfElements)
+        ! determine if existing files should be over written (i.e. clobbered)
+        Clober = ListGetLogical( Params,'Overwrite',GotIt )
+        IF ( .NOT.GotIt ) Clober = .TRUE.
+
+        CALL CreatNetcdfFile(NcFile,NumberOfDofNodes,NumberOfElements,Clober)
         CALL Info(Caller, 'CreatNetcdfFile Done')
 
         CALL WriteMeshInfo(NcFile)
@@ -161,10 +165,11 @@
       CALL WriteVariables(NcFile,nTime)
 
       CONTAINS
-        SUBROUTINE CreatNetcdfFile(FName,NNodes,NBulkElements)
+        SUBROUTINE CreatNetcdfFile(FName,NNodes,NBulkElements,Clober)
         implicit none
         Character(LEN=MAX_NAME_LEN),INTENT(IN) :: FName
         INTEGER, INTENT(IN) :: NNodes,NBulkElements
+        LOGICAL, INTENT(IN) :: Clober
 
         TYPE(Variable_t),POINTER :: Solution
         CHARACTER(LEN=1024) :: Txt, ScalarFieldName
@@ -178,8 +183,11 @@
 
         LOGICAL :: ScalarsExist
 
-        ! do not overwrite file... for now
-        call check( nf90_create(TRIM(FName),NF90_NOCLOBBER,ncid))
+        ! If "Overwrite" keyword passed then clobber existing files
+        if (Clober) then
+          call check( nf90_create(TRIM(FName),NF90_CLOBBER,ncid))
+        else
+          call check( nf90_create(TRIM(FName),NF90_NOCLOBBER,ncid))
 
         call check( nf90_def_dim(ncid,'nMesh_node',NNodes,dimid(1)))
         call check( nf90_def_dim(ncid,'nMesh_face',NBulkElements,dimid(2)))

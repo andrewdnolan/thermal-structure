@@ -88,6 +88,7 @@ prognostic_run()
        s#<KEY>#"$KEY"#g;
        s#<FIT>#"$FIT"#g;
        s#<T_mean>#"$T_ma"#g;
+       s#<offset>#"$offset"#g;
        s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
        s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/diag.sif"
@@ -128,10 +129,10 @@ for offset in $(seq -w $MB_f $MB_s $MB_f); do
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
   # make the run name based on model params
-  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_diag"
+  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag"
 
   # run the model for a given offset
-  # diagnostic_run $dx $KEY $offset $run_name $SS_itters
+  diagnostic_run $dx $KEY $offset $run_name $SS_itters
 
 
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@

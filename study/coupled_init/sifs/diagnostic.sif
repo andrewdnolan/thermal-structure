@@ -43,20 +43,6 @@ Constants
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
   Mass Balance Offset             = Real <offset>  ! m y^{-1}
   T_mean                          = real <T_mean>  ! Mean annual air temp @ z_ref [C]
-
-  !~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ! Thermodynamic parameters:
-  !~~~~~~~~~~~~~~~~~~~~~~~~~~
-  t_ref_enthalpy                  = real 200.0     ![K]
-  L_heat                          = real 334000.0  ![J kg-1]
-  !   Cp(T) = A*T + B
-  Enthalpy Heat Capacity A        = real 7.253     ![J kg-1 K-2]
-  Enthalpy Heat Capacity B        = real 146.3     ![J kg-1 K-1]
-  !
-  P_surf                          = real 0.1013    ![MPa] Surface atmospheric pressure
-  P_triple                        = real 6.1173e-4 ![MPa] Triple point pressure for water
-  T_triple                        = Real 273.16    ![K]       Temperature of water triple point
-  beta_clapeyron                  = real 0.0974    ![K MPa-1] Clausus clapeyron relationship (Gilbert et al. 2014)
   Pressure Variable               = String "Pressure"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -220,17 +206,16 @@ End
 
 ! Export time dependent Hydrostatic Pressure
 Solver 3
-  ! Exec Solver      = String "Never"
+   ! Exec Solver      = String "Never"
    Equation = "UpdateExport"
    Procedure = File "ElmerIceSolvers" "UpdateExport"
    Variable = -nooutput "dumy"
 
-   Exported Variable 1 = -dofs 1 "Zs Accumulation Flux 2"
-   Exported Variable 2 = -dofs 1 "Zs Accumulation Flux 2"
+   Exported Variable 1 = -dofs 1 "Mass Balance"
 End
 
 Solver 4
-  ! Exec Solver                   = String "Never"
+  Exec Solver                   = String "Never"
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
   Linear System Residual Output = Integer 0
@@ -363,14 +348,14 @@ Solver 8
   ! calculate loads = true
 End
 
-Solver 9
-  Equation      = "SaveBoundaryValues"
-  Procedure     = File "SaveData" "SaveBoundaryValues"
-  Exec Solver   = "Before Simulation"
-  ! a dummy variable for the solver that does not show up
-  Variable      = String -nooutput "dummyvar"
-  Parameter 1   =  String "Zs Accumulation Flux 2"
-End
+! Solver 9
+!   Equation      = "SaveBoundaryValues"
+!   Procedure     = File "SaveData" "SaveBoundaryValues"
+!   Exec Solver   = "Before Simulation"
+!   ! a dummy variable for the solver that does not show up
+!   Variable      = String -nooutput "dummyvar"
+!   Parameter 1   =  String "Zs Accumulation Flux 2"
+! End
 
 ! Solver 10
 !    Equation = "NetcdfOutPutSolve"
@@ -404,7 +389,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(9)  = 1 2 3 4 5 6 7 8 9
+  Active Solvers(8)  = 1 2 3 4 5 6 7 8
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END EQUATION
@@ -432,6 +417,10 @@ Body Force 1
   Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
                            real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy"
   Enthalpy_h Lower Limit = real 0.0
+
+  ! Mass Balance Forcing to calculate latent heat source
+  Mass Balance = Variable Coordinate 2
+                           Real Procedure "../../bin/mass_balance" "<FIT>"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
@@ -474,11 +463,6 @@ Boundary Condition 2
                       End
   Depth                = Real 0.0
   Enthalpy_h           = Equals "Surface_Enthalpy"
-
-  ! Mass Balance Forcing to calculate latent heat source
-  Zs Accumulation Flux 1 = Real 0.0e0
-  Zs Accumulation Flux 2 = Variable Coordinate 2
-                           Real Procedure "../../bin/mass_balance" "<FIT>"
 End
 
 ! Front of the glacier
