@@ -21,7 +21,6 @@ contains
                                  ref_z,   & ! Reference surface elev. [m a.s.l.]
                                  T_mean,  & ! Mean annual T @ ref_z   [C]
                                  coefs(3)   ! Coefs for T_std(doy)    [?]
-
     ! resulting vector
     real(kind=dp), intent(out) :: T(365)    ! T(DOY) @ nodal z          [m]
 
@@ -40,10 +39,10 @@ contains
         call temp_std(std, i, coefs)
 
         ! Find surface temp for DOY(i)
-        T(i) = T_mean                                 & ! mean signal
-               + alpha*cos(2*3.14*(i - T_peak)/365.0) & ! seasonal cycle
-               + grad_T*(ref_z-z)                     & ! elevation dependence
-               + norm_rand(0.0_dp, std)                 ! random variability
+        T(i) = T_mean                                       & ! mean signal
+             + alpha*cos(2.0_dp*PI*float(i - T_peak)/365.0) & ! seasonal cycle
+             + grad_T*(ref_z-z)                             & ! elevation dependence
+             + norm_rand(0.0_dp, std)                         ! random variability
 
     ENDDO
 

@@ -420,7 +420,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   REAL(KIND=dp) :: T_ref,       &  ! reference temp.      [K]
                    CapA,        &  ! Heat cap. const 1    [J kg-1 K-2]
                    CapB,        &  ! Heat cap. const 1    [J kg-1 K-1]
-                   w_max_aq,    &  ! max water content in frin aq [-]
+                   w_max_aq,    &  ! max water content in frin aq  [-]
+                   w_max_en,    &  ! max water content in glac ice [-]
                    Enthalpy_max    ! Maximum Enthalpy     [J kg-1]
 
   ! REAL(KIND=dp), allocatable    &
@@ -474,6 +475,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   r_frac   = GetParam(Model, "r_frac")                   ![-]
   C_firn   = GetParam(Model, "C_firn")                   ![-]
   w_max_aq = GetParam(Model, "w_max_aq")
+  w_max_en = GetParam(Model, "w_max_en")
   ! Air temperature related Parameters
   alpha    = GetParam(Model, "alpha")                    ! [K]
   dTdz     = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
@@ -525,7 +527,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       doy_ip1 = 365
     end if
 
-    write(*,*)  Time, dt
+    ! write(*,*)  Time, dt
   else
     ! set the "timestep" as one year
     dt = 1
@@ -559,10 +561,18 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
         ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
-        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * f_dd * SUM(PDD)
+        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * f_dd * SUM(PDD) * (doy_ip1-doy_i)
+
+        !write(*,*) "Melt:", f_dd * SUM(PDD) * (doy_ip1-doy_i)/365.0, "m / yr"
+
+        ! calculate maximum enthalpy: above the ELA account for the maximum
+        ! water content being higher due to the porosity of firn
+        Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_aq * L_heat
       ElSE
         ! below the ELA so no latent heat source available
         Q_lat = 0.0
+        ! below the ELA bound max water content at englacial values.
+        Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_en * L_heat
       ENDIF
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -588,9 +598,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
       ! Add the surface heating to the surface enthalpy
       H_surf =  Q_lat/rho_w + H_surf
-
-      ! calculate maximum enthalpy
-      Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_aq * L_heat
 
       if (H_surf .ge. Enthalpy_max) then
         ! Limit the surface enthalpy based on max englacial water content
