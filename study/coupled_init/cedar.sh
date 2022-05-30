@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-21%10                            # 21 jobs that run 10 at a time
+#SBATCH --array=1-21                              # 21 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
 #SBATCH --time=42:30:00                            # maximum walltime per job
