@@ -49,7 +49,7 @@
       INTEGER,SAVE :: ElemFirst, ElemLast
       INTEGER, ALLOCATABLE, TARGET,SAVE :: NodePerm(:),InvNodePerm(:), InvDgPerm(:), DgPerm(:)
       LOGICAL, ALLOCATABLE,SAVE :: ActiveElem(:)
-      INTEGER,SAVE :: NumberOfGeomNodes,NumberOfDofNodes,NumberOfElements
+      INTEGER,SAVE :: NumberOfGeomNodes,NumberOfDofNodes,NumberOfElements, ActiveDirection
       LOGICAL,SAVE :: NoPermutation
 
 
@@ -153,8 +153,11 @@
         ! determine if existing files should be over written (i.e. clobbered)
         Clober = ListGetLogical( Params,'Overwrite',GotIt )
         IF ( .NOT.GotIt ) Clober = .TRUE.
+        ! Find active coordinate from strucutured mesh mapper
+        ActiveDirection = ListGetInteger( Solver % Values,'Active Coordinate', GotIt)
+        IF ( .NOT.GotIt ) ActiveDirection = 0
 
-        CALL CreatNetcdfFile(NcFile,NumberOfDofNodes,NumberOfElements,Clober)
+        CALL CreatNetcdfFile(NcFile,NumberOfDofNodes,NumberOfElements,Clober,ActiveDirection)
         CALL Info(Caller, 'CreatNetcdfFile Done')
 
         CALL WriteMeshInfo(NcFile)
@@ -165,10 +168,10 @@
       CALL WriteVariables(NcFile,nTime)
 
       CONTAINS
-        SUBROUTINE CreatNetcdfFile(FName,NNodes,NBulkElements,Clober)
+        SUBROUTINE CreatNetcdfFile(FName,NNodes,NBulkElements,Clober,ActiveDirection)
         implicit none
         Character(LEN=MAX_NAME_LEN),INTENT(IN) :: FName
-        INTEGER, INTENT(IN) :: NNodes,NBulkElements
+        INTEGER, INTENT(IN) :: NNodes,NBulkElements,ActiveDirection
         LOGICAL, INTENT(IN) :: Clober
 
         TYPE(Variable_t),POINTER :: Solution
@@ -188,6 +191,7 @@
           call check( nf90_create(TRIM(FName),NF90_CLOBBER,ncid))
         else
           call check( nf90_create(TRIM(FName),NF90_NOCLOBBER,ncid))
+        endif
 
         call check( nf90_def_dim(ncid,'nMesh_node',NNodes,dimid(1)))
         call check( nf90_def_dim(ncid,'nMesh_face',NBulkElements,dimid(2)))
@@ -197,12 +201,7 @@
         call check( nf90_def_var(ncid,'Mesh',NF90_INT,varid))
           call check( nf90_put_att(ncid,varid,"cf_role", "mesh_topology") )
           call check( nf90_put_att(ncid,varid,"topology_dimension", 2) )
-          IF (ComputeLonLat) THEN
-            call check( nf90_put_att(ncid,varid,"node_coordinates", "Mesh_node_lon Mesh_node_lat") )
-            call check( nf90_put_att(ncid,varid,"face_coordinates", "Mesh_face_lon Mesh_face_lat") )
-          ELSE
-            call check( nf90_put_att(ncid,varid,"node_coordinates", "Mesh_node_x Mesh_node_y") )
-          ENDIF
+          call check( nf90_put_att(ncid,varid,"node_coordinates", "Mesh_node_x Mesh_node_y") )
           call check( nf90_put_att(ncid,varid,"face_node_connectivity", "Mesh_face_nodes"))
           call check( nf90_put_att(ncid,varid,"face_dimension","nMesh_face"))
 
@@ -211,35 +210,22 @@
           call check( nf90_def_var_fill(ncid,varid,0,Connect_Fill))
           call check( nf90_put_att(ncid,varid,"start_index",1))
 
-        call check( nf90_def_var(ncid,'Mesh_node_x',NF90_DOUBLE,dimid(1),varid))
-        call check( nf90_def_var(ncid,'Mesh_node_y',NF90_DOUBLE,dimid(1),varid))
+        ! this really shouldn't ever be the case
+        IF( ActiveDirection == 1 ) THEN
+          call check( nf90_def_var(ncid,'Mesh_node_x',NF90_DOUBLE,(/dimid(1),dimid(4)/),varid))
+        ELSE
+          call check( nf90_def_var(ncid,'Mesh_node_x',NF90_DOUBLE,dimid(1),varid))
+        ENDIF
 
-        ! IF (ComputeLonLat) THEN
-        !   call check( nf90_def_var(ncid,'Mesh_node_lon',NF90_DOUBLE,dimid(1),varid))
-        !     call check( nf90_put_att(ncid,varid,"standard_name","longitude"))
-        !     call check( nf90_put_att(ncid,varid,"long_name","nodes longitude"))
-        !     call check( nf90_put_att(ncid,varid,"units","degrees_east"))
-        !
-        !   call check( nf90_def_var(ncid,'Mesh_node_lat',NF90_DOUBLE,dimid(1),varid))
-        !     call check( nf90_put_att(ncid,varid,"standard_name","latitude"))
-        !     call check( nf90_put_att(ncid,varid,"long_name","nodes latitude"))
-        !     call check( nf90_put_att(ncid,varid,"units","degrees_north"))
-        !
-        !   call check( nf90_def_var(ncid,'Mesh_face_lon',NF90_DOUBLE,dimid(2),varid))
-        !     call check( nf90_put_att(ncid,varid,"standard_name","longitude"))
-        !     call check( nf90_put_att(ncid,varid,"long_name","grid center longitude"))
-        !     call check( nf90_put_att(ncid,varid,"units","degrees_east"))
-        !     call check( nf90_put_att(ncid,varid,"bounds","Mesh_face_lonbnds"))
-        !
-        !   call check( nf90_def_var(ncid,'Mesh_face_lat',NF90_DOUBLE,dimid(2),varid))
-        !     call check( nf90_put_att(ncid,varid,"standard_name","latitude"))
-        !     call check( nf90_put_att(ncid,varid,"long_name","grid center latitude"))
-        !     call check( nf90_put_att(ncid,varid,"units","degrees_north"))
-        !     call check( nf90_put_att(ncid,varid,"bounds","Mesh_face_latbnds"))
-        !
-        !   call check( nf90_def_var(ncid,'Mesh_face_lonbnds',NF90_DOUBLE,(/dimid(3),dimid(2)/),varid))
-        !   call check( nf90_def_var(ncid,'Mesh_face_latbnds',NF90_DOUBLE,(/dimid(3),dimid(2)/),varid))
-        ! ENDIF
+        ! this will be the most common usecase during transient simulation
+        IF( ActiveDirection == 2 ) THEN
+          call check( nf90_def_var(ncid,'Mesh_node_y',NF90_DOUBLE,(/dimid(1),dimid(4)/),varid))
+        ELSE
+          call check( nf90_def_var(ncid,'Mesh_node_y',NF90_DOUBLE,dimid(1),varid))
+        ENDIF
+
+        ! do not support three dimensional meshes for now
+        IF( ActiveDirection == 3 ) CALL FATAL(Caller,"Mesh dim should be 2 for now...")
 
         IF (Parallel) THEN
           call check( nf90_def_var(ncid,'BulkElement_GlobalIndex',NF90_INT,dimid(2),varid))
@@ -341,16 +327,6 @@
           END IF
           x(ii) = Mesh%Nodes%x(i)
           y(ii) = Mesh%Nodes%y(i)
-
-! #ifdef HAVE_PROJ
-!           IF (ComputeLonLat) THEN
-!             coordp = pjuv_object(x(ii),y(ii))
-!             coordg = pj_inv(coordp, pj)
-!             NodeLon(ii) = coordg % u * pj_rad_to_deg
-!             NodeLat(ii) = coordg % v * pj_rad_to_deg
-!           ENDIF
-! #endif
-
         END DO
 
         area=0._dp
@@ -383,23 +359,6 @@
             Indexes(1:n,t) = NodePerm( NodeIndexes(1:n) )
           END IF
 
-! #ifdef HAVE_PROJ
-!           IF (ComputeLonLat) THEN
-!             ! element center
-!             xg=SUM(Mesh%Nodes%x(NodeIndexes(1:n)))/n
-!             yg=SUM(Mesh%Nodes%y(NodeIndexes(1:n)))/n
-!             coordp = pjuv_object(xg,yg)
-!             coordg = pj_inv(coordp, pj)
-!             FaceLon(t) =coordg % u * pj_rad_to_deg
-!             FaceLat(t) =coordg % v * pj_rad_to_deg
-!
-!             DO k=1,n
-!               LonBnds(k,t)=NodeLon(Indexes(k,t))
-!               LatBnds(k,t)=NodeLat(Indexes(k,t))
-!             END DO
-!           ENDIF
-! #endif
-
           CALL GetElementNodes( ElementNodes, Element )
 
           IntegStuff = GaussPoints( Element )
@@ -425,48 +384,34 @@
           call check(nf90_put_var(ncid,varid,GIndexes))
         END IF
 
+        ! ! this really shouldn't ever be the case
         call check(nf90_inq_varid(ncid,'Mesh_node_x',VarId))
         call check(nf90_put_var(ncid,varid,x(1:NumberOfDofNodes)))
+        ! IF( ActiveDirection == 1 ) THEN
+        !   call check( nf90_def_var(ncid,'Mesh_node_x',NF90_DOUBLE,(/dimid(1),dimid(4)/),varid))
+        ! ELSE
+        !   call check( nf90_def_var(ncid,'Mesh_node_x',NF90_DOUBLE,dimid(1),varid))
+        ! ENDIF
 
+        ! this will be the most common usecase during transient simulation
         call check(nf90_inq_varid(ncid,'Mesh_node_y',VarId))
         call check(nf90_put_var(ncid,varid,y(1:NumberOfDofNodes)))
+        ! IF( ActiveDirection == 2 ) THEN
+        !   call check( nf90_def_var(ncid,'Mesh_node_y',NF90_DOUBLE,(/dimid(1),dimid(4)/),varid))
+        ! ELSE
+        !   call check( nf90_def_var(ncid,'Mesh_node_y',NF90_DOUBLE,dimid(1),varid))
+        ! ENDIF
 
         call check(nf90_inq_varid(ncid,'Mesh_face_nodes',VarId))
         call check(nf90_put_var(ncid,VarId,Indexes))
 
         call check(nf90_inq_varid(ncid,'BulkElement_Area',VarId))
         call check(nf90_put_var(ncid,varid,area(1:NumberOfElements)))
-
-        ! IF (ComputeLonLat) THEN
-        !   call check(nf90_inq_varid(ncid,'Mesh_node_lon',VarId))
-        !   call check(nf90_put_var(ncid,varid,NodeLon(1:NumberOfDofNodes)))
-        !
-        !   call check(nf90_inq_varid(ncid,'Mesh_node_lat',VarId))
-        !   call check(nf90_put_var(ncid,varid,NodeLat(1:NumberOfDofNodes)))
-        !
-        !   call check(nf90_inq_varid(ncid,'Mesh_face_lat',VarId))
-        !   call check(nf90_put_var(ncid,varid,FaceLat(1:NumberOfElements)))
-        !
-        !   call check(nf90_inq_varid(ncid,'Mesh_face_lon',VarId))
-        !   call check(nf90_put_var(ncid,varid,FaceLon(1:NumberOfElements)))
-        !
-        !   call check(nf90_inq_varid(ncid,'Mesh_face_lonbnds',VarId))
-        !   call check(nf90_put_var(ncid,varid,LonBnds))
-        !
-        !   call check(nf90_inq_varid(ncid,'Mesh_face_latbnds',VarId))
-        !   call check(nf90_put_var(ncid,varid,LatBnds))
-        ! END IF
-
         call check(nf90_close(ncid))
 
         DEALLOCATE(Basis,dBasisdx)
         DEALLOCATE(Vertice,x,y)
         DEALLOCATE(area,Indexes,GIndexes)
-        ! IF (ComputeLonLat) THEN
-        !   DEALLOCATE(NodeLon,NodeLat)
-        !   DEALLOCATE(FaceLon,FaceLat)
-        !   DEALLOCATE(LonBnds,LatBnds)
-        ! ENDIF
 
       END SUBROUTINE WriteMeshInfo
 
@@ -482,6 +427,7 @@
         INTEGER :: ncid,VarId
         INTEGER :: ii,i,j,t,m
 
+        REAL(KIND=dp),ALLOCATABLE :: active_coord(:)
         REAL(KIND=dp),ALLOCATABLE :: NodeVar(:)
         REAL(KIND=dp),ALLOCATABLE :: EVar(:)
 
@@ -499,6 +445,34 @@
         Time = GetTime()
         call check(nf90_inq_varid(ncid,'time',VarId))
         call check(nf90_put_var(ncid,VarId,Time,start= (/nTime/)))
+
+        ! Add writing of active Coordinate
+        IF (ActiveDirection .ne. 0) THEN
+
+          ALLOCATE(active_coord(NumberOfDofNodes))
+
+          DO ii = 1, NumberOfDofNodes
+            IF( NoPermutation ) THEN
+              i = ii
+            ELSE
+              i = InvNodePerm(ii)
+            END IF
+
+            IF ( ActiveDirection == 1 ) THEN
+              active_coord(ii) = Mesh%Nodes%x(i)
+            ELSE IF ( ActiveDirection == 2 ) THEN
+              active_coord(ii) = Mesh%Nodes%y(i)
+            END IF
+          END DO
+
+          IF ( ActiveDirection == 1 ) THEN
+            call check(nf90_inq_varid(ncid,'Mesh_node_x',VarId))
+          ELSE IF ( ActiveDirection == 2 ) THEN
+            call check(nf90_inq_varid(ncid,'Mesh_node_y',VarId))
+          END IF
+
+          call check(nf90_put_var(ncid,VarId,active_coord,start= (/1,nTime/) ))
+        END IF
 
         ScalarFieldName = GetString( Params,'Scalar Field 1',ScalarsExist)
         Vari=1
@@ -566,6 +540,10 @@
         call check(nf90_close(ncid))
 
         DEALLOCATE(NodeVar,EVar)
+
+        IF (ActiveDirection .ne. 0) THEN
+          DEALLOCATE(active_coord)
+        ENDIF
 
       END SUBROUTINE WriteVariables
 

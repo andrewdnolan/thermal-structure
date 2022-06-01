@@ -139,7 +139,7 @@ for offset in $(seq -w $MB_f $MB_s $MB_f); do
   # transient run
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   dt=0.1
-  NT=50
+  NT=102
   # limit to 10 S.S. itters for transient runs
   SS_itters=10
   # diagnostic run is now restart variable

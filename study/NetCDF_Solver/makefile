@@ -21,7 +21,7 @@ SRC=../elmersrc
 #######################################
 LIBS= NetcdfUGRIDOutputSolver USFIcyMask
 
-NetcdfUGRIDOutputSolver: NetcdfUGRIDOutputSolver.F90
+NetcdfUGRIDOutputSolver: NetcdfUGRIDOutputSolver.f90
 	elmerf90 $(FFLAGS) $^ -o $@ `nf-config --fflags --flibs`
 
 clean:

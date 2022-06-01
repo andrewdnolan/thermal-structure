@@ -30,9 +30,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./<KEY>/" "mesh_dx<DX>"        !\"
-  Include Path      "./<KEY>/"                    !\"
-  Results Directory "./<KEY>/"                    !\"
+  Mesh DB           "./glc1-a/" "mesh_dx50"        !\"
+  Include Path      "./glc1-a/"                    !\"
+  Results Directory "./glc1-a/"                    !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -46,8 +46,8 @@ Constants
 
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
-  Mass Balance Offset             = Real <offset>  ! m y^{-1}
-  T_mean                          = real <T_mean>  ! Mean annual air temp @ z_ref [C]
+  Mass Balance Offset             = Real -1.000  ! m y^{-1}
+  T_mean                          = real -9.02  ! Mean annual air temp @ z_ref [C]
   Pressure Variable               = String "Pressure"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -64,17 +64,17 @@ Simulation
   BDF order                   = 2
 
   Steady State Min Iterations = 1
-  Steady State Max Iterations = <SS_itters>
+  Steady State Max Iterations = 10
 
-  Timestep Intervals          = <NT>  ![a]
-  Timestep Sizes              = <dt>  ![a]
+  Timestep Intervals          = 102  ![a]
+  Timestep Sizes              = 0.1  ![a]
   Output Intervals            = 1
 
-  ! Post File                   = "VTU/<run_name>.vtu"
-  Output File                 = "<run_name>.result"               !\"
+  ! Post File                   = "VTU/glc1-a_dx_50_MB_-1.000_OFF_prog.vtu"
+  Output File                 = "glc1-a_dx_50_MB_-1.000_OFF_prog.result"               !\"
   Max Output Level            = 3
 
-  Restart File                = "<RESTART>"
+  Restart File                = "glc1-a_dx_50_MB_-1.000_OFF_Tma_-9.02_diag.result"
   Restart Position            = 9
   Restart Time                = Real 0.0
   Restart Before Initial Conditions = Logical True
@@ -130,12 +130,12 @@ End
 Initial Condition 2
   Zs    = Variable Coordinate 1
           Real
-           include  "../../input_data/topography/<KEY>_surf.dat"
+           include  "../../input_data/topography/glc1-a_surf.dat"
           End
 
   RefZs = Variable Coordinate 1
           Real
-           include  "../../input_data/topography/<KEY>_surf.dat"
+           include  "../../input_data/topography/glc1-a_surf.dat"
           End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -426,8 +426,8 @@ Solver 10
    ! Active Coordinate  = Integer 2
 
    Optimize Bandwidth = Logical False
-   OutPut Directory = File "./<KEY>/nc"
-   Output File Name = "<run_name>_NetcdfOutPutSolve"
+   OutPut Directory = File "./glc1-a/nc"
+   Output File Name = "glc1-a_dx_50_MB_-1.000_OFF_prog_NetcdfOutPutSolve"
 
    ! Stokes Solver Fields
    Scalar Field 1  = String "Pressure"
@@ -496,7 +496,7 @@ Body Force 2
   Name                       = "Climate"
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                                Real Procedure "../../bin/mass_balance" "<FIT>"
+                                Real Procedure "../../bin/mass_balance" "spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
@@ -518,11 +518,11 @@ Boundary Condition 1
   Velocity 2        = Real 0.0e0
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/<KEY>_bed.dat"
+                         include "../../input_data/topography/glc1-a_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/<KEY>_bed.dat"
+                         include "../../input_data/topography/glc1-a_bed.dat"
                       End
 
   ! < Heat_Flux>
