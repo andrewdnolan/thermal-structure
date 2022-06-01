@@ -504,9 +504,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     ! find DOY of next timestep [d]
     doy_i = NINT(MOD(time-dt, 1.0) * 365.0)
 
-    ! B/C round off error ith doy sometimes is 365 instead of 0. Check and fix
-    if (doy_i==365) then
-      doy_i = 0
+    ! B/C round off error ith doy sometimes is 365 instead of 1. Check and fix
+    if ((doy_i==365) .or. (doy_i==0)) then
+      doy_i = 1
     end if
 
     ! Find DOY of current timestep [d]
