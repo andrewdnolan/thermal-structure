@@ -514,7 +514,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
     ! B/C round off error ith+1 doy is sometimes 0 instead of 365. Check and fix
     if (doy_ip1==0) then
-      doy_i = 365
+      doy_ip1 = 365
     end if
 
     ! yearly timesteps give inf mean annual air temp due to division by zero
