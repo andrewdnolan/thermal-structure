@@ -11,7 +11,7 @@ F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 # fortran flags
 FFLAGS=-fcheck=all
 
-all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary
+all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary $(BIN_DIR)/NetcdfUGRIDOutputSolver
 
 # compile the net balance boundary conditions functions, while linking to the
 # necessary interface and fitpack source code objects
