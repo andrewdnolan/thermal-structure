@@ -2,7 +2,7 @@
 #SBATCH --array=1-21                              # 21 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
-#SBATCH --time=42:30:00                            # maximum walltime per job
+#SBATCH --time=3:00:00                            # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -107,11 +107,11 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
-  # Convert result files into NetCDFs
-  ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-                                -m "./${KEY}/mesh_dx${dx}/" \
-                                -t $NT              \
-                                -o "./${KEY}/nc/"
+  # # Convert result files into NetCDFs
+  # ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
+  #                               -m "./${KEY}/mesh_dx${dx}/" \
+  #                               -t $NT              \
+  #                               -o "./${KEY}/nc/"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
@@ -169,8 +169,11 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 # transient run
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=0.1
-NT=20000
-TT=2000
+
+NT=1000
+TT=100
+# NT=20000
+# TT=2000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable

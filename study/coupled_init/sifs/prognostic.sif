@@ -1,7 +1,7 @@
 !echo on
 
 !---LUA BEGIN
-! assert(loadfile('test.lua'))()
+! assert(loadfile('../../src/elmer_src/lua_functions.lua'))()
 !---LUA END
 
 
@@ -415,40 +415,43 @@ Solver 9
    Exported Variable 3                     = -dofs 1 "Zs Accumulation Flux 2"
 End
 
-! Solver 10
-!    Exec Condition = Variable "Time"
-!                     Real lua "netcdf_cond(tx[0], 10)"
-!
-!    Equation = "NetcdfOutPutSolve"
-!    Procedure = "NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
-!    Variable = -nooutput "test"
-!
-!    Optimize Bandwidth = Logical False
-!
-!    OutPut Directory = File "nc"
-!    Output File Name = "<run_name>"
-!
-!    ! Stokes Solver Fields
-!    Scalar Field 1  = String "Pressure"
-!    Scalar Field 2  = String "velocity 1"
-!    Scalar Field 3  = String "velocity 2"
-!    ! Enthalpy Solver Fields
-!    Scalar Field 4  = String "Enthalpy_h"
-!    Scalar Field 5  = String "Water Content"
-!    Scalar Field 6  = String "Temperature"
-!    Scalar Field 7  = String "Phase Change Enthalpy"
-!    Scalar Field 8  = String "Surface_Enthalpy"
-!    ! Free Surface Solver Fields
-!    Scalar Field 9  = String "Zs"
-!    Scalar Field 10 = String "Mass Balance"
-!    ! Misc Solver Fields
-!    Scalar Field 11 = String "Depth"
-!    Scalar Field 12 = String "Height"
-!
-!    Compute LonLat = Logical False
-!    ! Projection = File "+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
-!
-! End
+Solver 10
+   Exec Solver    = String  "after timestep"
+   Exec Condition = Variable "Time"
+                    Real lua "netcdf_cond(tx[0], 10)"
+
+   Equation           = "NetcdfOutPutSolve"
+   Procedure          = "../../bin/NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
+   Variable           = -nooutput "NetCDFOutPut"
+   Active Coordinate  = Integer 2
+
+   OutPut Directory   = File "./<KEY>/nc"
+   Output File Name   = "<run_name>_NetcdfOutPutSolve"
+
+   Optimize Bandwidth = Logical False
+
+  ! Stokes Solver Fields
+   Scalar Field 1  = String "Pressure"
+   Scalar Field 2  = String "velocity 1"
+   Scalar Field 3  = String "velocity 2"
+   ! Enthalpy Solver Fields
+   Scalar Field 4  = String "Enthalpy_h"
+   Scalar Field 5  = String "Water Content"
+   Scalar Field 6  = String "Temperature"
+   Scalar Field 7  = String "Phase Change Enthalpy"
+   Scalar Field 8  = String "Surface_Enthalpy"
+   Scalar Field 9  = String "W"
+   ! Free Surface Solver Fields
+   Scalar Field 10 = String "Zs"
+   Scalar Field 11 = String "Zbed"
+   Scalar Field 12 = String "Mass Balance"
+   ! Misc Solver Fields
+   Scalar Field 13 = String "Depth"
+   Scalar Field 14 = String "Height"
+   Scalar Field 15 = String "Densi"
+
+   Compute LonLat = Logical False
+End
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! BEGIN EQUATION
@@ -457,7 +460,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(8)  = 1 2 3 4 5 6 7 8
+  Active Solvers(9)  = 1 2 3 4 5 6 7 8 10
 End
 
 Equation 2
