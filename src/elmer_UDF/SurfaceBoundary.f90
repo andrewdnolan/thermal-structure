@@ -501,24 +501,21 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     ! Get current time
     Time    =   TimeVar % Values(1)
 
-    ! find DOY of next timestep [d]
+    ! find DOY at begining of timestep [d]
     doy_i = NINT(MOD(time-dt, 1.0) * 365.0)
 
-    ! B/C round off error ith doy sometimes is 365 instead of 1. Check and fix
+    ! B/C round off error ith doy is sometimes 365 or 0 instead of 1. Check and fix
     if ((doy_i==365) .or. (doy_i==0)) then
       doy_i = 1
     end if
 
-    ! Find DOY of current timestep [d]
+    ! Find DOY at end of timestep [d]
     doy_ip1   = NINT(MOD(time, 1.0) * 365.0)
 
-    ! ! B/C round off error ith doy sometimes is 365 instead of 0. Check and fix
-    ! if (doy_i==365) then
-    !   doy_i = 0
-    ! end if
-
-    ! ! find DOY of next timestep [d]
-    ! doy_ip1 = NINT(MOD(time+dt, 1.0) * 365.0)
+    ! B/C round off error ith+1 doy is sometimes 0 instead of 365. Check and fix
+    if (doy_ip1==0) then
+      doy_i = 365
+    end if
 
     ! yearly timesteps give inf mean annual air temp due to division by zero
     ! also don't prodcuce any melt by default
@@ -527,7 +524,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       doy_ip1 = 365
     end if
 
-    ! write(*,*)  Time, dt
   else
     ! set the "timestep" as one year
     dt = 1

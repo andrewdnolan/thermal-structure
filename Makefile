@@ -8,8 +8,10 @@ SRC  := $(wildcard src/elmer_UDF/*.f90)
 EXEC := $(SRC:src/elmer_UDF/%.f90=$(BIN_DIR)/%)
 # compiled fitpack source code
 F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
+# fortran flags
+FFLAGS=-fcheck=all
 
-all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary $(BIN_DIR)/SurfaceHeating
+all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary
 
 # compile the net balance boundary conditions functions, while linking to the
 # necessary interface and fitpack source code objects
@@ -24,17 +26,17 @@ $(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90
 $(BIN_DIR)/SurfaceBoundary: $(SRC_DIR)/SurfaceBoundary.f90 $(BIN_DIR)/SurfaceTemperature_mod.o
 	elmerf90 $^ -o $@ -I$(BIN_DIR)
 
-# compile surface boundary condtions and link surf temp module
-$(BIN_DIR)/SurfaceHeating: $(SRC_DIR)/SurfaceHeating.f90 $(BIN_DIR)/SurfaceTemperature_mod.o
-	elmerf90 $^ -o $@ -I$(BIN_DIR)
-
 # compile surface temperature module neeed for surface boundary conditions
 $(BIN_DIR)/SurfaceTemperature_mod.o: $(SRC_DIR)/SurfaceTemperature_mod.f90
 	elmerf90 -c $^ -o $@ -J $(BIN_DIR)
 
+# compile NetCDF output solver from fgillet
+$(BIN_DIR)/NetcdfUGRIDOutputSolver: $(SRC_DIR)/NetcdfUGRIDOutputSolver.f90
+	elmerf90 $(FFLAGS) $^ -o $@ `nf-config --fflags --flibs`
+
 # compile the *.F90 files with the `elmerf90` alias
 $(BIN_DIR)/%: $(SRC_DIR)/%.f90
-	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ] || [ $@ = "bin/SurfaceTemperature_mod" ] || [ $@ = "bin/SurfaceHeating" ]; then\
+	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ] || [ $@ = "bin/SurfaceTemperature_mod" ] || [ $@ = "bin/NetcdfUGRIDOutputSolver" ]; then\
 		continue; \
 	 else \
 		elmerf90 $^ -o $@ ; \
