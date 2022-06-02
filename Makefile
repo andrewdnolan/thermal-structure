@@ -1,11 +1,11 @@
 # folder to store compiled files
 BIN_DIR = bin
 # folder with fortran source
-SRC_DIR = src/elmer_UDF
+SRC_DIR = src/elmer_src
 # Find all the source files
-SRC  := $(wildcard src/elmer_UDF/*.f90)
+SRC  := $(wildcard src/elmer_src/*.f90)
 # compiled executables used in .sif files
-EXEC := $(SRC:src/elmer_UDF/%.f90=$(BIN_DIR)/%)
+EXEC := $(SRC:src/elmer_src/%.f90=$(BIN_DIR)/%)
 # compiled fitpack source code
 F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
 # fortran flags
@@ -43,8 +43,8 @@ $(BIN_DIR)/%: $(SRC_DIR)/%.f90
 	 fi
 
 # make the elmer2nc .result parser using thr makefile in it's source folder
-elmer2nc: $(wildcard src/elmer2nc/*.f90)
-	$(MAKE) -C src/elmer2nc
+elmer2nc: $(wildcard src/result2nc/*.f90)
+	$(MAKE) -C src/result2nc
 
 clean:
 	ls bin/* | grep -v "\." | xargs rm && \
