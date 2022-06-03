@@ -43,8 +43,8 @@ $(BIN_DIR)/%: $(SRC_DIR)/%.f90
 	 fi
 
 # make the elmer2nc .result parser using thr makefile in it's source folder
-elmer2nc: $(wildcard src/result2nc/*.f90)
-	$(MAKE) -C src/result2nc
+elmer2nc: $(wildcard src/elmer2nc/*.f90)
+	$(MAKE) -C src/elmer2nc
 
 clean:
 	ls bin/* | grep -v "\." | xargs rm && \
