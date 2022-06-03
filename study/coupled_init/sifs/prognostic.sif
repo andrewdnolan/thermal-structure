@@ -222,8 +222,8 @@ Solver 2
 End
 
 Solver 3
-  Exec Interval                           = 10
-  Timestep Scale                          = 10
+  Exec Interval              = 10
+  Timestep Scale             = 10
   Equation                   = "HeightDepth"
   ! Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -235,7 +235,6 @@ End
 Solver 4
   Exec Interval                           = 10
   Timestep Scale                          = 10
-  ! Exec Solver                   = String "Never"
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
   Linear System Residual Output = Integer 0
@@ -245,10 +244,10 @@ End
 
 ! Surface Heating Solver
 Solver 5
-  ! Exec Solver = "Never"
-  Equation              = String "Surface Boundary"
+  Equation              = String "SurfaceBoundary"
   Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
+  Variable DOFs         = 1
 
   Exported Variable 1   = -dofs 1 "Densi" ! [kg m^-3]
 End
@@ -321,7 +320,6 @@ End
 
 ! Enthalpy Solver
 Solver 8
-  ! Exec Solver = "Never"
   Equation                                 = String "Enthalpy Equation"
   Procedure                                = File "ElmerIceSolvers" "EnthalpySolver"
   Variable                                 = String "Enthalpy_h"
@@ -378,7 +376,7 @@ End
 Solver 9
    Exec Interval                           = 10
    Timestep Scale                          = 10
-   !Exec Solver                             = always
+
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
    Variable DOFs                           =  1

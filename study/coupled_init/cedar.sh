@@ -107,11 +107,11 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
-  # # Convert result files into NetCDFs
-  # ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-  #                               -m "./${KEY}/mesh_dx${dx}/" \
-  #                               -t $NT              \
-  #                               -o "./${KEY}/nc/"
+  # Convert result files into NetCDFs
+  ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
+                                -m "./${KEY}/mesh_dx${dx}/" \
+                                -t $NT              \
+                                -o "./${KEY}/nc/"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"

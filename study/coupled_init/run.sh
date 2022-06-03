@@ -99,11 +99,11 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/diag.sif" | tee $log_file
 
-  # # Convert result files into NetCDFs
-  # ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-  #                               -m "./${KEY}/mesh_dx${dx}/" \
-  #                               -t $NT               \
-  #                               -o "./${KEY}/nc/"
+  # Convert result files into NetCDFs
+  ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
+                                -m "./${KEY}/mesh_dx${dx}/" \
+                                -t $NT               \
+                                -o "./${KEY}/nc/"
 
   # # Remove the sif file
   rm "./sifs/diag.sif"
@@ -145,7 +145,7 @@ for offset in $(seq -w $MB_f $MB_s $MB_f); do
   # diagnostic run is now restart variable
   RESTART="${run_name}.result"
   # prognostic run name
-  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_prog"
+  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_prog"
 
   # run the transient model with diagnostic solution as restart fiedl
   prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
