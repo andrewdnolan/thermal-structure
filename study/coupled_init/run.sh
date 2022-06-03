@@ -129,7 +129,7 @@ for offset in $(seq -w $MB_f $MB_s $MB_f); do
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
   # make the run name based on model params
-  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag"
+  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag_local"
 
   # run the model for a given offset
   diagnostic_run $dx $KEY $offset $run_name $SS_itters
@@ -145,7 +145,7 @@ for offset in $(seq -w $MB_f $MB_s $MB_f); do
   # diagnostic run is now restart variable
   RESTART="${run_name}.result"
   # prognostic run name
-  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_prog"
+  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_prog_local"
 
   # run the transient model with diagnostic solution as restart fiedl
   prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt

@@ -261,9 +261,10 @@ End
 
 ! Surface Heating Solver
 Solver 6
-  Equation              = String "Surface Boundary"
+  Equation              = String "SurfaceBoundary"
   Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
+  Variable DOFs         = 1
 
   Exported Variable 1   = -dofs 1 "Densi" ! [kg m^-3]
 End
