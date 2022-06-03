@@ -2,7 +2,7 @@
 #SBATCH --array=1-21                              # 21 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
-#SBATCH --time=4:00:00                            # maximum walltime per job
+#SBATCH --time=43:00:00                            # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -170,10 +170,8 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=0.1
 
-NT=1000
-TT=100
-# NT=20000
-# TT=2000
+NT=20000
+TT=2000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable
