@@ -486,7 +486,7 @@ Body Force 1
                 real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)"
 
   ! Enthalpy (soft) Limiters
-  Enthalpy_h Upper Limit = Variable Depth, Phase Change Enthalpy
+  Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
                            real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy"
   Enthalpy_h Lower Limit = real 0.0
 End
