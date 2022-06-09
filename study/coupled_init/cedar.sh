@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --array=1-21                              # 21 jobs that run
+####SBATCH --array=1-21                              # 21 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
-#SBATCH --time=43:00:00                            # maximum walltime per job
+#SBATCH --time=6:00:00                            # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -148,11 +148,11 @@ T_ma=-9.02
 offsets=($(seq -w $MB_0 $MB_s $MB_f))
 
 # bash arrays zero indexed
-N=$((SLURM_ARRAY_TASK_ID-1))
+# N=$((SLURM_ARRAY_TASK_ID-1))
 
 # get ith offset corresponing to SLURM_ARRAY_TASK_ID
-offset=${offsets[$N]}
-
+# offset=${offsets[$N]}
+offset=$MB_f
 
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # steady-state run
@@ -168,10 +168,10 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # transient run
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-dt=0.1
+dt=1.0
 
-NT=20000
-TT=2000
+NT=1000
+TT=1000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable
