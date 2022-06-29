@@ -1,46 +1,17 @@
-# folder to store compiled files
-BIN_DIR = bin
-# folder with fortran source
-SRC_DIR = src/elmer_src
-# Find all the source files
-SRC  := $(wildcard src/elmer_src/*.f90)
-# compiled executables used in .sif files
-EXEC := $(SRC:src/elmer_src/%.f90=$(BIN_DIR)/%)
-# compiled fitpack source code
-F77_OBJ := $(BIN_DIR)/splev.o $(BIN_DIR)/fpbspl.o
-# fortran flags
-FFLAGS=-fcheck=all
-
-all: $(EXEC) elmer2nc $(BIN_DIR)/mass_balance $(BIN_DIR)/SurfaceBoundary $(BIN_DIR)/NetcdfUGRIDOutputSolver
-
-# compile the net balance boundary conditions functions, while linking to the
-# necessary interface and fitpack source code objects
-$(BIN_DIR)/mass_balance: $(SRC_DIR)/mass_balance.f90 $(BIN_DIR)/fitpack_interface.o $(F77_OBJ)
-	elmerf90 $^ -o $@ -I$(BIN_DIR)
+# Global rule for all the various makefiles
+all: fitpack_interface numerical_recipes elmer_src elmer2nc
 
 # compile the fitpack source code and f90 interface
-$(BIN_DIR)/fitpack_interface.o: $(SRC_DIR)/mass_balance.f90
+fitpack_interface: $(wildcard include/fitpack/*.f90)
 	$(MAKE) -C include/fitpack
 
-# compile surface boundary condtions and link surf temp module
-$(BIN_DIR)/SurfaceBoundary: $(SRC_DIR)/SurfaceBoundary.f90 $(BIN_DIR)/SurfaceTemperature_mod.o
-	elmerf90 $^ -o $@ -I$(BIN_DIR)
+# compile the numerical recipes source code
+numerical_recipes: $(wildcard include/numerical_recipes/*.f90)
+	$(MAKE) -C include/numerical_recipes
 
-# compile surface temperature module neeed for surface boundary conditions
-$(BIN_DIR)/SurfaceTemperature_mod.o: $(SRC_DIR)/SurfaceTemperature_mod.f90
-	elmerf90 -c $^ -o $@ -J $(BIN_DIR)
-
-# compile NetCDF output solver from fgillet
-$(BIN_DIR)/NetcdfUGRIDOutputSolver: $(SRC_DIR)/NetcdfUGRIDOutputSolver.f90
-	elmerf90 $(FFLAGS) $^ -o $@ `nf-config --fflags --flibs`
-
-# compile the *.F90 files with the `elmerf90` alias
-$(BIN_DIR)/%: $(SRC_DIR)/%.f90
-	@if [ $@ = "bin/mass_balance" ] || [ $@ = "bin/SurfaceBoundary" ] || [ $@ = "bin/SurfaceTemperature_mod" ] || [ $@ = "bin/NetcdfUGRIDOutputSolver" ]; then\
-		continue; \
-	 else \
-		elmerf90 $^ -o $@ ; \
-	 fi
+# compile the elmer source code and link all the modules
+elmer_src: $(wildcard src/elmer_src/*.f90)
+	$(MAKE) -C src/elmer_src
 
 # make the elmer2nc .result parser using thr makefile in it's source folder
 elmer2nc: $(wildcard src/elmer2nc/*.f90)
