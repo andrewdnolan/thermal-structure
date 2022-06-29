@@ -4,7 +4,7 @@ module SurfaceTemperature
 
 contains
 
-  subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak, coefs)
+  subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak, coefs, seed)
     !
     ! calculate surface temp with random (but consistent) variability
     !
@@ -15,6 +15,8 @@ contains
 
     ! input params
     Integer, intent(in)       :: T_peak     ! DOY of annual temp peak [DOY]
+    Integer, intent(in), &
+             optional         :: seed       ! seed for random num. generator
     real(kind=dp), intent(in) :: z,       & ! nodal surface elevation [m]
                                  alpha,   & ! Anual air temp. amp.    [C]
                                  grad_T,  & ! Air temp lapse rate     [K m^-1]
@@ -25,9 +27,16 @@ contains
     real(kind=dp), intent(out) :: T(365)    ! T(DOY) @ nodal z          [m]
 
     ! internal params
-    integer :: i                            ! index counter for DOY
-    integer, parameter :: seed=123456789    ! seed for random num. generator
+    integer :: i,       &                   ! index counter for DOY
+              seed__                        ! internal value of seed
     real(kind=dp) :: std                    ! standard dev. for DOY     [?]
+
+    ! Check if seed was passed
+    if (present(seed)) then
+      seed__ = seed
+    else
+      seed__ = 123456789
+    end if
 
     ! seed the random number generator
     call set_seed(seed)

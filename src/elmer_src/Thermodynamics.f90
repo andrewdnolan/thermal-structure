@@ -57,7 +57,7 @@ end function Diffusivity
 ! The "Apply Limiter" keyword  must be set to true in the Enthalpy solver for the
 ! soft limiter to be applied.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-function Limit_Enthalpy(Model, Node, InputArray) result(H_max)
+function Limit_Enthalpy_rho(Model, Node, InputArray) result(H_max)
 
   use DefUtils
   implicit none
@@ -117,4 +117,62 @@ function Limit_Enthalpy(Model, Node, InputArray) result(H_max)
     end if
 
   end function GetParam
-end function Limit_Enthalpy
+end function Limit_Enthalpy_rho
+
+
+
+function Limit_Enthalpy_surf(Model, Node, InputArray) result(H_max)
+
+  use DefUtils
+  implicit none
+
+  integer       :: Node
+  TYPE(Model_t) :: Model
+  REAL(KIND=dp) :: InputArray(2), &
+                   depth,         &  ! depth below free sufrace     [m]
+                   H_f,           &  ! enthalpy of fusion           [J kg-1]
+                   H_max,         &  ! Limit enthalpy (returned)    [J kg-1]
+                   w_max_en,      &  ! max englacial water content  [-]
+                   w_max_aq,      &  ! max water content in frin aq [-]
+                   L_heat            ! Latnet heat of fusion        [J kg-1]
+
+  ! Read constants from sif file
+  !-----------------------------
+  L_heat   = GetParam(Model, "L_heat")                   ![J kg-1]
+  w_max_en = GetParam(Model, "w_max_en")                 ![-]
+  w_max_aq = GetParam(Model, "w_max_aq")                 ![-]
+
+  ! Unpack input array
+  !-------------------
+  depth = InputArray(1) ! depth from surface [m]
+  H_f   = InputArray(2) ! Enthalpy of fusion [J kg-1]
+
+  ! If density less than poreclose off, allow more water content
+  if (depth .eq. 0.0) then
+    ! Eqn. (10) from Aschwanden et al. 2012
+    H_max = H_f + w_max_aq*L_heat
+  else
+    H_max = H_f + w_max_en*L_heat
+  endif
+
+  contains
+
+  ! subfunction for reading constants and error checking
+  function GetParam(Model, constant_name) result(constant)
+    USE DefUtils
+    implicit none
+
+    real :: constant
+    logical :: GotIt
+    TYPE(Model_t) :: Model
+    character(len=*) :: constant_name
+
+    constant = GetConstReal(Model % Constants, trim(constant_name), GotIt)
+
+    if (.not. GotIt) then
+      call fatal('Limit_Enthalpy ---> GetParam', &
+                 'Could not find '//trim(constant_name) )
+    end if
+
+  end function GetParam
+end function Limit_Enthalpy_surf

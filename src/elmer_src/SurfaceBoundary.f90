@@ -349,7 +349,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   ! Local modules
   USE SurfaceTemperature
-
+  USE special_funcs
+  
   IMPLICIT NONE      ! saves you from stupid errors
 
   !----------------------------------------------------------------------------
@@ -387,7 +388,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! air temp related
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  INTEGER       :: T_peak         ! DOY of annual temp peak      [DOY]
+  INTEGER       :: T_peak,      & ! DOY of annual temp peak      [DOY]
+                   seed=123456789 ! seed for random num. generator
   REAL(KIND=dp) :: z_ref,       & ! reference surface elevation  [m a.s.l.]
                    alpha,       & ! Anual air temp. amp          [K]
                    dTdz,        & ! air temp lapse rate          [K m-1]
@@ -413,6 +415,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    rho_w,       &  ! denisty of water      [Kg m^-3]
                    rho_s,       &  ! denisty of snow       [Kg m^-3]
                    C_firn,      &  ! Surf. Dens. const.    [-]
+                   Melt,        &  ! surf. (snow) melting  [m s.e.]
                    PDD(365) = 0    ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Enthalpy related params
@@ -532,6 +535,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     doy_ip1 = 365
   endif
 
+  seed = seed + doy_i
   ! Outter Most Loop: Itterate of model nodes
   DO n=1,N_n
 
@@ -543,12 +547,12 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
       ! Calculate nodal air temperature curve
       call SurfTemp(z, T, alpha, dTdz, &
-                    z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /))
+                    z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /), seed)
 
       ! only loop over DOY within current timestep
       DO d=doy_i,doy_ip1
         ! Subtract the melting temperature to find the daily positive degrees
-        PDD(d) = MAX(T(d)-T_melt, T_melt) ! [K]
+        PDD(d) = MAX(T(d)-T_melt, T_melt) ! [C+ d]
       END DO
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -556,8 +560,11 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
+        ! Calculate surace melt in meters of snow equivalent
+        Melt = f_dd * SUM(PDD)
+
         ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
-        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * f_dd * SUM(PDD) * (doy_ip1-doy_i)
+        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt
 
         !write(*,*) "Melt:", f_dd * SUM(PDD) * (doy_ip1-doy_i)/365.0, "m / yr"
 
@@ -593,7 +600,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Convert surface air temp to enthalpy
       H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
       ! Add the surface heating to the surface enthalpy
-      H_surf =  Q_lat/rho_w + H_surf
+      H_surf =  Q_lat/rho_s + H_surf
 
       if (H_surf .ge. Enthalpy_max) then
         ! Limit the surface enthalpy based on max englacial water content
@@ -630,8 +637,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set a seasonal snow layer, a crude approximation
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! if no melt occurs set the surface denisty to that of snow
-      if ( SUM(PDD) == 0 ) then
+      ! if mean air temp less than 0 C set surface denisty to that of snow
+      if ( T_surf .le. 273.15 ) then
         Dens % values ( Dens % perm(n)) = rho_s
       end if
 
