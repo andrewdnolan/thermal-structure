@@ -15,7 +15,9 @@ NC_OBJS     := $(BIN_DIR)/NetcdfUGRIDOutputSolver
 LINKED_OBJS := $(BIN_DIR)/SurfaceBoundary \
 							 $(BIN_DIR)/mass_balance
 # Modules to be built, and linked to elmer source
-MOD_SRCS := $(SRC_DIR)/surfacetemperature_mod.f90
+MOD_SRCS := $(SRC_DIR)/surfacetemperature_mod.f90 \
+						$(SRC_DIR)/PositiveDegreeDays.f90 \
+
 MOD_OBJS := $(patsubst $(SRC_DIR)/%.f90, $(BIN_DIR)/%.o,  $(MOD_SRCS))
 
 # Concat all the objs to one list
@@ -43,7 +45,8 @@ fitpack_interface.mod  := $(BIN_DIR)/fitpack_interface.o \
 													$(BIN_DIR)/fpbspl.o            \
 													$(BIN_DIR)/splev.o
 surfacetemperature.mod := $(BIN_DIR)/surfacetemperature_mod.o
+PositiveDegreeDays.mod := $(BIN_DIR)/PositiveDegreeDays.o\
+ 													$(BIN_DIR)/special_funcs.o
 # Rules for creating executables
-$(BIN_DIR)/mass_balance: $(fitpack_interface.mod)
-$(BIN_DIR)surfacetemperature_mod.o: $(surfacetemperature.mod)
-$(BIN_DIR)/SurfaceBoundary: $(surfacetemperature.mod) $(special_funcs.mod)
+$(BIN_DIR)/mass_balance            : $(fitpack_interface.mod)
+$(BIN_DIR)/SurfaceBoundary         : $(surfacetemperature.mod) $(PositiveDegreeDays.mod)

@@ -153,8 +153,7 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
       PDDs      = 0.0 ! Positive Degree per Day (PDD) at node n
 
       ! Calculate air temperature curve
-      call SurfTemp(z, T, alpha, dTdz, &
-                    z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /))
+      call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
       ! Itterate over the julian calendar days
       DO i=1,365
@@ -294,8 +293,7 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   z = InputArray(1)
 
   ! Calculate air temperature curve
-  call SurfTemp(z, T, alpha, dTdz, &
-                z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /))
+  call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
   if (Transient) then
     ! if transient get air temp for doy of timestep
@@ -349,8 +347,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   ! Local modules
   USE SurfaceTemperature
-  USE special_funcs
-  
+  USE PositiveDegreeDays
+
   IMPLICIT NONE      ! saves you from stupid errors
 
   !----------------------------------------------------------------------------
@@ -395,6 +393,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    dTdz,        & ! air temp lapse rate          [K m-1]
                    T_mean,      & ! mean annual surf. air. temp  [C]
                    T(365),      & ! surface air temperature      [K]
+                   std(365),    & ! std. of surf air temp        [K]
                    T_surf,      & ! intermediate result          [K]
                    H_surf,      & ! intermediate result          [J kg-1]
                    std_c0,      &
@@ -535,7 +534,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     doy_ip1 = 365
   endif
 
-  seed = seed + doy_i
+  ! Create std(doy) array (only needs to be done once)
+  call temp_std(std, (/ std_c0, std_c1, std_c2 /))
+
   ! Outter Most Loop: Itterate of model nodes
   DO n=1,N_n
 
@@ -546,14 +547,16 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       z = model%nodes%y(n)
 
       ! Calculate nodal air temperature curve
-      call SurfTemp(z, T, alpha, dTdz, &
-                    z_ref, T_mean, T_peak, (/ std_c0, std_c1, std_c2 /), seed)
+      call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
-      ! only loop over DOY within current timestep
-      DO d=doy_i,doy_ip1
-        ! Subtract the melting temperature to find the daily positive degrees
-        PDD(d) = MAX(T(d)-T_melt, T_melt) ! [C+ d]
-      END DO
+      ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
+      PDD = Cavlo_Greve_PDDs(T,std)
+
+      ! ! only loop over DOY within current timestep
+      ! DO d=doy_i,doy_ip1
+      !   ! Subtract the melting temperature to find the daily positive degrees
+      !   PDD(d) = MAX(T(d)-T_melt, T_melt) ! [C+ d]
+      ! END DO
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate surface heating term
@@ -561,7 +564,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
         ! Calculate surace melt in meters of snow equivalent
-        Melt = f_dd * SUM(PDD)
+        Melt = f_dd * SUM(PDD(doy_i:doy_ip1))
 
         ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
         Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt
@@ -647,11 +650,27 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   contains
 
-  ! subfunction for reading constants and error checking
-  function GetParam(Model, constant_name) result(constant)
-    USE DefUtils
+  subroutine temp_std(std, coefs)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Time dependent standard deviation in air temperature, which facilitates
+    ! greater varaince in winter than summer, but is also neccisary for
+    ! recreating melt curve
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
+    real(dp), intent(in)                  :: coefs(3) ! Coefs for T_std(doy)
+    real(dp), intent(out), dimension(365) :: std      ! std(doy) array
+    ! internal parameters
+    real(dp), dimension(365)              :: d        ! Day of year array  [DOY]
+    integer                               :: i
+    ! populate day of year array
+    d = [ (real(i, dp), i = 1, 365) ]
+    ! evaluate the quadaratic function for the daily std
+    std = coefs(1)**2 * d + coefs(2) * d + coefs(3)
+  end subroutine temp_std
+
+  ! subfunction for reading constants and error checking
+  function GetParam(Model, constant_name) result(constant)
     real :: constant
     logical :: GotIt
     TYPE(Model_t) :: Model

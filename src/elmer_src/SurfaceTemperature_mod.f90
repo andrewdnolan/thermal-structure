@@ -4,7 +4,7 @@ module SurfaceTemperature
 
 contains
 
-  subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak, coefs, seed)
+  subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak)
     !
     ! calculate surface temp with random (but consistent) variability
     !
@@ -15,43 +15,26 @@ contains
 
     ! input params
     Integer, intent(in)       :: T_peak     ! DOY of annual temp peak [DOY]
-    Integer, intent(in), &
-             optional         :: seed       ! seed for random num. generator
     real(kind=dp), intent(in) :: z,       & ! nodal surface elevation [m]
                                  alpha,   & ! Anual air temp. amp.    [C]
                                  grad_T,  & ! Air temp lapse rate     [K m^-1]
                                  ref_z,   & ! Reference surface elev. [m a.s.l.]
-                                 T_mean,  & ! Mean annual T @ ref_z   [C]
-                                 coefs(3)   ! Coefs for T_std(doy)    [?]
+                                 T_mean     ! Mean annual T @ ref_z   [C]
+                                 ! coefs(3)   ! Coefs for T_std(doy)    [?]
     ! resulting vector
     real(kind=dp), intent(out) :: T(365)    ! T(DOY) @ nodal z          [m]
 
     ! internal params
-    integer :: i,       &                   ! index counter for DOY
-              seed__                        ! internal value of seed
-    real(kind=dp) :: std                    ! standard dev. for DOY     [?]
-
-    ! Check if seed was passed
-    if (present(seed)) then
-      seed__ = seed
-    else
-      seed__ = 123456789
-    end if
-
-    ! seed the random number generator
-    call set_seed(seed)
+    integer :: i                            ! index counter for DOY
 
     ! Itterate over the julian calendar days
     DO i=1,365
 
-        ! Calculate the daily standard deviation
-        call temp_std(std, i, coefs)
-
         ! Find surface temp for DOY(i)
-        T(i) = T_mean                                       & ! mean signal
-             + alpha*cos(2.0_dp*PI*float(i - T_peak)/365.0) & ! seasonal cycle
-             + grad_T*(ref_z-z)                             & ! elevation dependence
-             + norm_rand(0.0_dp, std)                         ! random variability
+        T(i) = T_mean                                          & ! mean signal
+             + alpha*cos(2.0_dp*PI*real(i - T_peak, dp)/365.0) & ! seasonal cycle
+             + grad_T*(ref_z-z)                                  ! elevation dependence
+           ! + norm_rand(0.0_dp, std)                             ! random variability
 
     ENDDO
 
