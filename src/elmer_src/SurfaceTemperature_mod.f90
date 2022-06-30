@@ -53,7 +53,7 @@ contains
       real(kind=dp), intent(out) :: std          ! standard deviation for DOY
 
       ! evaluate the quadaratic function for the daily std
-      std = coefs(1)**2 * d + coefs(2) * d + coefs(3)
+      std = coefs(1) * d**2 + coefs(2) * d + coefs(3)
     end subroutine temp_std
 
     subroutine set_seed(seed)

@@ -569,8 +569,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
         Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt
 
-        !write(*,*) "Melt:", f_dd * SUM(PDD) * (doy_ip1-doy_i)/365.0, "m / yr"
-
         ! calculate maximum enthalpy: above the ELA account for the maximum
         ! water content being higher due to the porosity of firn
         Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_aq * L_heat
@@ -666,7 +664,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     ! populate day of year array
     d = [ (real(i, dp), i = 1, 365) ]
     ! evaluate the quadaratic function for the daily std
-    std = coefs(1)**2 * d + coefs(2) * d + coefs(3)
+    std = coefs(1) * d**2  + coefs(2) * d + coefs(3)
   end subroutine temp_std
 
   ! subfunction for reading constants and error checking
