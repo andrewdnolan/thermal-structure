@@ -63,7 +63,7 @@ def _preprocess_UGRID(ds):
     else:
         # Grid the nodal Z values and add as coordinate
         new_ds.coords["Z"] = xr.DataArray(
-            ds.Mesh_node_y.values.reshape(NZ, NX), dims = dims
+            ds.Mesh_node_y.values.reshape(NZ, NX), dims = ["coord_2", "coord_1"]
         )
 
     # Grid the node number and add as a coordinate
