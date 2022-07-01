@@ -1,8 +1,8 @@
 #!/bin/bash
-####SBATCH --array=1-21                              # 21 jobs that run
+#SBATCH --array=1-442                              # 442 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
-#SBATCH --time=6:00:00                            # maximum walltime per job
+#SBATCH --time=9:00:00                             # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -107,11 +107,11 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
-  # Convert result files into NetCDFs
-  ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-                                -m "./${KEY}/mesh_dx${dx}/" \
-                                -t $NT              \
-                                -o "./${KEY}/nc/"
+  # # Convert result files into NetCDFs
+  # ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
+  #                               -m "./${KEY}/mesh_dx${dx}/" \
+  #                               -t $NT              \
+  #                               -o "./${KEY}/nc/"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
@@ -137,29 +137,46 @@ log_runtime()
 # parse the parameters from the json files
 parse_json "params/glc1-a.json"
 
-# let's allow for X number of steady state itterations
-SS_itters=25
+# # make a list of mass balance offsets
+# offsets=($(seq -w $MB_0 $MB_s $MB_f))
+# # bash arrays zero indexed
+# N=$((SLURM_ARRAY_TASK_ID-1))
+# # get ith offset corresponing to SLURM_ARRAY_TASK_ID
+# offset=${offsets[$N]}
+
+# get ith offset and T_ma corresponing to SLURM_ARRAY_TASK_ID, nested for loops
+# each script is junky. The cartesian product of the two arrays would be a more
+# elegant solution, but I was having trouble gettig that to work.
+# Refs:
+#   - https://unix.stackexchange.com/questions/97814/array-cartesian-product-in-bash
+#   - https://stackoverflow.com/questions/23363003/how-to-produce-cartesian-product-in-bash
+#   - https://rosettacode.org/wiki/Cartesian_product_of_two_or_more_lists#UNIX_Shell
+
+count=1
+# loop over the mass balance offsets
+for offset in $(seq -w $MB_0 $MB_s $MB_f); do
+  # loop over mean annual air temps
+  for T_ma in $(seq -w -9.00 0.1 -7.00); do
+    # check if counter equals SLURM_ARRAY_TASK_ID
+    if [[ $count -eq $SLURM_ARRAY_TASK_ID ]]; then
+        break 2
+    fi
+    count=$((count+1))
+  done
+done
+
+
 # set the glacier key
 KEY='glc1-a'
-#Mean annual air temperate
-T_ma=-9.02
-
-# make a list of mass balance offsets
-offsets=($(seq -w $MB_0 $MB_s $MB_f))
-
-# bash arrays zero indexed
-# N=$((SLURM_ARRAY_TASK_ID-1))
-
-# get ith offset corresponing to SLURM_ARRAY_TASK_ID
-# offset=${offsets[$N]}
-offset=$MB_f
-
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 # steady-state run
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+# let's allow for X number of steady state itterations
+SS_itters=25
+
 # make the run name based on model params
-run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_diag"
+run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag"
 
 # run the model for a given offset
 diagnostic_run $dx $KEY $offset $run_name $SS_itters
@@ -170,14 +187,14 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=1.0
 
-NT=1000
-TT=1000
+NT=2000
+TT=2000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable
 RESTART="${run_name}.result"
 # prognostic run name
-run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_prog"
+run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
 
 # Start the timer
 start=$(date +%s.%N)
