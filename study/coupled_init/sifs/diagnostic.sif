@@ -416,7 +416,7 @@ Body Force 1
 
   ! Enthalpy (soft) Limiters
   Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
-                           real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy"
+                           real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy_rho"
   Enthalpy_h Lower Limit = real 0.0
 
   ! Mass Balance Forcing to calculate latent heat source
