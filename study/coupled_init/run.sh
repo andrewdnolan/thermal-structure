@@ -122,7 +122,7 @@ SS_itters=25
 # set the glacier key
 KEY='glc1-a'
 #Mean annual air temperate
-T_ma=-7.02
+T_ma=-9.02
 limit_type='rho' # 'surf' or 'rho'
 Cfirn=0.05
 
@@ -131,8 +131,6 @@ Cfirn=0.05
 # for offset in $(seq -w $MB_f $MB_s $MB_f); do
 for offset in $MB_f; do
 
-# for offset in $MB_0 $MB_f; do
-
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # steady-state run
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -140,16 +138,16 @@ for offset in $MB_f; do
   # make the run name based on model params
   run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_limit_${limit_type}_Cfirn_${Cfirn}_diag"
 
-  # # run the model for a given offset
-  # diagnostic_run $dx $KEY $offset $run_name $SS_itters
+  # run the model for a given offset
+  diagnostic_run $dx $KEY $offset $run_name $SS_itters
 
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # transient run
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  dt=0.1
-  NT=1000
+  dt=1.0
+  NT=250
   # limit to 10 S.S. itters for transient runs
-  SS_itters=10
+  SS_itters=15
   # diagnostic run is now restart variable
   RESTART="${run_name}.result"
   # prognostic run name
