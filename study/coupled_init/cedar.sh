@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-442%20                           # 442 jobs that run
+#SBATCH --array=1-442%40                           # 442 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
 #SBATCH --time=9:00:00                             # maximum walltime per job
@@ -187,8 +187,8 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=1.0
 
-NT=20
-TT=20
+NT=2000
+TT=2000
 # limit to 10 S.S. itters for transient runs
 SS_itters=10
 # diagnostic run is now restart variable

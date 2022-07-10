@@ -48,20 +48,20 @@ limit_type='surf' # 'surf' or 'rho'
 
 
 for Delta_mb in ['-1', '-1.5']:
-
+    for T_ma in ['-9.02', '-7.02']:
     # if Delta_mb == "-1": continue
 
-    src_fp = f"glc1-a/nc/glc1-a_dx_50_NT_1000_dt_0.1_MB_{Delta_mb}_OFF_limit_{limit_type}_prog_NetcdfOutPutSolve.nc"
+        src_fp = f"glc1-a/nc/glc1-a_dx_50_NT_250_dt_1.0_MB_{Delta_mb}_OFF_Tma_{T_ma}_limit_rho_Cfirn_0.05_prog.nc"
 
-    ds = test_open.dataset(src_fp)
+        ds = test_open.dataset(src_fp)
 
-    out_fn = f'./figs/glc1-a_MB_{Delta_mb}_OFF_100a_hightempres_limit_{limit_type}.mp4'
-    title  = "$\Delta \dot b$ = {:.3f}".format(float(Delta_mb))
+        out_fn = f'./figs/glc1-a_MB_{Delta_mb}_OFF_250a_Tma_{T_ma}.mp4'
+        title  = "$\Delta \dot b$ = {:.3f}, $T_m$ = {:.2f}".format(float(Delta_mb), float(T_ma))
 
-    animation_2D_field(ds, out_fn, title)
+        animation_2D_field(ds, out_fn, title)
 
-    print('mp4 file succesfully written to:')
-    print(f'\t {out_fn}')
+        print('mp4 file succesfully written to:')
+        print(f'\t {out_fn}')
 
     # fig, ax = plt.subplots()
     #
