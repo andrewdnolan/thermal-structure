@@ -38,7 +38,7 @@ RESTART="${run_name}.result"
 # prognostic run name
 run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
 
-file="${KEY}/nc/${run_name}"
+file="${KEY}/nc/${run_name}.nc"
 
 if [[ ! -f "${file/.nc/_gridded.nc}" ]]; then
   python3 grid_data.py $file
