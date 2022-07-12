@@ -11,10 +11,11 @@ dependencies:
   - pandas
   - seaborn
   - pip
-  - xarray 
+  - xarray
   - matplotlib
   - dask
   - dask-jobqueue
   - jupyterlab
+  - rise
   - pip:
     - SALib
