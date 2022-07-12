@@ -186,7 +186,6 @@ diagnostic_run $dx $KEY $offset $run_name $SS_itters
 # transient run
 #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 dt=1.0
-
 NT=2000
 TT=2000
 # limit to 10 S.S. itters for transient runs
@@ -201,6 +200,9 @@ start=$(date +%s.%N)
 
 # run the transient model with diagnostic solution as restart fiedl
 prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
+
+# grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+python3 grid_data.py "${KEY}/nc/${run_name}.nc"
 
 # End the timer
 end=$(date +%s.%N)

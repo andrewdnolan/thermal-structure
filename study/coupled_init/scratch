@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+#SBATCH --job-name=post_proc                       # base job name for the array
+#SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
+#SBATCH --time=1:00:00                             # maximum walltime per job
+#SBATCH --nodes=1                                  # Only one node is needed
+#SBATCH --ntasks=1                                 # These are serial jobs
+#SBATCH --mail-type=ALL                            # send all mail (way to much)
+#SBATCH --mail-user=andrew.d.nolan@maine.edu       # email to spend updates too
+#SBATCH --output=logs/post_proc.out                # standard output
+#SBATCH --error=logs/post_proc.err                 # standard error
+# in the previous two lines %A" is replaced by jobID and "%a" with the array index
+
+for file in $(ls ./glc1-a/nc/glc1-a_dx_50_NT_2000_dt_1.0_MB_*_OFF*.nc);do
+  python3 grid_data.py $file
+  echo
+  echo $(basename $file) processed
+  echo
+done
+# python3 grid_data.py
