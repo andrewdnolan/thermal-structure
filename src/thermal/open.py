@@ -1,8 +1,8 @@
-
 import numpy as np
 import xarray as xr
+from glob import glob
 
-def _quads_to_tris(quads):
+def __quads_to_tris(quads):
     """converts quad elements into tri elements
     from: https://stackoverflow.com/a/59971611/10221482
     """
@@ -46,6 +46,9 @@ def _preprocess_UGRID(ds):
     # create a new dataset to populate
     new_ds = xr.Dataset()
 
+    # copy encoding attrs from original file
+    new_ds.encoding = ds.encoding
+
     # add time dimensions with values from UGRID source
     new_ds = new_ds.expand_dims({"t": NT}).assign_coords({"t": ds.time.values})
 
@@ -80,7 +83,7 @@ def _preprocess_UGRID(ds):
     )
     # split the quad elements into triangles for plotting with matplotlib
     new_ds["tri_elements"] = xr.DataArray(
-        _quads_to_tris(new_ds.quad_elements.values),
+        __quads_to_tris(new_ds.quad_elements.values),
         dims=["tri_element_number", "tri_element_node"],
     )
 
@@ -104,7 +107,6 @@ def _preprocess_UGRID(ds):
             new_ds[key] = xr.DataArray(
                 var.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
             )
-
     return new_ds
 
 def _preprocess_elmer2nc(ds):
@@ -128,9 +130,64 @@ def dataset(filename, **kwargs):
     ds = _preprocess(ds)
     return ds
 
-def parameter_ensemble():
-    return None
+def mf_dataset(files, preprocess=None, parallel=False, concat_dim=None, **open_kwargs):
 
-# def mf_dataset(filename, **kwargs):
-#     # if
+    # check if glob was passed to function
+    if (type(files) == str) and ('*' in files):
+        paths = sorted(glob(files))
+    elif (type(files) == str) and ('*' not in files):
+        raise ValueError('If `type(files)==str` then must be a glob (i.e. include a *)')
+
+    if parallel:
+        import dask
+
+        # wrap the open_dataset, getattr, and preprocess with delayed
+        open_ = dask.delayed(dataset)
+        getattr_ = dask.delayed(getattr)
+        if preprocess is not None:
+            preprocess = dask.delayed(preprocess)
+    else:
+        open_ = dataset
+        getattr_ = getattr
+
+
+    datasets = [open_(p, **open_kwargs) for p in paths]
+    closers  = [getattr_(ds, "_close") for ds in datasets]
+    if preprocess is not None:
+        datasets = [preprocess(ds) for ds in datasets]
+
+    if parallel:
+        # calling compute here will return the datasets/file_objs lists,
+        # the underlying datasets will still be stored as dask arrays
+        datasets, closers = dask.compute(datasets, closers)
+
+
+    combined = xr.concat(datasets, dim=concat_dim)
+
+    def multi_file_closer():
+        for closer in closers:
+            closer()
+
+    combined.set_close(multi_file_closer)
+
+
+    return combined
+
+# def parameter_ensemble():
+#
+#     def expand_dims(ds, fp):
+#         offset = float(fp.split('MB_')[-1].split('_OFF')[0])
+#         ds     = ds.expand_dims("Delta_MB").assign_coords(Delta_MB=('Delta_MB', [offset]))
+#         return ds
+#
+#     #https://docs.xarray.dev/en/stable/user-guide/io.html#netcdf
+#
+#     # open the files
+#     open_tasks    = [dask.delayed(xr.open_dataset)(f) for f in file_names]
+#     # preprocess according to how the file was generated
+#     preproc_tasks = [dask.delayed(test_open._preprocess)(task) for task in open_tasks]
+#     # add parameter dim for concatenation
+#     expand_tasks  = [dask.delayed(expand_dims)(task, f) for task, f in zip(preproc_tasks, file_names)]
+#
+#     datasets   = dask.compute(expand_tasks)
 #     return None
