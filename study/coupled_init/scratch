@@ -26,7 +26,8 @@ for offset in $(seq -w $MB_0 $MB_s $MB_f); do
   done
 done
 
-
+KEY='glc1-a'
+dx=50
 dt=1.0
 NT=2000
 TT=2000
