@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
+#SBATCH --array=1-442%40                           # 442 jobs that run
 #SBATCH --job-name=post_proc                       # base job name for the array
-#SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
-#SBATCH --time=1:00:00                             # maximum walltime per job
+#SBATCH --mem-per-cpu=1000M                        # maximum 2250MMB per job
+#SBATCH --time=0:10:00                             # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
@@ -10,10 +11,38 @@
 #SBATCH --error=logs/post_proc.err                 # standard error
 # in the previous two lines %A" is replaced by jobID and "%a" with the array index
 
-for file in $(ls ./glc1-a/nc/glc1-a_dx_50_NT_2000_dt_1.0_MB_*_OFF*.nc);do
+
+
+count=1
+# loop over the mass balance offsets
+for offset in $(seq -w $MB_0 $MB_s $MB_f); do
+  # loop over mean annual air temps
+  for T_ma in $(seq -w -9.00 0.1 -7.00); do
+    # check if counter equals SLURM_ARRAY_TASK_ID
+    if [[ $count -eq $SLURM_ARRAY_TASK_ID ]]; then
+        break 2
+    fi
+    count=$((count+1))
+  done
+done
+
+
+dt=1.0
+NT=2000
+TT=2000
+# limit to 10 S.S. itters for transient runs
+SS_itters=10
+# diagnostic run is now restart variable
+RESTART="${run_name}.result"
+# prognostic run name
+run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
+
+file="${KEY}/nc/${run_name}"
+
+if [[ ! -f "${file/.nc/_gridded.nc}" ]]; then
   python3 grid_data.py $file
+
   echo
   echo $(basename $file) processed
   echo
-done
-# python3 grid_data.py
+fi
