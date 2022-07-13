@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 #SBATCH --array=1-442%40                           # 442 jobs that run
 #SBATCH --job-name=post_proc                       # base job name for the array
-#SBATCH --mem-per-cpu=1000M                        # maximum 2250MMB per job
+#SBATCH --mem-per-cpu=1750M                        # maximum 2250MMB per job
 #SBATCH --time=0:10:00                             # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu       # email to spend updates too
-#SBATCH --output=logs/post_proc.out                # standard output
-#SBATCH --error=logs/post_proc.err                 # standard error
+#SBATCH --output=logs/post_proc%a.out              # standard output
+#SBATCH --error=logs/post_proc%a.err               # standard error
 # in the previous two lines %A" is replaced by jobID and "%a" with the array index
 
 # for json parsing from the command line
@@ -83,8 +83,13 @@ run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
 
 file="${KEY}/nc/${run_name}.nc"
 
-python3 grid_data.py $file
 
-echo
-echo $(basename $file) processed
-echo
+if [[ -f $file ]]; then
+
+  python3 grid_data.py $file
+
+  echo
+  echo $(basename $file) processed
+  echo
+
+fi
