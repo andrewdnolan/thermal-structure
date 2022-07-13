@@ -1,7 +1,7 @@
 #!/bin/bash
-#SBATCH --array=1-442%40                           # 442 jobs that run
+#SBATCH --array=1-232%40                           # 442 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
-#SBATCH --mem-per-cpu=1500M                        # maximum 2250MMB per job
+#SBATCH --mem-per-cpu=1750M                        # maximum 2250MMB per job
 #SBATCH --time=9:00:00                             # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
@@ -151,6 +151,9 @@ parse_json "params/glc1-a.json"
 #   - https://unix.stackexchange.com/questions/97814/array-cartesian-product-in-bash
 #   - https://stackoverflow.com/questions/23363003/how-to-produce-cartesian-product-in-bash
 #   - https://rosettacode.org/wiki/Cartesian_product_of_two_or_more_lists#UNIX_Shell
+
+# hard code mb final because i accidently wrote over data
+MB_0=-1.250
 
 count=1
 # loop over the mass balance offsets
