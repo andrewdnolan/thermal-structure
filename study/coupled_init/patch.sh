@@ -19,6 +19,6 @@ target=$( sed -n "${SLURM_ARRAY_TASK_ID}p" bad_files )
 # Get the original filename
 source="${target/_gridded.nc/.nc}"
 # get rid of the problem target files
-echo rm $target
+rm $target
 # re-grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-echo python3 grid_data.py $source
+python3 grid_data.py $source
