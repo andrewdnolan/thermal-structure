@@ -44,6 +44,8 @@ End
 Constants
   include "./params/ref_params.sif"
 
+  Seasonality                     = logical True
+  
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
   Mass Balance Offset             = Real <offset>  ! m y^{-1}

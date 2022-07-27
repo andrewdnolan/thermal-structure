@@ -1,16 +1,12 @@
 ! ******************************************************************************
 ! *
-! *  Authors: Andrew Nolan, Adrian Gilbert
+! *  Authors: Andrew Nolan
 ! *  Email:   anolan@sfu.ca
 ! *  Github:  andrewdnolan
 ! *
 ! *  Date Written:
 ! *   2021/07/01
 ! *
-! *  Note:
-! *   This script was adapted from material provided at the Elmer/Ice Beginners
-! *   course at UiO in 2016. The original material can be found on Documentation
-! *   page of the Elmer/Ice Wiki under "Course Material."
 ! ******************************************************************************
 
 SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
@@ -429,7 +425,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! REAL(KIND=dp), allocatable    &
   !               :: Enthalpy_max(:) ! Maximum Enthalpy     [J kg-1]
 
-  LOGICAL :: GotIt,first_time=.true.
+  LOGICAL :: GotIt, Seasonality, first_time=.true.
 
   !-------------------------
   ! First time loop
@@ -461,32 +457,36 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy")
   Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
   ! Physical Parameters
-  rho_i    = GetParam(Model,  "rho_i")                   ![kg m-3]
-  rho_s    = GetParam(Model,  "rho_s")                   ![kg m-3]
-  rho_w    = GetParam(Model,  "rho_w")                   ![kg m-3]
+  rho_i       = GetParam(Model,  "rho_i")                   ![kg m-3]
+  rho_s       = GetParam(Model,  "rho_s")                   ![kg m-3]
+  rho_w       = GetParam(Model,  "rho_w")                   ![kg m-3]
   ! Physical constants
-  L_heat   = GetParam(Model, "L_heat")                   ![J kg-1]
-  T_ref    = GetParam(Model, "t_ref_enthalpy")           ! [K]
-  CapA     = GetParam(Model, "Enthalpy Heat Capacity A") ! [J kg-1 K-2]
-  CapB     = GetParam(Model, "Enthalpy Heat Capacity B") ! [J kg-1 K-1]
+  L_heat      = GetParam(Model, "L_heat")                   ![J kg-1]
+  T_ref       = GetParam(Model, "t_ref_enthalpy")           ! [K]
+  CapA        = GetParam(Model, "Enthalpy Heat Capacity A") ! [J kg-1 K-2]
+  CapB        = GetParam(Model, "Enthalpy Heat Capacity B") ! [J kg-1 K-1]
   ! Melt Parameters
-  f_dd     = GetParam(Model, "f_dd")                     ![m K-1 yr-1]
-  T_melt   = GetParam(Model, "T_melt")                   ![K]
+  f_dd        = GetParam(Model, "f_dd")                     ![m K-1 yr-1]
+  T_melt      = GetParam(Model, "T_melt")                   ![K]
   ! Firn Aquifer Parameters
-  h_aq     = GetParam(Model, "h_aq")                     ![m]
-  r_frac   = GetParam(Model, "r_frac")                   ![-]
-  C_firn   = GetParam(Model, "C_firn")                   ![-]
-  w_max_aq = GetParam(Model, "w_max_aq")
-  w_max_en = GetParam(Model, "w_max_en")
+  h_aq        = GetParam(Model, "h_aq")                     ![m]
+  r_frac      = GetParam(Model, "r_frac")                   ![-]
+  C_firn      = GetParam(Model, "C_firn")                   ![-]
+  w_max_aq    = GetParam(Model, "w_max_aq")
+  w_max_en    = GetParam(Model, "w_max_en")
   ! Air temperature related Parameters
-  alpha    = GetParam(Model, "alpha")                    ! [K]
-  dTdz     = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
-  T_mean   = GetParam(Model, "T_mean")                   ! [K]
-  T_peak   = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
-  z_ref    = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
-  std_c0   = GetParam(Model, "std_c0")                   ! [K?]
-  std_c1   = GetParam(Model, "std_c1")                   ! [K?]
-  std_c2   = GetParam(Model, "std_c2")                   ! [K?]
+  alpha       = GetParam(Model, "alpha")                    ! [K]
+  dTdz        = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
+  T_mean      = GetParam(Model, "T_mean")                   ! [K]
+  T_peak      = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
+  z_ref       = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
+  std_c0      = GetParam(Model, "std_c0")                   ! [K?]
+  std_c1      = GetParam(Model, "std_c1")                   ! [K?]
+  std_c2      = GetParam(Model, "std_c2")                   ! [K?]
+  Seasonality = ListGetLogical(Model % Constants, "Seasonality", GotIt )
+  IF ( .NOT.GotIt ) then
+    call fatal('Surface_Processes', 'Could not find Seasonality') 
+  end if
 
   ! ! Allocate Enthalpy Max Array
   ! allocate(Enthalpy_max(N_n))
@@ -495,7 +495,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !   Element   => GetActiveElement(e)
   !   BodyForce =>
   ! end do
-
 
   if (TransientSimulation) then
     ! if transient get current timestep, which is really time at end of timestep
@@ -528,7 +527,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   else
     ! set the "timestep" as one year
-    dt = 1
+    dt = 1.0
     ! if steady state get yearly amount of melt
     doy_i   = 1
     doy_ip1 = 365
@@ -537,7 +536,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! Create std(doy) array (only needs to be done once)
   call temp_std(std, (/ std_c0, std_c1, std_c2 /))
 
-  ! Outter Most Loop: Itterate of model nodes
+  ! Outter Most Loop: Itterate over model nodes
   DO n=1,N_n
 
     ! Check if depth == 0.0 for node, i.e. is it a surface node
@@ -563,8 +562,14 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
-        ! Calculate surace melt in meters of snow equivalent
-        Melt = f_dd * SUM(PDD(doy_i:doy_ip1))
+
+        if ( Seasonality ) then
+          ! Calculate surace melt in meters of snow equivalent
+          Melt = f_dd * SUM(PDD(doy_i:doy_ip1))
+        else
+          ! since no seasonality, equal divide the annual melt throughout the year.
+          Melt = f_dd * SUM(PDD) * dt
+        end if
 
         ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
         Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt
@@ -583,12 +588,12 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Convert surface air temperature to enthalpy
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate mean annual airtemp over timestep and convert from [C] to [K]
-
-      ! yearly timesteps give inf mean annual air temp due to division by zero
-      if ((doy_ip1-doy_i .eq. 0) .and. (MOD(dt, 1.0) .eq. 0.0)) then
-        T_surf = SUM(T)/365.0 + 273.15
-      else
+      if (Seasonality) then
+        ! average airtemp over timestep
         T_surf = SUM(T(doy_i:doy_ip1))/(doy_ip1-doy_i) + 273.15
+      else
+        ! b/c no seasonality just return mean annual air temp
+        T_surf = SUM(T)/365.0 + 273.15
       end if
 
       if (n .eq. N_n) write(*,*) doy_i, doy_ip1, doy_ip1-doy_i, T_surf-273.15
