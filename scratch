@@ -1,52 +1,52 @@
-# #!/usr/bin/env bash
-#
-# #Load cedar module file
-# source ../../config/modulefile.cc.cedar
-#
-# result_files=(`ls result/klun-a/mesh_dx100/*.result | grep -P "MB_-?\d.\d\d_OFF"`)
-# NetCDF_files=(`ls result/klun-a/nc/*.nc             | grep -P "MB_-?\d.\d\d_OFF"`)
-#
-# #############################################
-# #https://stackoverflow.com/a/2315459/10221482
-# #############################################
-#
-# incomp_files=()
-# for i in "${result_files[@]}"; do
-#   skip=
-#   # strip file extension from results
-#   fn_1=$(echo "${i%%.result}" | cut -d "/" -f 4)
-#
-#   for j in "${NetCDF_files[@]}"; do
-#     fn_2=$(echo "${j%%.nc}" | cut -d "/" -f 4)
-#     [[ $fn_1 == $fn_2 ]] && { skip=1; break; }
-#   done
-#
-#   [[ -n $skip ]] || incomp_files+=("$i")
-# done
-# # declare -p incomp_files
-#
-# for file in "${incomp_files[@]}"; do
-#   # time echo $( tac $file | sed -n '/^Time/ {p;q}' );
-#   # time echo $( LC_ALL=C fgrep "Time" $file | tail -n 1);
-#
-#   T_f=$(tac $file | LC_ALL=C fgrep -m1 "Time")
-#   T_f=$(echo $T_f  | cut -d " " -f 2)
-#
-#   # echo $T_f
-#
-#   # find the Run Number, i.e.
-#   CMD=$(grep $file "./run/medium.out")
-#
-#   # # Find original amoutn of time planned for
-#   # T_og=$(echo $CMD | grep -oP "\-t \d\d\d\d" | cut -d " " -f 2)
-#
-#   # replace old time with the number of timestep executed
-#   NEW_CMD=$( echo $CMD | perl -ne "s#-t\s\d\d\d\d?#-t "$T_f"#g; print $_" )
-#
-#   echo $NEW_CMD
-#
-#   # $NEW_CMD
-# done
+#!/usr/bin/env bash
+
+#Load cedar module file
+source ../../config/modulefile.cc.cedar
+
+result_files=(`ls result/klun-a/mesh_dx100/*.result | grep -P "MB_-?\d.\d\d_OFF"`)
+NetCDF_files=(`ls result/klun-a/nc/*.nc             | grep -P "MB_-?\d.\d\d_OFF"`)
+
+#############################################
+#https://stackoverflow.com/a/2315459/10221482
+#############################################
+
+incomp_files=()
+for i in "${result_files[@]}"; do
+  skip=
+  # strip file extension from results
+  fn_1=$(echo "${i%%.result}" | cut -d "/" -f 4)
+
+  for j in "${NetCDF_files[@]}"; do
+    fn_2=$(echo "${j%%.nc}" | cut -d "/" -f 4)
+    [[ $fn_1 == $fn_2 ]] && { skip=1; break; }
+  done
+
+  [[ -n $skip ]] || incomp_files+=("$i")
+done
+# declare -p incomp_files
+
+for file in "${incomp_files[@]}"; do
+  # time echo $( tac $file | sed -n '/^Time/ {p;q}' );
+  # time echo $( LC_ALL=C fgrep "Time" $file | tail -n 1);
+
+  T_f=$(tac $file | LC_ALL=C fgrep -m1 "Time")
+  T_f=$(echo $T_f  | cut -d " " -f 2)
+
+  # echo $T_f
+
+  # find the Run Number, i.e.
+  CMD=$(grep $file "./run/medium.out")
+
+  # # Find original amoutn of time planned for
+  # T_og=$(echo $CMD | grep -oP "\-t \d\d\d\d" | cut -d " " -f 2)
+
+  # replace old time with the number of timestep executed
+  NEW_CMD=$( echo $CMD | perl -ne "s#-t\s\d\d\d\d?#-t "$T_f"#g; print $_" )
+
+  echo $NEW_CMD
+
+  # $NEW_CMD
+done
 
 
 old_fp="initialization/coarse/result/"
