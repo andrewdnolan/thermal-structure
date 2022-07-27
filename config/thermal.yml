@@ -12,6 +12,8 @@ dependencies:
   - seaborn
   - pip
   - xarray
+  - netCDF4
+  - h5netcdf
   - matplotlib
   - dask
   - dask-jobqueue
