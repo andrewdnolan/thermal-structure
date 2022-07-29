@@ -1,7 +1,7 @@
 
 # `elmer2nc`
 
-This is program parses `*.result` files written by `Elmer`, and re-writes them `NetCDF` files.
+This is program parses `*.result` files written by `Elmer`, and re-writes them `NetCDF` files. The program can be compiled by executing the make file (i.e. `make`), but requires `NetCDF` fortran libraries to be installed. The program is built in the project wide `Makefile` located in the top dir of this repo, so no need to really manually compile the source here. 
 
 Basic information about the progam can be found by running:
 ```bash
