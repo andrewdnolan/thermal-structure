@@ -71,12 +71,12 @@ Simulation
   Timestep Sizes              = <dt>  ![a]
   Output Intervals            = 1
 
-  Post File                   = "VTU/pseudo_test.vtu"
+  Post File                   = "VTU/<run_name>.vtu"
   Output File                 = "<run_name>.result"               !\"
   Max Output Level            = 3
 
   Restart File                = "<RESTART>"
-  Restart Position            = 9
+  Restart Position            = 0
   Restart Time                = Real 0.0
   Restart Before Initial Conditions = Logical True
   Initialize Dirichlet Conditions   = Logical False
@@ -508,8 +508,10 @@ Boundary Condition 1
 
   ! sliding
   Velocity 1         = Real 0.0e0
+  ! Velocity 2         = Real 0.0e0
+
   Slip Coefficient 2 = Variable "water content"
-     real MATC "if (tx>0.001) (0.003); else (1.0)"
+     real MATC "if (tx>0.001) (<beta>); else (1.0)"
 
 
   Bottom Surface    = Variable Coordinate 1
