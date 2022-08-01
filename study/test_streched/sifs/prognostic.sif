@@ -70,7 +70,7 @@ Simulation
 
   Timestep Intervals          = <NT>  ![a]
   Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = 10
+  Output Intervals            = <NT> 
 
   ! Post File                   = "VTU/<run_name>.vtu"
   Output File                 = "<run_name>.result"               !\"
@@ -207,8 +207,8 @@ Solver 1
 End
 
 Solver 2
-  ! Exec Interval                           = 10
-  ! Timestep Scale                          = 10
+  Exec Interval            = <Dynamic_int>
+  Timestep Scale           = <Dynamic_int>
   ! Exec Solver              = "before timestep"
   Equation                 = "MapCoordinate"
   Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
@@ -224,8 +224,8 @@ Solver 2
 End
 
 Solver 3
-  ! Exec Interval              = 10
-  ! Timestep Scale             = 10
+  Exec Interval              = <Dynamic_int>
+  Timestep Scale             = <Dynamic_int>
   Equation                   = "HeightDepth"
   ! Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -235,8 +235,8 @@ Solver 3
 End
 
 Solver 4
-  ! Exec Interval                           = 10
-  ! Timestep Scale                          = 10
+  Exec Interval                 = <Dynamic_int>
+  Timestep Scale                = <Dynamic_int>
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
   Linear System Residual Output = Integer 0
@@ -250,17 +250,18 @@ Solver 5
   Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
   Variable DOFs         = 1
+  ! How to prescribe latent heat source:
+  !   either as Volumetric [J m-3 a-1] or Mass [J kg-1 a-1] heat sources
+  Latent Heat Source    = String "<heat_source>" ! or Mass
 
-  Exported Variable 1   = -dofs 1 "Densi" ! [kg m^-3]
+  ! When "Latent Heat Source" is "Mass" this variable is zero everywhere
+  Exported Variable 1   = -dofs 1 "Q_lat" ! [J m-3 a-1]
+  Exported Variable 2   = -dofs 1 "Densi" ! [kg m^-3]
 End
-
 ! Deformational Heat
 Solver 6
-  ! Exec Solver                   = String "Never"
-
-  ! Exec Interval                           = 10
-  ! Timestep Scale                          = 10
-  ! Exec Solver = String "Always"
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1
@@ -285,8 +286,8 @@ End
 
 
 Solver 7
-  ! Exec Interval                           = 10
-  ! Timestep Scale                          = 10
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
   Equation                                 = "Navier-Stokes"
   Flow model                               = String "Stokes"
   Optimize Bandwidth                       = Logical True
@@ -376,8 +377,8 @@ Solver 8
 End
 
 Solver 9
-   ! Exec Interval                           = 10
-   ! Timestep Scale                          = 10
+   Exec Interval                           = <Dynamic_int>
+   Timestep Scale                          = <Dynamic_int>
 
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
@@ -417,8 +418,9 @@ End
 
 Solver 10
    Exec Solver    = String  "after timestep"
-   ! Exec Condition = Variable "Time"
-   !                  Real lua "netcdf_cond(tx[0], 10)"
+
+   Exec Condition = Variable "Time"
+                    Real lua "netcdf_cond(tx[0], <Dynamic_int>)"
 
    Equation           = "NetcdfOutPutSolve"
    Procedure          = "../../bin/NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
@@ -441,14 +443,15 @@ Solver 10
    Scalar Field 7  = String "Phase Change Enthalpy"
    Scalar Field 8  = String "Surface_Enthalpy"
    Scalar Field 9  = String "W"
+   Scalar Field 10 = String "Q_lat"
    ! Free Surface Solver Fields
-   Scalar Field 10 = String "Zs"
-   Scalar Field 11 = String "Zbed"
-   Scalar Field 12 = String "Mass Balance"
+   Scalar Field 11 = String "Zs"
+   Scalar Field 12 = String "Zbed"
+   Scalar Field 13 = String "Mass Balance"
    ! Misc Solver Fields
-   Scalar Field 13 = String "Depth"
-   Scalar Field 14 = String "Height"
-   Scalar Field 15 = String "Densi"
+   Scalar Field 14 = String "Depth"
+   Scalar Field 15 = String "Height"
+   Scalar Field 16 = String "Densi"
 
    Compute LonLat = Logical False
 End
@@ -486,6 +489,13 @@ Body Force 1
   ! Deformational (mass) Heat Source (Convert to J yr-1 kg-1)
   Heat Source = Variable "W"
                 real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)"
+
+  ! Latent (mass) Heat Source (J kg-1 yr-1). Enthalpy solver only has mass heat
+  ! source implemented. See link below for Mass vs. Volume differernces:
+  !   http://www.elmerfem.org/forum/viewtopic.php?p=24801&hilit=volumetric+heat+source#p24801
+  Heat Source = Variable Q_lat, Densi
+                Real lua "(tx[0] / tx[1])"
+
 
   ! Enthalpy (soft) Limiters
   Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy

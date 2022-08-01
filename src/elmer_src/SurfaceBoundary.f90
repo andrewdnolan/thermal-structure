@@ -350,14 +350,15 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !----------------------------------------------------------------------------
   ! external variables
   !----------------------------------------------------------------------------
-  LOGICAL                    :: TransientSimulation  ! Should be .FAlSE. always for now
-  REAL(KIND=dp)              :: dt                   ! Should be 0 for now
+  LOGICAL                    :: TransientSimulation
+  REAL(KIND=dp)              :: dt
   TYPE(Model_t)              :: Model
   TYPE(Solver_t)             :: Solver
   TYPE(Element_t),   POINTER :: Element
-  TYPE(ValueList_t), POINTER :: BodyForce
+  TYPE(ValueList_t), POINTER :: Params
 
   TYPE(Variable_t), POINTER  :: Surf_Enthalpy, &
+                                Q_lat_vol,     &  ! Latent (volumetric) Heat source  [J m-3 y-1]
                                 H_f,           &  ! Phase Change Enthalpy [J kg-1]
                                 Depth,         &  ! Depth below surf      [m]
                                 TimeVar,       &  ! Time                  [yr]
@@ -401,7 +402,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   REAL(KIND=dp) :: z,           &  ! nodal surface elev.   [m a.s.l.]
                    Time,        &  ! Simulation time       [a]
                    T_melt,      &  ! Melting threshold     [K]
-                   L_heat,      &  ! Latnet heat of fusion [J kg-1]
+                   L_heat,      &  ! Latent heat of fusion [J kg-1]
                    f_dd,        &  ! Degree-day factor     [m K^-1 a^-1]
                    h_aq,        &  ! Firn aquifer thick    [m]
                    r_frac,      &  ! Runoff fraction       [-]
@@ -421,18 +422,21 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    w_max_aq,    &  ! max water content in frin aq  [-]
                    w_max_en,    &  ! max water content in glac ice [-]
                    Enthalpy_max    ! Maximum Enthalpy     [J kg-1]
-
   ! REAL(KIND=dp), allocatable    &
   !               :: Enthalpy_max(:) ! Maximum Enthalpy     [J kg-1]
 
+  ! How the heat souce is treated. Either Mass (J/kg) or Volumetric (J/m)
+  character(len=max_name_len) :: Heat_Source ! How the heat souce is treated
+
   LOGICAL :: GotIt, Seasonality, first_time=.true.
+
+  ! Variables to keep track of between calls to the solver
+  save first_time,N_v,N_s,N_n
+
 
   !-------------------------
   ! First time loop
   !-------------------------
-  save first_time,N_v,N_s,N_n
-
-
   ! Variable declaration that only needs to be run once (i.e. first time)
   IF (first_time) THEN
     ! set first_time to false for all subsequent time steps
@@ -450,12 +454,17 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ENDIF
   ! End "first_time" loop
 
+  ! Solver passed params
+  Params => GetSolverParams()
+
   ! Pointer to the model variables
-  Depth         => VariableGet( Model % Variables, "Depth")
-  Dens          => VariableGet( Model % Variables, "Densi")
-  MB            => VariableGet( Model % Variables, "mass balance")
-  H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy")
+  Depth         => VariableGet( Model % Variables, "Depth") ! [m]
+  Dens          => VariableGet( Model % Variables, "Densi") ! [kg m-3]
+  MB            => VariableGet( Model % Variables, "mass balance") ! [m y-1]
+  H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy") ! [J kg-1]
   Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
+  Q_lat_vol     => VariableGet( Model % Variables, "Q_lat") ![J m-3 yr-1]
+
   ! Physical Parameters
   rho_i       = GetParam(Model,  "rho_i")                   ![kg m-3]
   rho_s       = GetParam(Model,  "rho_s")                   ![kg m-3]
@@ -485,8 +494,17 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   std_c2      = GetParam(Model, "std_c2")                   ! [K?]
   Seasonality = ListGetLogical(Model % Constants, "Seasonality", GotIt )
   IF ( .NOT.GotIt ) then
-    call fatal('Surface_Processes', 'Could not find Seasonality') 
+    call fatal('Surface_Processes', 'Could not find Seasonality')
   end if
+
+  ! ! determine if existing files should be over written (i.e. clobbered)
+  Heat_Source = GetString( Params, 'Latent Heat Source', GotIt )
+  IF ( .NOT.GotIt ) then
+    call fatal('Surface_Processes', 'Could not find Latent Heat Source')
+  end if
+
+  ! TO DO: Add check for anything other than accepted Heat Source types
+
 
   ! ! Allocate Enthalpy Max Array
   ! allocate(Enthalpy_max(N_n))
@@ -524,7 +542,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       doy_i   = 1
       doy_ip1 = 365
     end if
-
   else
     ! set the "timestep" as one year
     dt = 1.0
@@ -540,7 +557,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   DO n=1,N_n
 
     ! Check if depth == 0.0 for node, i.e. is it a surface node
-    IF (Depth%Values(Depth%perm(n))==0.0) THEN
+    IF (Depth%Values(Depth%perm(n)) == 0.0) THEN
 
       ! Get nodal surface elevation [m]
       z = model%nodes%y(n)
@@ -565,14 +582,16 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
         if ( Seasonality ) then
           ! Calculate surace melt in meters of snow equivalent
-          Melt = f_dd * SUM(PDD(doy_i:doy_ip1))
+          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1 ![m] <= [m K-1 d-1] * [K] * [d]
         else
-          ! since no seasonality, equal divide the annual melt throughout the year.
-          Melt = f_dd * SUM(PDD) * dt
+          ! since no seasonality sum up all the melt for the year
+          Melt = f_dd * SUM(PDD) * 1 ![m] <= [m K-1 d-1] * [K] * [d]
+          ! then partition the melt equally (via fraction of year)
+          Melt = Melt * (dt/1.0)    ![m] <= [m] * [a] / [a]
         end if
 
-        ! Eqn. (9) Wilson and Flowers (2013) [J m-3]
-        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt
+        ! Eqn. (9) Wilson and Flowers (2013)
+        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt * (1.0 / dt) ! [J m-3 y-1]
 
         ! calculate maximum enthalpy: above the ELA account for the maximum
         ! water content being higher due to the porosity of firn
@@ -605,8 +624,20 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
       ! Convert surface air temp to enthalpy
       H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
-      ! Add the surface heating to the surface enthalpy
-      H_surf =  Q_lat/rho_s + H_surf
+
+      SELECT CASE(TRIM(Heat_Source))
+      CASE("volumetric")
+        ! heat source must be prescribed one layer below surface so as not to conflict w/ Dirichlet B.C.
+        cont = n-N_s
+        Q_lat_vol % values (Q_lat_vol % perm(cont)) = Q_lat            ! [J m-3 yr-1]
+        ! Just a Dirichlet B.C. based on air temp
+        H_surf = H_surf                                                ! [J kg-1]
+      CASE("mass")
+        Q_lat_vol % values (Q_lat_vol % perm(n)) = 0.0                 ! [J m-3 yr-1]
+        ! Add the surface heating to the surface enthalpy
+        H_surf = (Q_lat*dt) / rho_s + H_surf  ! [J kg-1] <= [J m-3 a-1] * [a] * [m3 kg-1] + [J kg-1]
+      END SELECT
+
 
       if (H_surf .ge. Enthalpy_max) then
         ! Limit the surface enthalpy based on max englacial water content
