@@ -347,6 +347,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   IMPLICIT NONE      ! saves you from stupid errors
 
+  ! Solver name
+  CHARACTER(*), PARAMETER :: Caller = 'Surface_Processes'
+
   !----------------------------------------------------------------------------
   ! external variables
   !----------------------------------------------------------------------------
@@ -378,8 +381,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    N_n,         &  ! number of model    nodes
                    N_s,         &  ! number of surface  nodes
                    N_v,         &  ! number of vertical nodes
-                   doy_i,       &  ! day of year of current timestep
-                   doy_ip1         ! day of year of next timesteps
+                   N_years,     &  ! number of years in timsetep      [a]
+                   doy_i,       &  ! day of year of current timestep  [doy]
+                   doy_ip1         ! day of year of next timesteps    [doy]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! air temp related
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -494,13 +498,13 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   std_c2      = GetParam(Model, "std_c2")                   ! [K?]
   Seasonality = ListGetLogical(Model % Constants, "Seasonality", GotIt )
   IF ( .NOT.GotIt ) then
-    call fatal('Surface_Processes', 'Could not find Seasonality')
+    call fatal(Caller, 'Could not find Seasonality')
   end if
 
   ! ! determine if existing files should be over written (i.e. clobbered)
   Heat_Source = GetString( Params, 'Latent Heat Source', GotIt )
   IF ( .NOT.GotIt ) then
-    call fatal('Surface_Processes', 'Could not find Latent Heat Source')
+    call fatal(Caller, 'Could not find Latent Heat Source')
   end if
 
   ! TO DO: Add check for anything other than accepted Heat Source types
@@ -519,6 +523,18 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
     ! Get current time
     Time    =   TimeVar % Values(1)
+
+    ! Check that a valid timestep is passed
+    if ((dt .ge. 1.0) .and. (MOD(dt, 1.0) /= 0.0)) then
+      call fatal(Caller, 'For dt > 1, only full year strides are supported. E.g. modulo(dt, 1.0) == 0')
+    end if
+
+    ! Find the number of years in the timestep
+    if (dt .ge. 1.0) then
+      N_years = floor(dt)
+    else
+      N_years = 1.0
+    end if
 
     ! find DOY at begining of timestep [d]
     doy_i = NINT(MOD(time-dt, 1.0) * 365.0)
@@ -566,7 +582,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
       ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
-      PDD = Cavlo_Greve_PDDs(T,std)
+      PDD = Cavlo_Greve_PDDs(T,std) * N_years
 
       ! ! only loop over DOY within current timestep
       ! DO d=doy_i,doy_ip1
@@ -713,7 +729,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     constant = GetConstReal(Model % Constants, trim(constant_name), GotIt)
 
     if (.not. GotIt) then
-      call fatal('Surface_Processes ---> GetParam', &
+      call fatal(Caller//'---> GetParam', &
                  'Could not find '//trim(constant_name) )
     end if
 
