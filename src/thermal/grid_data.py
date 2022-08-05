@@ -57,7 +57,7 @@ def main(argv):
         ds = ds.expand_dims(key).assign_coords({key: (key, [val])})
 
     # write the gridded dataset to disk for future use
-    ds.to_netcdf(out_fn, "w")
+    ds.to_netcdf(out_fn, "a")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
