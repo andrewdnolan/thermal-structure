@@ -103,7 +103,7 @@ KEY='glc1-a'
 T_ma=-9.00
 offset=-1.225
 # 500 year prognostic runs
-T_f=15
+T_f=500
 
 for heat_source in "volumetric" "mass";do
 

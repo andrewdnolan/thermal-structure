@@ -44,7 +44,7 @@ End
 Constants
   include "./params/ref_params.sif"
 
-  Seasonality                     = Logical False
+  Seasonality                     = Logical True
 
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
@@ -70,7 +70,7 @@ Simulation
 
   Timestep Intervals          = <NT>  ![a]
   Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = <NT> 
+  Output Intervals            = <NT>
 
   ! Post File                   = "VTU/<run_name>.vtu"
   Output File                 = "<run_name>.result"               !\"
@@ -420,7 +420,7 @@ Solver 10
    Exec Solver    = String  "after timestep"
 
    Exec Condition = Variable "Time"
-                    Real lua "netcdf_cond(tx[0], <Dynamic_int>)"
+                    Real lua "netcdf_cond(tx[0], 10)"
 
    Equation           = "NetcdfOutPutSolve"
    Procedure          = "../../bin/NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
