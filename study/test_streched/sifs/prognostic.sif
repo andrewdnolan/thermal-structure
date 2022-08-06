@@ -30,9 +30,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./glc1-a/" "mesh_dx50"        !\"
-  Include Path      "./glc1-a/"                    !\"
-  Results Directory "./glc1-a/"                    !\"
+  Mesh DB           "./<KEY>/" "mesh_dx<DX>"        !\"
+  Include Path      "./<KEY>/"                    !\"
+  Results Directory "./<KEY>/"                    !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -44,11 +44,12 @@ End
 Constants
   include "./params/ref_params.sif"
 
-  Seasonality                     = Logical False
+  Seasonality                     = Logical True
+
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
-  Mass Balance Offset             = Real -1.225  ! m y^{-1}
-  T_mean                          = real -9.00  ! Mean annual air temp @ z_ref [C]
+  Mass Balance Offset             = Real <offset>  ! m y^{-1}
+  T_mean                          = real <T_mean>  ! Mean annual air temp @ z_ref [C]
   Pressure Variable               = String "Pressure"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -65,17 +66,17 @@ Simulation
   BDF order                   = 2
 
   Steady State Min Iterations = 1
-  Steady State Max Iterations = 10
+  Steady State Max Iterations = <SS_itters>
 
-  Timestep Intervals          = 100  ![a]
-  Timestep Sizes              = 0.1  ![a]
-  Output Intervals            = 1
+  Timestep Intervals          = <NT>  ![a]
+  Timestep Sizes              = <dt>  ![a]
+  Output Intervals            = <NT>
 
-  Post File                   = "VTU/pseudo_test.vtu"
-  Output File                 = "glc1-a_dx_50_NT_100_dt_0.1_MB_-1.225_OFF_Tma_-9.00_pseudo.result"               !\"
+  ! Post File                   = "VTU/<run_name>.vtu"
+  Output File                 = "<run_name>.result"               !\"
   Max Output Level            = 3
 
-  Restart File                = "glc1-a_dx_50_NT_2000_dt_1.0_MB_-1.225_OFF_Tma_-9.00_prog.result"
+  Restart File                = "<RESTART>"
   Restart Position            = 9
   Restart Time                = Real 0.0
   Restart Before Initial Conditions = Logical True
@@ -114,9 +115,9 @@ End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Initial Condition 1
   ! Dynamic Variables from restart file
-  Velocity 1       = Equals "Velocity 1"  ! [m a-1]
-  Velocity 2       = Equals "Velocity 2"  ! [m a-1]
-  Pressure         = Equals "Pressure"    ! [MPa]
+  Velocity 1       = Equals "Velocity 1"
+  Velocity 2       = Equals "Velocity 2"
+  Pressure         = Equals "Pressure"
   Mesh Velocity 1  = Real 0.0
   Mesh Velocity 2  = Real 0.0
   ! Thermodynamic Variables from restart file
@@ -129,10 +130,14 @@ Initial Condition 1
 End
 
 Initial Condition 2
-  Zs    = Equals "Zs"             ! [m a.s.l.]
+  Zs    = Variable Coordinate 1
+          Real
+           include  "../../input_data/topography/<KEY>_surf.dat"
+          End
+
   RefZs = Variable Coordinate 1
           Real
-           include  "../../input_data/topography/glc1-a_surf.dat"
+           include  "../../input_data/topography/<KEY>_surf.dat"
           End
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -202,6 +207,8 @@ Solver 1
 End
 
 Solver 2
+  Exec Interval            = <Dynamic_int>
+  Timestep Scale           = <Dynamic_int>
   ! Exec Solver              = "before timestep"
   Equation                 = "MapCoordinate"
   Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
@@ -217,6 +224,8 @@ Solver 2
 End
 
 Solver 3
+  Exec Interval              = <Dynamic_int>
+  Timestep Scale             = <Dynamic_int>
   Equation                   = "HeightDepth"
   ! Exec Solver                = "Before Timestep"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
@@ -226,6 +235,8 @@ Solver 3
 End
 
 Solver 4
+  Exec Interval                 = <Dynamic_int>
+  Timestep Scale                = <Dynamic_int>
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
   Linear System Residual Output = Integer 0
@@ -239,12 +250,18 @@ Solver 5
   Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
   Variable DOFs         = 1
+  ! How to prescribe latent heat source:
+  !   either as Volumetric [J m-3 a-1] or Mass [J kg-1 a-1] heat sources
+  Latent Heat Source    = String "<heat_source>" ! or Mass
 
-  Exported Variable 1   = -dofs 1 "Densi" ! [kg m^-3]
+  ! When "Latent Heat Source" is "Mass" this variable is zero everywhere
+  Exported Variable 1   = -dofs 1 "Q_lat" ! [J m-3 a-1]
+  Exported Variable 2   = -dofs 1 "Densi" ! [kg m^-3]
 End
-
 ! Deformational Heat
 Solver 6
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
   Variable DOFs                            = 1
@@ -262,13 +279,15 @@ Solver 6
   Nonlinear System Convergence Tolerance   = 1.0E-06
   Nonlinear System Max Iterations          = 50
   Nonlinear System Relaxation Factor       = Real 1.0
-  !
-  ! Flow Solver Name                         = String "Flow Solution"
-  ! Flow Loads Name                          = String "Flow Solution Loads"
+
+  Flow Solver Name                         = String "Flow Solution"
+  Flow Loads Name                          = String "Flow Solution Loads"
 End
 
 
 Solver 7
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
   Equation                                 = "Navier-Stokes"
   Flow model                               = String "Stokes"
   Optimize Bandwidth                       = Logical True
@@ -300,8 +319,6 @@ Solver 7
   Exported Variable 1                      = -dofs 2 "Mesh Velocity"
   Exported Variable 2                      = -dofs 1 "Densi"
   ! Exported Variable 4                      = -dofs 1 "Melt"
-  Exported Variable 3 = Flow Solution Loads[Fx:1 Fy:1 Fz:1 CEQ Residual:1 ]
-  Calculate Loads = Logical True
 End
 
 ! Enthalpy Solver
@@ -353,11 +370,16 @@ Solver 8
   Exported Variable 3 DOFs                 = 1
 
   Flow Solver Name                         = String "Flow Solution"
-  Flow Loads Name                          = String "Flow Solution Loads"
+  ! Flow Loads Name                          = String "Flow Solution Loads"
   Pressure Variable                        = String "Pressure"
+
+  ! calculate loads = true
 End
 
 Solver 9
+   Exec Interval                           = <Dynamic_int>
+   Timestep Scale                          = <Dynamic_int>
+
    Equation                                = "Free Surface Evolution"
    Variable                                = String "Zs"
    Variable DOFs                           =  1
@@ -396,16 +418,17 @@ End
 
 Solver 10
    Exec Solver    = String  "after timestep"
-   ! Exec Condition = Variable "Time"
-   !                  Real lua "netcdf_cond(tx[0], 10)"
+
+   Exec Condition = Variable "Time"
+                    Real lua "netcdf_cond(tx[0], 10)"
 
    Equation           = "NetcdfOutPutSolve"
    Procedure          = "../../bin/NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
    Variable           = -nooutput "NetCDFOutPut"
    Active Coordinate  = Integer 2
 
-   OutPut Directory   = File "./glc1-a/nc"
-   Output File Name   = "glc1-a_dx_50_NT_100_dt_0.1_MB_-1.225_OFF_Tma_-9.00_pseudo"
+   OutPut Directory   = File "./<KEY>/nc"
+   Output File Name   = "<run_name>"
 
    Optimize Bandwidth = Logical False
 
@@ -420,26 +443,17 @@ Solver 10
    Scalar Field 7  = String "Phase Change Enthalpy"
    Scalar Field 8  = String "Surface_Enthalpy"
    Scalar Field 9  = String "W"
+   Scalar Field 10 = String "Q_lat"
    ! Free Surface Solver Fields
-   Scalar Field 10 = String "Zs"
-   Scalar Field 11 = String "Zbed"
-   Scalar Field 12 = String "Mass Balance"
+   Scalar Field 11 = String "Zs"
+   Scalar Field 12 = String "Zbed"
+   Scalar Field 13 = String "Mass Balance"
    ! Misc Solver Fields
-   Scalar Field 13 = String "Depth"
-   Scalar Field 14 = String "Height"
-   Scalar Field 15 = String "Densi"
+   Scalar Field 14 = String "Depth"
+   Scalar Field 15 = String "Height"
+   Scalar Field 16 = String "Densi"
 
    Compute LonLat = Logical False
-End
-
-Solver 11
-  Equation           = "NormalVector"
-  Exec Solver        = Before Simulation
-  Procedure          = "ElmerIceSolvers" "ComputeNormalSolver"
-  Variable           = String "Normal Vector"
-  Variable DOFs      = 2
-  Optimize Bandwidth = Logical False
-  ComputeAll         = Logical False
 End
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -449,7 +463,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(10)  = 1 2 3 4 5 6 7 8 10 11
+  Active Solvers(9)  = 1 2 3 4 5 6 7 8 10
 End
 
 Equation 2
@@ -476,6 +490,13 @@ Body Force 1
   Heat Source = Variable "W"
                 real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)"
 
+  ! Latent (mass) Heat Source (J kg-1 yr-1). Enthalpy solver only has mass heat
+  ! source implemented. See link below for Mass vs. Volume differernces:
+  !   http://www.elmerfem.org/forum/viewtopic.php?p=24801&hilit=volumetric+heat+source#p24801
+  Heat Source = Variable Q_lat, Densi
+                Real lua "(tx[0] / tx[1])"
+
+
   ! Enthalpy (soft) Limiters
   Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
                            real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy_rho"
@@ -487,7 +508,7 @@ Body Force 2
   Name                       = "Climate"
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                                Real Procedure "../../bin/mass_balance" "spline"
+                                Real Procedure "../../bin/mass_balance" "<FIT>"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
@@ -500,34 +521,25 @@ End
 
 ! Bedrock
 Boundary Condition 1
-  Name                       = "bedrock"
-  Target Boundaries          = 1
-  ComputeNormal              = Logical True
-  Normal-Tangential Velocity = Logical True
-  Mass Consistent Normals    = Logical True
+  Name              = "bedrock"
+  Target Boundaries = 1
+  Compute Normals   = Logical True
 
-  ! sliding
-  Velocity 1         = Real 0.0e0
-  Slip Coefficient 2 = Variable "water content"
-     real MATC "if (tx>0.001) (0.003); else (1.0)"
-
-
+  ! No sliding
+  Velocity 1        = Real 0.0e0
+  Velocity 2        = Real 0.0e0
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/glc1-a_bed.dat"
+                         include "../../input_data/topography/<KEY>_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/glc1-a_bed.dat"
+                         include "../../input_data/topography/<KEY>_bed.dat"
                       End
 
   ! < Heat_Flux>
   Enthalpy Heat Flux BC = Logical True
   Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
-
-  ! Frictional Heating Term
-  Enthalpy_h Load       = Variable Velocity 1
-                          Real Procedure  "ElmerIceUSF" "getFrictionLoads"
 End
 
 Boundary Condition 2
