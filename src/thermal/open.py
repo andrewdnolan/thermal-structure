@@ -1,6 +1,7 @@
 import numpy as np
 import xarray as xr
 from glob import glob
+from derived_fields import calc_percent_temperate, calc_relative_volume
 
 def __quads_to_tris(quads):
     """converts quad elements into tri elements
@@ -22,7 +23,7 @@ def __quads_to_tris(quads):
         tris[j + 1][2] = n0
     return tris
 
-def _preprocess_UGRID(ds):
+def __preprocess_UGRID(ds):
     """Reshape the UGRID NetCDF results onto a structured grid.
 
     Parameters
@@ -73,19 +74,19 @@ def _preprocess_UGRID(ds):
     new_ds.coords["NN"] = xr.DataArray(
         ds.nMesh_node.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
     )
-    # extract nodes of quad elements from UGRID source
-    new_ds["quad_elements"] = xr.DataArray(
-        ds.Mesh_face_nodes.values - 1, dims=["quad_element_number", "quad_element_node"]
-    )
-    # extract the element area from UGRID source
-    new_ds["quad_elements_area"] = xr.DataArray(
-        ds.BulkElement_Area.values, dims=["quad_element_number"]
-    )
-    # split the quad elements into triangles for plotting with matplotlib
-    new_ds["tri_elements"] = xr.DataArray(
-        __quads_to_tris(new_ds.quad_elements.values),
-        dims=["tri_element_number", "tri_element_node"],
-    )
+    # # extract nodes of quad elements from UGRID source
+    # new_ds["quad_elements"] = xr.DataArray(
+    #     ds.Mesh_face_nodes.values - 1, dims=["quad_element_number", "quad_element_node"]
+    # )
+    # # extract the element area from UGRID source
+    # new_ds["quad_elements_area"] = xr.DataArray(
+    #     ds.BulkElement_Area.values, dims=["quad_element_number"]
+    # )
+    # # split the quad elements into triangles for plotting with matplotlib
+    # new_ds["tri_elements"] = xr.DataArray(
+    #     __quads_to_tris(new_ds.quad_elements.values),
+    #     dims=["tri_element_number", "tri_element_node"],
+    # )
 
     # loop over the elmer vairables
     for key in ds.keys():
@@ -109,25 +110,34 @@ def _preprocess_UGRID(ds):
             )
     return new_ds
 
-def _preprocess_elmer2nc(ds):
+def __preprocess_elmer2nc(ds):
     pass
 
-def _preprocess(ds):
+def __preprocess(ds, h_min=10.0):
     """Wrapper around various preprocessing functions.
     """
     if 'nMesh_node' in ds.dims:
-        ds =  _preprocess_UGRID(ds)
+        ds = __preprocess_UGRID(ds)
     else:
         print('no other support implemented yet. To be Done')
 
-    ds["height"] = xr.where(ds.height <= 10, 0, ds.height)
+    # filter valid icethickness
+    ds["height"] = xr.where(ds.height <= h_min, 0, ds.height)
+    # calculate velocity magnitude from velocity components
     ds['vel_m']  = np.sqrt(ds['velocity 1']**2 + ds['velocity 2']**2)
+    # rename velocities to be more commpact, and match notation of "vel_m"
+    ds = ds.rename({"velocity 1" : "vel_x", "velocity 2" : "vel_z"})
+    # calcute the percent temperate
+    ds['percent_temperate'] = calc_percent_temperate(ds)
+    # calcute the percent temperate
+    ds['relative_volume']   = calc_relative_volume(ds)
 
     return ds
 
+# public functions
 def dataset(filename, **kwargs):
     ds = xr.open_dataset(filename, **kwargs)
-    ds = _preprocess(ds)
+    ds = __preprocess(ds)
     return ds
 
 def mf_dataset(files, preprocess=None, parallel=False, concat_dim=None, **open_kwargs):
