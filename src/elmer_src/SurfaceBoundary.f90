@@ -582,7 +582,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
       ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
-      PDD = Cavlo_Greve_PDDs(T,std) * N_years
+      PDD = Cavlo_Greve_PDDs(T,std) * N_years    ! [K d]
 
       ! ! only loop over DOY within current timestep
       ! DO d=doy_i,doy_ip1
@@ -598,10 +598,10 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
         if ( Seasonality ) then
           ! Calculate surace melt in meters of snow equivalent
-          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1 ![m] <= [m K-1 d-1] * [K] * [d]
+          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1 ![m] <= [m K-1 d-1] * [K d]
         else
           ! since no seasonality sum up all the melt for the year
-          Melt = f_dd * SUM(PDD) * 1 ![m] <= [m K-1 d-1] * [K] * [d]
+          Melt = f_dd * SUM(PDD) ![m] <= [m K-1 d-1] * [K d]
           ! then partition the melt equally (via fraction of year)
           Melt = Melt * (dt/1.0)    ![m] <= [m] * [a] / [a]
         end if
