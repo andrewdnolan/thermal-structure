@@ -10,3 +10,7 @@ function netcdf_cond(t, inter)
 
   return write;
 end
+
+function IfThenElse(condition,t,f)
+  if condition then return t else return f end
+end
