@@ -43,6 +43,65 @@ function  Diffusivity(Model, Node, Temp) result(EnthalpyDiffusivity)
   EnthalpyDiffusivity = HeatConductivity / Heat_Capacity
 end function Diffusivity
 
+function heat_transfer_coef(Model, Node, InputArray) result(alpha)
+  use DefUtils
+  implicit none
+
+  integer       :: Node, nb, n
+  TYPE(Model_t) :: Model
+  REAL(KIND=dp) :: InputArray(2), alpha, H, H_f
+  REAL(KIND=dp), ALLOCATABLE :: Heat_kappa(:),Water_Kappa(:)
+
+  Logical :: GotIt
+  INTEGER, POINTER :: NodeIndexes(:)
+  TYPE(Element_t), POINTER :: Element
+  TYPE(ValueList_t), POINTER :: Material, BC
+
+  character(*), parameter :: caller='heat_transfer_coef'
+
+  H    = InputArray(1)
+  H_f  = InputArray(2)
+
+  Element => Model % CurrentElement
+  nb = GetElementNOFNodes(Element)
+  Material => GetMaterial(Element)
+  NodeIndexes => Element % NodeIndexes
+
+  BC => GetBC(Element)
+
+  IF (.NOT. ASSOCIATED(material)) THEN
+    CALL Fatal(caller, 'No material found')
+  END IF
+
+  ALLOCATE(Heat_kappa(Model % MaxElementNodes))
+  ALLOCATE(Water_kappa(Model % MaxElementNodes))
+
+
+  ! read in reference viscosity
+  Heat_kappa(1:nb) = ListGetReal( BC, 'Enthalpy Heat Diffusivity', nb, NodeIndexes, GotIt)
+  IF(.NOT. GotIt) THEN
+    CALL Fatal(caller, 'Enthalpy Heat Diffusivity not found')
+  END IF
+  ! read in reference viscosity
+  Water_kappa(1:nb) = ListGetReal( BC, 'Enthalpy Water Diffusivity', nb, NodeIndexes, GotIt)
+  IF(.NOT. GotIt) THEN
+    CALL Fatal(caller, 'Enthalpy Water Diffusivity not found')
+  END IF
+
+  ! compute viscosity
+  IF (H < H_f) THEN ! check for physical reasonable temperature
+    alpha = 0.0
+  ELSE
+    alpha = 1.0
+  END IF
+
+  !http://www.elmerfem.org/forum/viewtopic.php?t=7781
+  alpha = alpha/0.1
+end function heat_transfer_coef
+
+
+
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Limit_Enthalpy:
 ! Function to set the Enthalpy maxium, based on maximum water content. Following
