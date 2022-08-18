@@ -145,3 +145,59 @@ contains
   end subroutine read_vector
   !-----------------------------------------------------------------------------
 END FUNCTION spline
+
+FUNCTION WilsonFlowersMingo_MassBalance(Model, Node, z) RESULT(accum)
+  ! provides you with most Elmer functionality
+  USE DefUtils
+  ! saves you from stupid errors
+  IMPLICIT NONE
+  ! the external variables
+  !----------------------------------------------------------------------------
+  TYPE(Model_t) :: Model         ! the access point to everything about the model
+  INTEGER       :: Node          ! the current Node number
+  REAL(KIND=dp) :: z             ! nodal surface elevation [m a.s.l.]
+  REAL(KIND=dp) :: accum         ! the result
+  !----------------------------------------------------------------------------
+  ! internal variables
+  !----------------------------------------------------------------------------
+  LOGICAL       :: FirstTime=.TRUE., GotIt
+
+  REAL(KIND=dp) :: ELA,   & ! equilibirum line alltitude [m a.s.l.]
+                   z_min, & !
+                   z_max
+  ! Hard coded model params from Wilson et al. (2013)
+  REAL(KIND=dp), parameter :: dbdz=5.6e-3, &
+                              b_min=-3.0,    &
+                              b_max=0.5
+
+  ! Variables that only need to be read in once, are saved for future uses
+  SAVE FirstTime, ELA
+
+  IF (FirstTime) THEN
+    FirstTime=.FALSE.
+
+    ELA  = ListGetConstReal( Model % Constants, 'ELA', GotIt )
+    IF (.NOT. GotIt) THEN
+      CALL WARN('getAccumulation','Keyword >ELA< not found in >Constant< section')
+      CALL WARN('getAccumulation','Taking default value >ELA< of 2250 m a.s.l.')
+      ELA = 2550_dp
+    END IF
+  END IF
+
+  ! Based on the ELA calculate the cut off elevations
+  z_max = b_max/dbdz + ELA
+  z_min = b_min/dbdz + ELA
+
+  ! Eqn (11) from Wilson et al. 2013
+  if (z .le. z_min) then
+    accum = b_min
+  elseif ( z .ge. z_max ) then
+    accum = b_max
+  else
+    accum = (z-ELA)*dbdz
+  endif
+
+
+  RETURN
+
+END FUNCTION WilsonFlowersMingo_MassBalance
