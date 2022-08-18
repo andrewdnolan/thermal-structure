@@ -121,8 +121,8 @@ def __preprocess(ds, h_min=10.0):
     else:
         print('no other support implemented yet. To be Done')
 
-    # filter valid icethickness
-    ds["height"] = xr.where(ds.height <= h_min, 0, ds.height)
+    # filter valid ice thickness, add small amount to h_min to deal with roundoff
+    ds["height"] = xr.where(ds.height <= h_min + 0.1, 0, ds.height)
     # calculate velocity magnitude from velocity components
     ds['vel_m']  = np.sqrt(ds['velocity 1']**2 + ds['velocity 2']**2)
     # rename velocities to be more commpact, and match notation of "vel_m"
