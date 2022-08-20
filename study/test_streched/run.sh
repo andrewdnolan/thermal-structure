@@ -100,12 +100,13 @@ SS_itters=25
 # set the glacier key
 KEY='glc1-a'
 #Mean annual air temperate
-T_ma=-9.00
+T_ma=-7.00
 offset=-1.225
 # 500 year prognostic runs
-T_f=500
+T_f=1000
 
-for heat_source in "volumetric" "mass";do
+# for heat_source in "volumetric" "mass";do
+for heat_source in "volumetric";do
 
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # steady-state run
@@ -131,7 +132,8 @@ for heat_source in "volumetric" "mass";do
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
   # test multiple timesteps [a]
-  for dt in 1.0 0.5 0.25 0.1; do
+  # for dt in 1.0 0.5 0.25 0.1; do
+  for dt in 0.25; do
     # Number of time interval based on dt
     NT=$(awk -v dt=$dt -v T_f=$T_f 'BEGIN {OFMT = "%.0f"; print (T_f/dt)}')
     # Execute interval for dynamics solvers,
@@ -142,7 +144,9 @@ for heat_source in "volumetric" "mass";do
     # diagnostic run is now restart variable
     RESTART="${run_name}.result"
     # prognostic run name
-    run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_${heat_source}_prog"
+    # run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_${heat_source}_prog"
+    run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_vol_prog"
+
 
     # run the transient model with diagnostic solution as restart fiedl
     prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
