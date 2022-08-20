@@ -53,28 +53,14 @@ diagnostic_run()
   sed "s#<DX>#"$dx"#g;
        s#<FIT>#"$FIT"#g;
        s#<KEY>#"$KEY"#g;
-       s#<Cfirn>#"$Cfirn"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<run_name>#"$run_name"#g;
        s#<SS_itters>#"$SS_itters"#g;
-       s#<limit_type>#"$limit_type"#g;" "./sifs/diagnostic.sif" > "./sifs/${run_name}.sif"
+       s#<heat_source>#"$heat_source"#g;" "./sifs/diagnostic.sif" > "./sifs/${run_name}.sif"
 
-  # filepath to log file
-  log_file="${KEY}/logs/${run_name}.log"
-
-  # Run the model
-  ElmerSolver "./sifs/${run_name}.sif" | tee $log_file
-
-  # number of steady state itteration required
-  n_itter=$(tac "./${KEY}/mesh_dx${dx}/${run_name}.result" | \
-             grep -m1 "Time" | tr -s ' ' | cut -d " " -f 2)
-
-  # Convert result files into NetCDFs
-  ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-                                -m "./${KEY}/mesh_dx${dx}/" \
-                                -t $n_itter                 \
-                                -o "./${KEY}/nc/"
+  docker exec elmerenv /bin/sh -c "cd shared_directory/Thesis/thermal-structure/study/coupled_init;
+                                   ElmerSolver ./sifs/${run_name}.sif "
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
@@ -89,25 +75,17 @@ prognostic_run()
        s#<NT>#"$NT"#g;
        s#<KEY>#"$KEY"#g;
        s#<FIT>#"$FIT"#g;
-       s#<Cfirn>#"$Cfirn"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
        s#<SS_itters>#"$SS_itters"#g;
-       s#<limit_type>#"$limit_type"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
+       s#<Dynamic_int>#"$Dynamic_int"#g
+       s#<heat_source>#"$heat_source"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
 
-  # filepath to log file
-  log_file="${KEY}/logs/${run_name}.log"
+  docker exec elmerenv /bin/sh -c "cd shared_directory/Thesis/thermal-structure/study/coupled_init;
+                                  ElmerSolver ./sifs/${run_name}.sif "
 
-  # Run the model
-  ElmerSolver "./sifs/${run_name}.sif" | tee $log_file
-
-  # # Convert result files into NetCDFs
-  # ../../src/elmer2nc/elmer2nc.sh -r "./${KEY}/mesh_dx${dx}/${run_name}.result" \
-  #                               -m "./${KEY}/mesh_dx${dx}/" \
-  #                               -t $NT               \
-  #                               -o "./${KEY}/nc/"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
@@ -122,37 +100,44 @@ SS_itters=25
 # set the glacier key
 KEY='glc1-a'
 #Mean annual air temperate
-T_ma=-9.02
+
 limit_type='rho' # 'surf' or 'rho'
-Cfirn=0.05
 
-# loop over the mass balance offsets
-# for offset in $(seq $MB_0 $MB_s $MB_f); do
-# for offset in $(seq -w $MB_f $MB_s $MB_f); do
-for offset in $MB_f; do
+# loop over the mass balance offsets and mean annual airtemps
+for T_ma in $(seq -w -9.00 0.5 -7.0); do
+  for offset in $(seq -w $MB_0 0.1 $MB_f); do
 
-  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  # steady-state run
-  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # steady-state run
+    #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-  # make the run name based on model params
-  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_limit_${limit_type}_Cfirn_${Cfirn}_diag"
+    # make the run name based on model params
+    run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_vol_1bfs_diag"
 
-  # run the model for a given offset
-  diagnostic_run $dx $KEY $offset $run_name $SS_itters
+    # run the model for a given offset
+    diagnostic_run $dx $KEY $offset $run_name $SS_itters
 
-  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  # transient run
-  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  dt=1.0
-  NT=250
-  # limit to 10 S.S. itters for transient runs
-  SS_itters=15
-  # diagnostic run is now restart variable
-  RESTART="${run_name}.result"
-  # prognostic run name
-  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_limit_${limit_type}_Cfirn_${Cfirn}_prog"
+    # parameter dictionary for griding NetCDFs
+    param_dict="{\"T_ma\"      : ${T_ma},
+                 \"Delta_MB\"  : ${offset} }"
 
-  # run the transient model with diagnostic solution as restart fiedl
-  prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
+    # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+    python3 ../../src/thermal/grid_data.py "glc1-a/nc/${run_name}.nc" \
+                                           -params "${param_dict}"
+
+    # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # # transient run
+    # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+    # dt=1.0
+    # NT=250
+    # # limit to 10 S.S. itters for transient runs
+    # SS_itters=15
+    # # diagnostic run is now restart variable
+    # RESTART="${run_name}.result"
+    # # prognostic run name
+    # run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_vol_1bfs__prog"
+    #
+    # # run the transient model with diagnostic solution as restart fiedl
+    # prognostic_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
+  done
 done

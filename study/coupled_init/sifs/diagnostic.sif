@@ -1,5 +1,9 @@
 !echo on
 
+!---LUA BEGIN
+! assert(loadfile('../../src/elmer_src/lua_functions.lua'))()
+!---LUA END
+
 ! Physical Constants
 #spy         = 365.25*24*60*60              ! -- [s a^-1]
 ! SI base units
@@ -39,7 +43,7 @@ End
 Constants
   include "./params/ref_params.sif"
 
-  Seasonality                     = Logical False
+  Seasonality                     = Logical True
 
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
@@ -267,8 +271,13 @@ Solver 6
   Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
   Variable DOFs         = 1
+  ! How to prescribe latent heat source:
+  !   either as Volumetric [J m-3 a-1] or Mass [J kg-1 a-1] heat sources
+  Latent Heat Source    = String "volumetric" ! Mass / volumetric
 
-  Exported Variable 1   = -dofs 1 "Densi" ! [kg m^-3]
+  ! When "Latent Heat Source" is "Mass" this variable is zero everywhere
+  Exported Variable 1   = -dofs 1 "Q_lat" ! [J m-3 a-1]
+  Exported Variable 2   = -dofs 1 "Densi" ! [kg m^-3]
 End
 
 ! Deformational Heat
@@ -322,7 +331,7 @@ Solver 8
   Nonlinear System Newton After Tolerance  = 1.0E-06
   Nonlinear System Convergence Tolerance   = 1.0E-05
   Nonlinear System Max Iterations          = 50
-  Nonlinear System Relaxation Factor       = Real 0.5
+  Nonlinear System Relaxation Factor       = Real 1.0
   Nonlinear System Reset Newton            = Logical True
   ! Nonlinear System Convergence Measure     = String "solution"
 
@@ -351,36 +360,41 @@ Solver 8
   ! calculate loads = true
 End
 
-! Solver 9
-!   Equation      = "SaveBoundaryValues"
-!   Procedure     = File "SaveData" "SaveBoundaryValues"
-!   Exec Solver   = "Before Simulation"
-!   ! a dummy variable for the solver that does not show up
-!   Variable      = String -nooutput "dummyvar"
-!   Parameter 1   =  String "Zs Accumulation Flux 2"
-! End
+Solver 9
+   Exec Solver    = String  "After Simulation"
+   Equation           = "NetcdfOutPutSolve"
+   Procedure          = "../../bin/NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
+   Variable           = -nooutput "NetCDFOutPut"
+   Active Coordinate  = Integer 2
 
-! Solver 10
-!    Equation = "NetcdfOutPutSolve"
-!    Procedure = "NetcdfUGRIDOutputSolver" "NetcdfOutputSolver"
-!    Variable = -nooutput "test"
-!
-!    Optimize Bandwidth = Logical False
-!
-!    OutPut Directory = File "nc"
-!    Output File Name = "test"
-!
-!    Scalar Field 1 = String "Pressure"
-!    Scalar Field 2 = String "velocity 1"
-!    Scalar Field 3 = String "velocity 2"
-!    ! Scalar Field 4 = String "zs"
-!    ! Scalar Field 5 = String "Uobs 1"
-!    ! Scalar Field 6 = String "Uobs 2"
-!
-!    Compute LonLat = Logical False
-!    ! Projection = File "+proj=stere +lat_0=90 +lat_ts=70 +lon_0=-45 +k=1 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs"
-!
-! End
+   OutPut Directory   = File "./<KEY>/nc"
+   Output File Name   = "<run_name>"
+
+   Optimize Bandwidth = Logical False
+
+  ! Stokes Solver Fields
+   Scalar Field 1  = String "Pressure"
+   Scalar Field 2  = String "velocity 1"
+   Scalar Field 3  = String "velocity 2"
+   ! Enthalpy Solver Fields
+   Scalar Field 4  = String "Enthalpy_h"
+   Scalar Field 5  = String "Water Content"
+   Scalar Field 6  = String "Temperature"
+   Scalar Field 7  = String "Phase Change Enthalpy"
+   Scalar Field 8  = String "Surface_Enthalpy"
+   Scalar Field 9  = String "W"
+   Scalar Field 10 = String "Q_lat"
+   ! Free Surface Solver Fields
+   ! Scalar Field 10 = String "Zs"
+   Scalar Field 11 = String "Zbed"
+   Scalar Field 12 = String "Mass Balance"
+   ! Misc Solver Fields
+   Scalar Field 13 = String "Depth"
+   Scalar Field 14 = String "Height"
+   Scalar Field 15 = String "Densi"
+
+   Compute LonLat = Logical False
+End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END SOLVERS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -392,7 +406,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(8)  = 1 2 3 4 5 6 7 8
+  Active Solvers(9)  = 1 2 3 4 5 6 7 8 9
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END EQUATION
@@ -405,12 +419,18 @@ Body Force 1
   Flow BodyForce 1       = Real 0.0
   Flow BodyForce 2       = Real #gravity   ![m a^-1]
   Flow Solution Passive  = Variable depth, height
-                           Real lua "((tx[0] + tx[1]) < 10.0)"
+                           Real lua "((tx[0] + tx[1]) <= 11.0)"
 
   ! Deformational (mass) Heat Source (Convert to J yr-1 kg-1)
   Heat Source = Variable "W"
-                real MATC "if (tx<0.0) (0.0); else (tx*1e6/910.0)"
+                Real LUA "IfThenElse((tx[0]<0.0), 0.0, tx[1]*1e6/910)"
 
+
+  ! Latent (mass) Heat Source (J kg-1 yr-1). Enthalpy solver only has mass heat
+  ! source implemented. See link below for Mass vs. Volume differernces:
+  !   http://www.elmerfem.org/forum/viewtopic.php?p=24801&hilit=volumetric+heat+source#p24801
+  Heat Source = Variable Q_lat, Densi
+                Real lua "(tx[0] / tx[1])"
   ! ! Can't Call the variable hydrostatic pressure, since that already seems to be
   ! ! a keyword arugment
   ! Hydro Pressure = Variable depth
@@ -465,19 +485,23 @@ Boundary Condition 2
                          include "../../input_data/topography/<KEY>_surf.dat"
                       End
   Depth                = Real 0.0
+  ! Surface Enthalpy Pinned to Air Temperature
   Enthalpy_h           = Equals "Surface_Enthalpy"
 End
 
-! Front of the glacier
+! Upper limit of the glacier
 Boundary Condition 3
+  Name              = "Head Wall"
   Target Boundaries = 3
+  ! Enthalpy_h        = Real 134404.00
+
 End
 
 ! Upper limit of the glacier
 Boundary Condition 4
   Target Boundaries = 4
-  Velocity 1        = real 0.0
-End
+!   Velocity 1        = real 0.0
+! End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BOUNDARY CONDITIONs
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
