@@ -432,7 +432,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! How the heat souce is treated. Either Mass (J/kg) or Volumetric (J/m)
   character(len=max_name_len) :: Heat_Source ! How the heat souce is treated
 
-  LOGICAL :: GotIt, Seasonality, first_time=.true.
+  LOGICAL :: GotIt, Seasonality, Source_at_Surface, first_time=.true.
 
   ! Variables to keep track of between calls to the solver
   save first_time,N_v,N_s,N_n
@@ -506,10 +506,12 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   IF ( .NOT.GotIt ) then
     call fatal(Caller, 'Could not find Latent Heat Source')
   end if
-
   ! TO DO: Add check for anything other than accepted Heat Source types
-
-
+  ! ! determine if existing files should be over written (i.e. clobbered)
+  Source_at_Surface = GetLogical( Params, 'Source at Surface', GotIt )
+  IF ( .NOT.GotIt ) then
+    call fatal(Caller, 'Could not find Source at Surface')
+  end if
   ! ! Allocate Enthalpy Max Array
   ! allocate(Enthalpy_max(N_n))
   ! ! Access the Limit Enthalpy
@@ -643,8 +645,14 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
       SELECT CASE(TRIM(Heat_Source))
       CASE("volumetric")
-        ! heat source must be prescribed one layer below surface so as not to conflict w/ Dirichlet B.C.
-        cont = n-N_s
+
+        if (Source_at_Surface) then
+          cont = n
+        else
+          ! heat source prescribed one layer below surface so as not to conflict w/ Dirichlet B.C.
+          cont = n-N_s
+        end if
+
         Q_lat_vol % values (Q_lat_vol % perm(cont)) = Q_lat            ! [J m-3 yr-1]
         ! Just a Dirichlet B.C. based on air temp
         H_surf = H_surf                                                ! [J kg-1]
