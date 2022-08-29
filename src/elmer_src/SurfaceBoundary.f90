@@ -364,6 +364,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                                 Q_lat_vol,     &  ! Latent (volumetric) Heat source  [J m-3 y-1]
                                 H_f,           &  ! Phase Change Enthalpy [J kg-1]
                                 Depth,         &  ! Depth below surf      [m]
+                                Height,        &  ! Height above bed      [m]
                                 TimeVar,       &  ! Time                  [yr]
                                 MB,            &  ! Mass Balance (i.e.)   [m yr]
                                 Dens              ! Ice Depth             [m]
@@ -415,6 +416,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    rho_w,       &  ! denisty of water      [Kg m^-3]
                    rho_s,       &  ! denisty of snow       [Kg m^-3]
                    C_firn,      &  ! Surf. Dens. const.    [-]
+                   z_trans,     &  ! firn/ice trans. depth [m]
                    Melt,        &  ! surf. (snow) melting  [m s.e.]
                    PDD(365) = 0    ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -462,8 +464,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   Params => GetSolverParams()
 
   ! Pointer to the model variables
-  Depth         => VariableGet( Model % Variables, "Depth") ! [m]
-  Dens          => VariableGet( Model % Variables, "Densi") ! [kg m-3]
+  Depth         => VariableGet( Model % Variables, "Depth")  ! [m]
+  Height        => VariableGet( Model % Variables, "Height") ! [m]
+  Dens          => VariableGet( Model % Variables, "Densi")  ! [kg m-3]
   MB            => VariableGet( Model % Variables, "mass balance") ! [m y-1]
   H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy") ! [J kg-1]
   Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
@@ -496,29 +499,42 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   std_c0      = GetParam(Model, "std_c0")                   ! [K?]
   std_c1      = GetParam(Model, "std_c1")                   ! [K?]
   std_c2      = GetParam(Model, "std_c2")                   ! [K?]
+
+  ! Determine if there should be seasonality in airtemp forcing
   Seasonality = ListGetLogical(Model % Constants, "Seasonality", GotIt )
   IF ( .NOT.GotIt ) then
-    call fatal(Caller, 'Could not find Seasonality')
+    ! default to true
+    Seasonality = .true.
+    CALL INFO(Caller,"No entry for >Seasonality<. in Constant Section", Level=6)
+    CALL INFO(Caller,"Setting to .true. ",     Level=6)
   end if
 
-  ! ! determine if existing files should be over written (i.e. clobbered)
+  ! Determine how to treat the latent heat from meltwater refreezing
   Heat_Source = GetString( Params, 'Latent Heat Source', GotIt )
-  IF ( .NOT.GotIt ) then
-    call fatal(Caller, 'Could not find Latent Heat Source')
-  end if
-  ! TO DO: Add check for anything other than accepted Heat Source types
-  ! ! determine if existing files should be over written (i.e. clobbered)
+  IF (GotIt) then
+    ! in this case, whatever was passed was not a valid option, so just using default value
+    if ((TRIM(Heat_Source) .ne. "volumetric") .and. &
+        (TRIM(Heat_Source) .ne. "mass")     ) then
+      Heat_Source = "volumetric"
+      CALL INFO(Caller,"Entry found for >Heat_Source<. is not a valid option.", Level=6)
+      CALL INFO(Caller,"Setting to 'volumetric'",     Level=6)
+    endif
+  ELSE
+    ! in this case, no option was passed at all, so just using default value
+    Heat_Source = "volumetric" ! or "mass"
+    CALL INFO(Caller, "No entry found for >Heat_Source<. in Solver Section", Level=6)
+    CALL INFO(Caller, "Setting to 'volumetric'",     Level=6)
+  END IF
+
+  ! Determine where to add the volumetric heat source, keyword really only
+  ! matters when Heat_Source = "volumetric"
   Source_at_Surface = GetLogical( Params, 'Source at Surface', GotIt )
   IF ( .NOT.GotIt ) then
-    call fatal(Caller, 'Could not find Source at Surface')
+    ! default to one below the free surface
+    Source_at_Surface = .false.
+    CALL INFO(Caller,"No entry for >Source at Surface<. in Solver Section", Level=6)
+    CALL INFO(Caller,"Setting to .false. ",     Level=6)
   end if
-  ! ! Allocate Enthalpy Max Array
-  ! allocate(Enthalpy_max(N_n))
-  ! ! Access the Limit Enthalpy
-  ! do e = 1, Solver % NumberOfActiveElements
-  !   Element   => GetActiveElement(e)
-  !   BodyForce =>
-  ! end do
 
   if (TransientSimulation) then
     ! if transient get current timestep, which is really time at end of timestep
@@ -580,7 +596,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Get nodal surface elevation [m]
       z = model%nodes%y(n)
 
-      ! Calculate nodal air temperature curve
+      ! Calculate nodal air temperature curve as function of day of year
       call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
 
       ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
@@ -609,7 +625,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         end if
 
         ! Eqn. (9) Wilson and Flowers (2013)
-        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt * (1.0 / dt) ! [J m-3 y-1]
+        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt * (1.0 / dt) ! [J m-3 yr-1]
 
         ! calculate maximum enthalpy: above the ELA account for the maximum
         ! water content being higher due to the porosity of firn
@@ -620,6 +636,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         ! below the ELA bound max water content at englacial values.
         Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_en * L_heat
       ENDIF
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Convert surface air temperature to enthalpy
@@ -642,34 +660,46 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
       ! Convert surface air temp to enthalpy
       H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
+
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Add surface heating and surface enthalpy by the specified methods
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       SELECT CASE(TRIM(Heat_Source))
       CASE("volumetric")
 
         if (Source_at_Surface) then
+          ! heat source prescribe @ free surface.
+          ! conflicts w/ Dirichlet condition for airtemp
+          ! left as avilable option only for debugging/demonstration
           cont = n
         else
-          ! heat source prescribed one layer below surface so as not to conflict w/ Dirichlet B.C.
+          ! heat source prescribed one layer below surface
+          ! so as not to conflict w/ Dirichlet B.C.
           cont = n-N_s
         end if
 
+        ! Volumetric heat source from Wilson and Flowers (2013)
         Q_lat_vol % values (Q_lat_vol % perm(cont)) = Q_lat            ! [J m-3 yr-1]
         ! Just a Dirichlet B.C. based on air temp
         H_surf = H_surf                                                ! [J kg-1]
+
       CASE("mass")
+
+        ! Volumetric heat source is 0.0 everywhere
         Q_lat_vol % values (Q_lat_vol % perm(n)) = 0.0                 ! [J m-3 yr-1]
         ! Add the surface heating to the surface enthalpy
         H_surf = (Q_lat*dt) / rho_s + H_surf  ! [J kg-1] <= [J m-3 a-1] * [a] * [m3 kg-1] + [J kg-1]
+        ! Limit the surface enthalpy based on max englacial water content
+        if (H_surf .ge. Enthalpy_max) H_surf = Enthalpy_max
+
       END SELECT
 
+      ! Set the surface enthalpy
+      Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = H_surf
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-      if (H_surf .ge. Enthalpy_max) then
-        ! Limit the surface enthalpy based on max englacial water content
-        Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = Enthalpy_max
-      else
-        ! Set the surface enthalpy based on temp and surface heating term
-        Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = H_surf
-      end if
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set variable (w/ depth) surface density in the accumulation zone
@@ -678,14 +708,29 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       do i=1,N_v
 
         ! index of ith vertically aligned node
+        ! only works with vertically structured mesh
         cont=n-(i-1)*N_s
 
         ! Check if mass balance of surface node is postive, i.e. in accumulation zone
         if (MB % values (MB % perm(n)) .ge. 0.0) THEN
-          ! EQN (2.2) from Cuffey and Paterson
-          Dens % values ( Dens % perm(cont) ) = &
-          rho_i - (rho_i - rho_s) * exp(-C_firn * Depth % values (Depth % perm(cont)))
+
+          ! approximate firn/ice transiton depth [Cuffey and Paterson, pg. 19]
+          z_trans = (1.00 / C_firn) * 1.9
+
+          ! check if ice-thickness is less than the firn/ice transition depth
+          if (Height % values (Height % perm(cont)) .le. z_trans) then
+            ! Re-scale transition depth to match the ice-thicnkess [kg m-3]
+            Dens % values ( Dens % perm(cont) ) = &
+            rho_i - (rho_i - rho_s) * exp(-(1.9 / Height % values (Height % perm(cont))) &
+                                          * Depth % values (Depth % perm(cont)))
+          else
+            ! EQN (2.2) from Cuffey and Paterson [kg m-3]
+            Dens % values ( Dens % perm(cont) ) = &
+            rho_i - (rho_i - rho_s) * exp(-C_firn * Depth % values (Depth % perm(cont)))
+          endif
+
         else
+          ! if below the ELA, set all nodes to density of ice [kg m-3]
           Dens % values ( Dens % perm(cont)) = rho_i
         endif
 
@@ -694,6 +739,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           Dens % values ( Dens % perm(cont)) = rho_i
         endif
       end do
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set a seasonal snow layer, a crude approximation
@@ -702,9 +748,10 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       if ( T_surf .le. 273.15 ) then
         Dens % values ( Dens % perm(n)) = rho_s
       end if
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-    ENDIF
-  ENDDO
+    ENDIF ! if at free sufrace
+  ENDDO ! loop over nodes
 
   contains
 
