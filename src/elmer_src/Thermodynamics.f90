@@ -204,6 +204,48 @@ function  Diffusivity(Model, Node, Temp) result(EnthalpyDiffusivity)
   EnthalpyDiffusivity = HeatConductivity / Heat_Capacity
 end function Diffusivity
 
+
+!==============================================================================
+function Lliboutry_and_Duval_Enhancment(Model, Node, omega) result(E)
+!==============================================================================
+  ! This function enhancment factor for the flow law when water content (omega)
+  ! is present.
+  !
+  ! Parameterization following Greve and Blatter (2016) Eq. 14
+  ! and  Wilson et al. (2013) Eqn. 5, which come from
+  ! Lliboutry and Duval (1985):
+  ! A = A(H)*Upsilon*(1.18125*omega*100)
+
+  use DefUtils
+  implicit none
+
+  type(Model_t) :: Model
+  integer       :: Node               ! current node number
+  real(kind=dp) :: omega,  &          ! Water content fraction [--]
+                   E,      &          ! Enhancment factor []
+                   Upsilon = 1.0_dp   ! Switches enhancment on and off, hard coded for now
+
+  if (omega .gt. 0.03) then
+    ! We only consider enhancment up to a fractional water content of 0.03
+    ! anything above that threshold is "floored" to 0.03
+    omega = 0.03_dp
+  elseif (omega .lt. 0.0) then
+    ! If some numerical reason the fractional water content is less than 0.0
+    ! set to 0.0 so there is no enhancment
+    omega = 0.00_dp
+  endif
+
+
+  if (omega .gt. 0.00) then
+    ! Calculte enhancment factor [-] for a given fractional water content
+    E = Upsilon * (1.0_dp + 1.18125_dp * omega * 100.00_dp)
+  else
+    E = 1.0
+  end if
+
+end function Lliboutry_and_Duval_Enhancment
+
+
 function heat_transfer_coef(Model, Node, InputArray) result(alpha)
   use DefUtils
   implicit none
