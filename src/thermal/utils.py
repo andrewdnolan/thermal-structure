@@ -57,7 +57,7 @@ class surface_AirTemp:
         self.SEED    = SEED
 
 
-    def __call__(self, z, **kwargs):
+    def __call__(self, z, doy=None, **kwargs):
         """"Evaluate the surface air temperature at a given elev. for all 365
             days of the year
         Inputs:
@@ -77,16 +77,22 @@ class surface_AirTemp:
         # Need to seed the Generator every function call to ensure same temp.
         random = np.random.default_rng(self.SEED)
 
+        # Use array broadcasting to calc temp as function of elevation and doy
+        if doy is None:
+            doy  = np.arange(0,365)[:, np.newaxis]
+        elif len(doy.shape) == 1:
+            doy  = doy[:, np.newaxis]
+
         if hasattr(self.T_σ, '__len__'):
-            std = np.polyval(self.T_σ, np.arange(0,365)[:, np.newaxis])
+            std = np.polyval(self.T_σ, doy)
         else:
             std = self.T_σ
 
-        # Use array broadcasting to calc temp as function of elevation and doy
-        doy  = np.arange(0,365)[:, np.newaxis]
+        # NT = doy.shape[0]
+        # print(doy.shape)
         Temp = self.α * np.cos( 2*np.pi*(doy-self.T_peak)/365 ) + \
                self.dTdz * (self.z_ref-z) + self.T_mean + \
-               random.normal(0, std, (365,1))
+               random.normal(0, std, doy.shape)
 
         return Temp
 
