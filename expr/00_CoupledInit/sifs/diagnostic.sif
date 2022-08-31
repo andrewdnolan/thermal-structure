@@ -449,7 +449,7 @@ Body Force 1
   ! Make Mass Balance Forcing to "Surface_Processes" solver
   ! need for calculting latent heat from meltwater refreezing
   Mass Balance = Variable Coordinate 2
-                           Real Procedure "../../bin/mass_balance" "<FIT>"
+                           Real Procedure "../../bin/mass_balance" "spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE

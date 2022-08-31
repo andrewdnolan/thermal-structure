@@ -152,7 +152,7 @@ Initial Condition 2
 
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                               Real Procedure "../../bin/mass_balance" "<FIT>"
+                               Real Procedure "../../bin/mass_balance" "spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END INITIAL CONDITIONS
@@ -566,7 +566,7 @@ Body Force 2
   Name                       = "Climate"
   Zs Accumulation Flux 1     = Real 0.0e0
   Zs Accumulation Flux 2     = Variable Coordinate 2
-                                Real Procedure "../../bin/mass_balance" "<FIT>"
+                                Real Procedure "../../bin/mass_balance" "spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BODY FORCE
