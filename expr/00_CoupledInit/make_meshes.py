@@ -33,6 +33,7 @@ for key in glaciers.keys():
     Δx     = glaciers[key]
     out_fp = os.path.join(rel_fp, key, "mesh_dx{}".format(Δx))
     nc_fp  = f'result/{key}/nc/'
+    gridded_fp = f'result/{key}/gridded/'
 
     #-----
     # Mesh
@@ -43,14 +44,15 @@ for key in glaciers.keys():
     #-------
     # NetCDF
     #-------
-    # Make the NetCDF folder
-    if not os.path.exists(nc_fp):
-        os.mkdir(nc_fp)
+    for nc_folder in [nc_fp, gridded_fp]:
+        # Make the NetCDF folder
+        if not os.path.exists(nc_folder):
+            os.mkdir(nc_folder)
 
-    # Add .gitkeep file to NetCDF folder so dir struc is preserved on GitHub
-    if not os.path.exists(os.path.join(nc_fp, '.gitkeep')):
-        with open(os.path.join(nc_fp, '.gitkeep'), 'w') as f:
-            pass
+        # Add .gitkeep file to NetCDF folder so dir struc is preserved on GitHub
+        if not os.path.exists(os.path.join(nc_folder, '.gitkeep')):
+            with open(os.path.join(nc_folder, '.gitkeep'), 'w') as f:
+                pass
 
     #--------
     # figures
@@ -61,7 +63,7 @@ for key in glaciers.keys():
     if not os.path.exists(f'figs/{key}/'):
         os.mkdir(f'figs/{key}/')
 
-        
+
     # Add .gitkeep file to figures folder so dir struc is preserved on GitHub
     if not os.path.exists(os.path.join(f'figs/{key}/', '.gitkeep')):
         with open(os.path.join(f'figs/{key}/', '.gitkeep'), 'w') as f:
