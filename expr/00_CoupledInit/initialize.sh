@@ -86,7 +86,7 @@ diagnostic_run()
   # Run the model
 
   # TO DO: if log, else
-  # ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
+  ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
   # add the params as a global attribute to the netcdf file
   python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
@@ -185,42 +185,42 @@ full_initialization(){
   # run the model for a given offset
   diagnostic_run $dx $FIT $KEY $offset $run_name $SS_itters
 
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
-  #
-  # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  # # transient run
-  # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  # # Number of time interval based on dt
-  # NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
-  # # Execute interval for dynamics solvers,
-  # Dynamic_int=$(awk -v dt=$dt 'BEGIN {OFMT = "%.0f"; print (1.0/dt)}')
-  #
-  # # limit to 10 S.S. itters for transient runs
-  # SS_itters=$prog_SS_itters
-  # # diagnostic run is now restart variable
-  # RESTART="${run_name}.result"
-  # # prognostic run name
-  # run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
-  #
-  # # Start the timer
-  # start=$(date +%s.%N)
-  #
-  # # run the transient model with diagnostic solution as restart fiedl
-  # prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $restart $NT $dt
-  #
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
-  # # End the timer
-  # end=$(date +%s.%N)
-  #
-  # # Execution time of the solver
-  # runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
-  #
-  # # record the prognostic runtimes for future info
-  # log_runtime $dx $dt $NT $offset $T_ma $runtime
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                 -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+                                 -params "${param_dict}"
+
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  # transient run
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  # Number of time interval based on dt
+  NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
+  # Execute interval for dynamics solvers,
+  Dynamic_int=$(awk -v dt=$dt 'BEGIN {OFMT = "%.0f"; print (1.0/dt)}')
+
+  # limit to 10 S.S. itters for transient runs
+  SS_itters=$prog_SS_itters
+  # diagnostic run is now restart variable
+  RESTART="${run_name}.result"
+  # prognostic run name
+  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
+
+  # Start the timer
+  start=$(date +%s.%N)
+
+  # run the transient model with diagnostic solution as restart fiedl
+  prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $restart $NT $dt
+
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                 -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+                                 -params "${param_dict}"
+  # End the timer
+  end=$(date +%s.%N)
+
+  # Execution time of the solver
+  runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+
+  # record the prognostic runtimes for future info
+  log_runtime $dx $dt $NT $offset $T_ma $runtime
 }
