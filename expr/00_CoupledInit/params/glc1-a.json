@@ -19,5 +19,9 @@
   "dt": 1,
   "TT": 2000,
   "fit": "spline",
-  "k": 2
+  "k": 2,
+
+  "memory": "2250M",
+  "walltime": "6:30:00",
+  "stride" : 40
 }

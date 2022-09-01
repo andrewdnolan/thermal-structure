@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+initialize.py:
+
+Using the bash functions in the initialize.sh script, run the initialization
+sequence for a given parameter combination. initialization sequence includes
+    - diagnostic simulation
+    - prognostic simulation
+"""
+
+
 import os
 import sys
 import argparse

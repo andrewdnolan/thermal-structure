@@ -68,3 +68,31 @@ for key in glaciers.keys():
     if not os.path.exists(os.path.join(f'figs/{key}/', '.gitkeep')):
         with open(os.path.join(f'figs/{key}/', '.gitkeep'), 'w') as f:
             pass
+
+
+    #-----
+    # logs
+    #-----
+    # Make logs dir
+    if not os.path.exists(f'logs/'):
+        os.mkdir('logs/')
+    if not os.path.exists(f'logs/{key}/'):
+        os.mkdir(f'logs/{key}/')
+
+
+    # Add .gitkeep file to logs folder so dir struc is preserved on GitHub
+    if not os.path.exists(os.path.join(f'logs/{key}/', '.gitkeep')):
+        with open(os.path.join(f'logs/{key}/', '.gitkeep'), 'w') as f:
+            pass
+
+    #-----
+    # run
+    #-----
+    # Make run dir
+    if not os.path.exists(f'run/'):
+        os.mkdir('run/')
+
+    # Add .gitkeep file to run folder so dir struc is preserved on GitHub
+    if not os.path.exists(os.path.join(f'run/', '.gitkeep')):
+        with open(os.path.join(f'run/', '.gitkeep'), 'w') as f:
+            pass
