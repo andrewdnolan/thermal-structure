@@ -37,6 +37,21 @@ parse_json()
     $params = decode_json $_;
     say $params->{MB}->{range}->[2]
     ' $1 )
+  # parse T_ma grid search start
+  T_ma_0=$( perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{T_ma}->{range}->[0]
+    ' $1 )
+  # parse T_ma grid search stride
+  T_ma_s=$( perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{T_ma}->{range}->[1]
+    ' $1 )
+  # parse T_ma grid search end
+  T_ma_f=$( perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{T_ma}->{range}->[2]
+    ' $1 )
   # parse horizontal gird spacing
   dx=$(   perl -MJSON -0lnE '
     $params = decode_json $_;
