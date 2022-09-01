@@ -88,6 +88,13 @@ diagnostic_run()
   # TO DO: if log, else
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
+  # add the params as a global attribute to the netcdf file
+  ncatted -a params,global,c,c,"$(cat /params/ref_params.sif)" \
+          "result/${KEY}/nc/${run_name}.nc"
+  # add the sif as a global attribute to the netcdf file
+  ncatted -a sif,global,c,c,"$(cat /sifs/${run_name}.sif)" \
+          "result/${KEY}/nc/${run_name}.nc"
+
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
 
@@ -114,6 +121,13 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
+  # add the params as a global attribute to the netcdf file
+  ncatted -a params,global,c,c,"$(cat /params/ref_params.sif)" \
+          "result/${KEY}/nc/${run_name}.nc"
+  # add the sif as a global attribute to the netcdf file
+  ncatted -a sif,global,c,c,"$(cat /sifs/${run_name}.sif)" \
+          "result/${KEY}/nc/${run_name}.nc"
+
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
 
@@ -134,6 +148,8 @@ log_runtime()
   awk -v OFS='\t'  '{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6}' >> \
                   $OUT_fp
 }
+
+
 
 full_initialization(){
   # Variables that need to be set:
