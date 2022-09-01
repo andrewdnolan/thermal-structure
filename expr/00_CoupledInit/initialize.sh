@@ -164,11 +164,11 @@ full_initialization(){
   # run the model for a given offset
   diagnostic_run $dx $FIT $KEY $offset $run_name $SS_itters
 
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
-  #
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                 -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+                                 -params "${param_dict}"
+
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # transient run
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -190,10 +190,10 @@ full_initialization(){
   # run the transient model with diagnostic solution as restart fiedl
   prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $restart $NT $dt
 
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                 -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+                                 -params "${param_dict}"
   # End the timer
   end=$(date +%s.%N)
 
