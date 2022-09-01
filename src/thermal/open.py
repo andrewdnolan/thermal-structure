@@ -49,7 +49,10 @@ def __preprocess_UGRID(ds):
 
     # copy encoding attrs from original file
     new_ds.encoding = ds.encoding
+    # copy attributes from the original file
+    new_ds.attrs    = src.attrs
 
+    
     # add time dimensions with values from UGRID source
     new_ds = new_ds.expand_dims({"t": NT}).assign_coords({"t": ds.time.values})
 
