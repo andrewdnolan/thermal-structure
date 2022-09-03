@@ -57,10 +57,10 @@ def main(argv):
                         help = "Horzontal gridcell spacing [m]. \n"\
                                "Mesh directory for $dx should already exist.")
 
-    parser.add_argument('-off',f'--{vars["offset"]["flag_var"]}', type=float,
+    parser.add_argument('-off',f'--{vars["offset"]["flag_var"]}', type=str,
                         help = "Scalar offset to the mass balance curve. [m a-1] \n")
 
-    parser.add_argument('-T_ma',f'--{vars["T_ma"]["flag_var"]}', type=float,
+    parser.add_argument('-T_ma',f'--{vars["T_ma"]["flag_var"]}', type=str,
                         help = "Mean annual air temp [C] at 'z_ref' found in the"\
                                " `params/ref_params.sif` file. \nReference value for"\
                                " 'z_ref' = 2193 [m a.s.l.] (mean elev. of Kaskawulsh)")
