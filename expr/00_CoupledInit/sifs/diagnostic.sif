@@ -433,7 +433,7 @@ Body Force 1
   ! Given that Pa = (J/m3), we first convert from MPa to Pa, then convert the
   ! volumetric heat source to a mass heat source (enthalpy solver only supports mass heat source)
   Heat Source = Variable "W", "Densi"
-               Real LUA "IfThenElse((tx[0]<0.0), 0.0, tx[1]*1e6/910)"
+               Real LUA "IfThenElse((tx[0]<0.0), 0.0, tx[0]*1e6/tx[1])"
 
   ! Latent (mass) Heat Source (J kg-1 yr-1). Enthalpy solver only has mass heat
   ! source implemented. See link below for Mass vs. Volume differernces:
