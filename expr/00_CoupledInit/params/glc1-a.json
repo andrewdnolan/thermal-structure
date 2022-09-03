@@ -22,6 +22,6 @@
   "k": 2,
 
   "memory": "3000M",
-  "walltime": "6:30:00",
+  "walltime": "8:00:00",
   "stride" : 40
 }

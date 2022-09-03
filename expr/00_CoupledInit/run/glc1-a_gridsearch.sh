@@ -2,7 +2,7 @@
 #SBATCH --array=1-441%40                           # 441 jobs that run
 #SBATCH --job-name=glc1-a_coupled_init             # base job name for the array
 #SBATCH --mem-per-cpu=3000M                        # maximum 2250MMB per job
-#SBATCH --time=6:30:00                             # maximum walltime per job
+#SBATCH --time=8:00:00                             # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
