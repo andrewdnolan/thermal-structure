@@ -21,7 +21,7 @@
   "fit": "spline",
   "k": 2,
 
-  "memory": "2250M",
+  "memory": "3000M",
   "walltime": "6:30:00",
   "stride" : 40
 }
