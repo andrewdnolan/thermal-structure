@@ -7,7 +7,7 @@ import thermal.mesh as meshing
 
 # input glaciers and desired mesh resolutions for coarse grid searches
 glaciers = { # small
-             # 'crmpt12'   : 50,  # Δx [m]
+             'crmpt12'   : 50,  # Δx [m]
              # 'crmpt18-a' : 50,  # Δx [m]
              # 'crmpt18-b' : 50,  # Δx [m]
              'glc1-a'    : 50,  # Δx [m]
