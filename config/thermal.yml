@@ -9,6 +9,7 @@ dependencies:
   - scipy
   - numpy
   - pandas
+  - scikit-learn
   - seaborn
   - pip
   - xarray
