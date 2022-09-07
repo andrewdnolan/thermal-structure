@@ -405,11 +405,13 @@ Solver 10
   Linear System Convergence Tolerance      = 1.0E-07
   Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU0"
+  Linear System Residual Output            = 1
 
-  Steady State Convergence Tolerance       = 1.0E-03
+  Steady State Convergence Tolerance       = 1.0E-02
 
   Nonlinear System Convergence Tolerance   = 1.0E-06
-  Nonlinear System Max Iterations          = 50
+  Nonlinear System Max Iterations          = 100
+  Nonlinear System Min Iterations          = 2
   Nonlinear System Relaxation Factor       = Real 1.0
 
   Flow Solver Name                         = String "Flow Solution"
