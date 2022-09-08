@@ -25,7 +25,6 @@ dask-worker-space/
 *.VTU
 
 # log files
-*
 *.log
 *.err
 
