@@ -24,6 +24,11 @@ dask-worker-space/
 *.vtu
 *.VTU
 
+# log files
+*
+*.log
+*.err
+
 # Presenations
 *.html
 # figures
