@@ -57,6 +57,11 @@ parse_json()
     $params = decode_json $_;
     say $params->{dx}
     ' $1 )
+  # parse timestep size
+  dt=$(   perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{dt}
+    ' $1 )
   # parse MB curve fit type
   FIT=$(   perl -MJSON -0lnE '
     $params = decode_json $_;
@@ -223,4 +228,52 @@ full_initialization(){
 
   # record the prognostic runtimes for future info
   log_runtime $dx $dt $NT $offset $T_ma $runtime
+}
+
+find_final_timestep()
+{ #-----------------------------------------------------------------------------
+  # Get the final timestep from a given NetCDF file.
+  # Needed to determine which model runs ran out of walltime or memory alloc.
+  #-----------------------------------------------------------------------------
+  # $1 (NetCDF_fp) --->   file path to NetCDF file
+  #-----------------------------------------------------------------------------
+
+  final_timestep=$(ncks -d 't',-1 -v 't' $1 | tac | grep -m 1 "t = " | tr -s ' ' | cut -d " " -f 4)
+  # get the final timestep from the input file |
+  # reverse cat the file, is needed because time dimension format look similar to timestep info
+  # get the final timestep |
+  # squeeze any duplicate blank spaces |
+  # get the actual time info by splitting
+}
+
+
+find_incomplete()
+{
+  KEY=$1
+
+  # parse the parameters from the json files
+  parse_json "params/${KEY}.json"
+
+  # loop over the mass balance offsets
+  for offset in $(seq -w $MB_0 $MB_s $MB_f); do
+    # loop over mean annual air temps
+    for T_ma in $(seq -w $T_ma_0 $T_ma_s $T_ma_f); do
+      # Number of time interval based on dt
+      NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
+      # get the transient runname
+      run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
+
+      # gridded transient results don't exist
+      if [[ ! -f "result/${KEY}/gridded/${run_name}.nc" ]]; then
+        echo "girdded diagnostic file doesnt' exist"
+      else
+        # since the file exists, check to see if the run finished
+        find_final_timestep "result/${KEY}/gridded/${run_name}.nc"
+
+        if [[ $final_timestep != $t_f ]]; then
+          echo "${T_ma}, ${offset}, ${final_timestep}"
+        fi
+      fi
+    done
+  done
 }
