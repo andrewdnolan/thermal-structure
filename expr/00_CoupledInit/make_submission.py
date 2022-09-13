@@ -35,8 +35,10 @@ def make_resubmission_script(KEY, WT=None, MEM=None):
     dx = j['dx']
     # time step [a]
     dt = j['dt']
+    # number of time integration points
+    NT = t_f / dt
     # Total number of gridpoints
-    N_P = sum(1 for _ in open(f"run/{KEY}.incomplete"))
+    N_P = sum(1 for _ in open(f"run/{KEY}.incomplete")) - 1
     # (J)ob (S)tride
     J_s = j['stride']
 
@@ -81,8 +83,18 @@ parse_json "params/{KEY}.json"
 # Add one to SLURM_ARRAY_TASK_ID to slip header
 count=$((SLURM_ARRAY_TASK_ID + 1))
 # get the mean annual airtemp and mass balance offset
-T_ma=$(sed -n "${{count}}p" "./run/{KEY}.incomplete" | cut -d$'\t' -f 1)
-offset=$(sed -n "${{count}}p" "./run/{KEY}.incomplete" | cut -d$'\t' -f 2)
+T_ma=$(sed -n "${{count}}p" "./run/{KEY}.incomplete" | cut -d$'\\t' -f 1)
+offset=$(sed -n "${{count}}p" "./run/{KEY}.incomplete" | cut -d$'\\t' -f 2)
+
+# remove the existing *.nc/*.result files since they will cause writing errors
+# diagnostic
+rm "result/{KEY}/*/{KEY}_dx_{dx}_MB_${{offset}}_OFF_Tma_${{T_ma}}_diag.nc"
+rm "result/{KEY}/mesh_dx{dx}/{KEY}_dx_{dx}_MB_${{offset}}_OFF_Tma_${{T_ma}}_diag.result"
+# prognostic
+rm "result/{KEY}/*/{KEY}_dx_{dx}_NT_{NT}_dt_{dt}_MB_${{offset}}_OFF_Tma_${{T_ma}}_prog.nc"
+rm "result/{KEY}/mesh_dx{dx}/{KEY}_dx_{dx}_NT_{NT}_dt_{dt}_MB_${{offset}}_OFF_Tma_${{T_ma}}_prog.result"
+
+
 
 # at the end of the array, remove the *.incomplete file
 if [[ $SLURM_ARRAY_TASK_ID == {N_P} ]]; then
