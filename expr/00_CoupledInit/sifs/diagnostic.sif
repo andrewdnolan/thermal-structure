@@ -326,7 +326,7 @@ Solver 8
   Linear System Max Iterations             = 500
   Linear System Convergence Tolerance      = 1.0E-07
   Linear System Residual Output            = 0
-  Linear System Abort Not Converged        = Logical True
+  Linear System Abort Not Converged        = Logical False
 
   ! ! Linear System Direct Solver
   ! !----------------------------------------------
