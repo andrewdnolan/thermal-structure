@@ -252,49 +252,64 @@ find_final_timestep()
 }
 
 log_incomplete()
-{   # if the first time add comment at header
-    if [[ ! -f $1 ]]; then 
-      echo "#T_ma offset" |
-      awk -v OFS='\t' '{print $1 "\t" $2}' >> $1
-    fi
-    
-    # print the current value to the passed file
-    echo "${T_ma} ${offset}" | 
+{ #-----------------------------------------------------------------------------
+  # Log the current offset and T_ma as an incomplete run.
+  #-----------------------------------------------------------------------------
+  # $1 (incomp_file) --->   file path to ./run/${KEY}.incomplete file
+  #-----------------------------------------------------------------------------
+
+  # if the first time add comment at header
+  if [[ ! -f $1 ]]; then
+    echo "#T_ma offset" |
     awk -v OFS='\t' '{print $1 "\t" $2}' >> $1
+  fi
+
+  # print the current value to the passed file
+  echo "${T_ma} ${offset}" |
+  awk -v OFS='\t' '{print $1 "\t" $2}' >> $1
 }
 
 find_incomplete()
-{
+{ #-----------------------------------------------------------------------------
+  # Create a list of incomplete model runs, which can be resubmitted
+  #
+  # Results are added to the "./run/${KEY}.incomplete" file
+  #-----------------------------------------------------------------------------
+  # $1 (KEY) --->   Glacier identifer
+  #-----------------------------------------------------------------------------
   KEY=$1
 
   # parse the parameters from the json files
   parse_json "params/${KEY}.json"
-  
+
+  # set the incomplete files filename
   incomp_file="run/${KEY}.incomplete"
 
-  #WARNING: hardcoding timstep 
+  #WARNING: hardcoding timstep
   dt=1.0
 
   # loop over the mass balance offsets
   for offset in $(seq -w $MB_0 $MB_s $MB_f); do
     # loop over mean annual air temps
     for T_ma in $(seq -w $T_ma_0 $T_ma_s $T_ma_f); do
+
       # Number of time interval based on dt
       NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
       # get the transient runname
       run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
-      #echo "result/${KEY}/gridded/${run_name}.nc"
-      
+
       # gridded transient results don't exist
       if [[ ! -f "result/${KEY}/gridded/${run_name}.nc" ]]; then
+        # record current offset and T_ma, which needs to be re-run
         log_incomplete ${incomp_file}
       else
         # since the file exists, check to see if the run finished
         find_final_timestep "result/${KEY}/gridded/${run_name}.nc"
 
         if [[ $final_timestep != $t_f ]]; then
+          # record current offset and T_ma, which needs to be re-run
           log_incomplete ${incomp_file}
-	fi
+	      fi
       fi
     done
   done
