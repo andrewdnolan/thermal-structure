@@ -62,6 +62,11 @@ parse_json()
     $params = decode_json $_;
     say $params->{dt}
     ' $1 )
+  # number of time integration steps
+  t_f=$(   perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{TT}
+    ' $1 )
   # parse MB curve fit type
   FIT=$(   perl -MJSON -0lnE '
     $params = decode_json $_;
@@ -246,6 +251,17 @@ find_final_timestep()
   # get the actual time info by splitting
 }
 
+log_incomplete()
+{   # if the first time add comment at header
+    if [[ ! -f $1 ]]; then 
+      echo "#T_ma offset" |
+      awk -v OFS='\t' '{print $1 "\t" $2}' >> $1
+    fi
+    
+    # print the current value to the passed file
+    echo "${T_ma} ${offset}" | 
+    awk -v OFS='\t' '{print $1 "\t" $2}' >> $1
+}
 
 find_incomplete()
 {
@@ -253,6 +269,11 @@ find_incomplete()
 
   # parse the parameters from the json files
   parse_json "params/${KEY}.json"
+  
+  incomp_file="run/${KEY}.incomplete"
+
+  #WARNING: hardcoding timstep 
+  dt=1.0
 
   # loop over the mass balance offsets
   for offset in $(seq -w $MB_0 $MB_s $MB_f); do
@@ -262,17 +283,18 @@ find_incomplete()
       NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
       # get the transient runname
       run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
-
+      #echo "result/${KEY}/gridded/${run_name}.nc"
+      
       # gridded transient results don't exist
       if [[ ! -f "result/${KEY}/gridded/${run_name}.nc" ]]; then
-        echo "girdded diagnostic file doesnt' exist"
+        log_incomplete ${incomp_file}
       else
         # since the file exists, check to see if the run finished
         find_final_timestep "result/${KEY}/gridded/${run_name}.nc"
 
         if [[ $final_timestep != $t_f ]]; then
-          echo "${T_ma}, ${offset}, ${final_timestep}"
-        fi
+          log_incomplete ${incomp_file}
+	fi
       fi
     done
   done
