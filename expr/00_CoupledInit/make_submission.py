@@ -36,7 +36,7 @@ def make_resubmission_script(KEY, WT=None, MEM=None):
     # time step [a]
     dt = j['dt']
     # number of time integration points
-    NT = t_f / dt
+    NT = int(t_f / dt)
     # Total number of gridpoints
     N_P = sum(1 for _ in open(f"run/{KEY}.incomplete")) - 1
     # (J)ob (S)tride

@@ -31,8 +31,8 @@ offset=$(sed -n "${count}p" "./run/glc1-a.incomplete" | cut -d$'\t' -f 2)
 rm "result/glc1-a/*/glc1-a_dx_50_MB_${offset}_OFF_Tma_${T_ma}_diag.nc"
 rm "result/glc1-a/mesh_dx50/glc1-a_dx_50_MB_${offset}_OFF_Tma_${T_ma}_diag.result"
 # prognostic
-rm "result/glc1-a/*/glc1-a_dx_50_NT_2000.0_dt_1_MB_${offset}_OFF_Tma_${T_ma}_prog.nc"
-rm "result/glc1-a/mesh_dx50/glc1-a_dx_50_NT_2000.0_dt_1_MB_${offset}_OFF_Tma_${T_ma}_prog.result"
+rm "result/glc1-a/*/glc1-a_dx_50_NT_2000_dt_1_MB_${offset}_OFF_Tma_${T_ma}_prog.nc"
+rm "result/glc1-a/mesh_dx50/glc1-a_dx_50_NT_2000_dt_1_MB_${offset}_OFF_Tma_${T_ma}_prog.result"
 
 
 
