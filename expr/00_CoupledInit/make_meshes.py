@@ -22,7 +22,7 @@ glaciers = { # small
              # 'fish'      : 200, # Δx [m]
              # 'klut-a'    : 200, # Δx [m]
              # 'klut-b'    : 200, # Δx [m]
-             # 'twds-b'    : 200, # Δx [m]
+             'twds-b'    : 200, # Δx [m]
             }
 
 
