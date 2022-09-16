@@ -11,3 +11,6 @@ __To Do__:
 
   - Write a solver to calculate the peclet number as field variable for each timestep.
     - Should also write the "Brinkman Number" (see [Meyer and Minchew, 2018](https://www-sciencedirect-com.proxy.lib.sfu.ca/science/article/pii/S0012821X18303790?via%3Dihub#se0080) for example of it being used.)
+
+  - Temperature Dependent Slip Coefficent?
+    - Section 2.4.2 from [Cohen et al. 2018](https://tc.copernicus.org/articles/12/2515/2018/tc-12-2515-2018.pdf)
