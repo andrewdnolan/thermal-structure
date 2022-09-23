@@ -17,7 +17,7 @@ glaciers = { # small
              # 'lilk-b'    : 100, # Δx [m]
              # 'klun-a'    : 100, # Δx [m]
              # 'klun-b'    : 100, # Δx [m]
-             # 'sprg'      : 100, # Δx [m]
+             'sprg'      : 100, # Δx [m]
              # # large
              # 'fish'      : 200, # Δx [m]
              # 'klut-a'    : 200, # Δx [m]
