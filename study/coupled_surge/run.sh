@@ -22,8 +22,10 @@ pseudo_run()
   log_file="${KEY}/logs/${run_name}.log"
 
   # Run the model
-  docker exec elmerenv /bin/sh -c "cd shared_directory/Thesis/thermal-structure/study/coupled_surge;
-                                   ElmerSolver ./sifs/${run_name}.sif "
+  # docker exec elmerenv /bin/sh -c "cd shared_directory/Thesis/thermal-structure/study/coupled_surge;
+  #                                  ElmerSolver ./sifs/${run_name}.sif "
+
+  ElmerSolver ./sifs/${run_name}.sif
   # Remove the sif file
   rm "./sifs/${run_name}.sif"
 
