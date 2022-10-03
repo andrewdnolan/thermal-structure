@@ -276,7 +276,7 @@ Solver 6
   ! Linear System Convergence Measure        = String "solution"
   ! Linear System Residual Output            = 10
 
-  Nonlinear System Convergence Tolerance   = 1.0E-07
+  Nonlinear System Convergence Tolerance   = 1.0E-06
   Nonlinear System Max Iterations          = 25
   Nonlinear System Newton After Iterations = 25
   Nonlinear System Newton After Tolerance  = 1.0E-04
