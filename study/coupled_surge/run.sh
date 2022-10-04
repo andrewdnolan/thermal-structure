@@ -89,5 +89,9 @@ for beta in 0.001 0.0005 0.0001; do
 
     # run the full pseduo surge simulation w/ current beta and surge length
     full_pseudo
+
+    if [[ -f "$run_name" ]]; then
+      continue
+    fi
   done
 done
