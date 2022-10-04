@@ -57,7 +57,7 @@ full_pseudo()
   run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_recovery"
 
   beta=1.0
-  run the transient model with diagnostic solution as restart fiedl
+  # run the transient model with diagnostic solution as restart fiedl
   pseudo_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
 
   # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
