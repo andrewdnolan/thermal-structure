@@ -54,7 +54,7 @@ full_pseudo()
 
   # recovery run name
   RESTART="${run_name}.result"
-  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_recovery"
+  run_name="${run_name}_dt_${dt}_NT_${TT}_recovery"
 
   beta=1.0
   # run the transient model with diagnostic solution as restart fiedl
