@@ -57,18 +57,12 @@ full_pseudo()
   run_name="${run_name}_dt_${dt}_NT_${TT}_recovery"
 
   beta=1.0
-  # # run the transient model with diagnostic solution as restart fiedl
-  # pseudo_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
-  #
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                               -out_fn "result/${KEY}/gridded/${run_name}.nc"
+  # run the transient model with diagnostic solution as restart fiedl
+  pseudo_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
 
-  echo
-  echo $RESTART
-  echo $run_name
-  echo
-
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                -out_fn "result/${KEY}/gridded/${run_name}.nc"
 
   # annoying but need to do to prevent vars being over written
   beta=$beta_surge
