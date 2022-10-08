@@ -87,9 +87,12 @@ dt=0.05
 # for beta in 0.001 0.0005 0.0001; do
 for beta in 0.00025; do
   # try various surge intervals [yr]
-  for TT in 2 5 10; do
+  for TT in 5 10; do
     # dt needs to be defined in the loop
     dt=0.05
+
+    # Restart needs to be defined in loop diagnostic run is now restart variable
+    RESTART="crmpt12_dx_50_NT_2000_dt_1.0_MB_-0.41_OFF_Tma_-8.5_prog.result"
 
     # run the full pseduo surge simulation w/ current beta and surge length
     full_pseudo
