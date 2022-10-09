@@ -39,7 +39,7 @@ full_pseudo()
   NT=$(awk -v dt=$dt -v t_f=$TT 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
 
   # prognostic run name
-  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_pseudo"
+  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_pseudo_cycle2"
 
   # run the transient model with diagnostic solution as restart fiedl
   pseudo_run $dx $KEY $offset $run_name $SS_itters $restart $NT $dt
@@ -84,21 +84,24 @@ dt=0.05
 
 
 # try various slip coefs
-# for beta in 0.001 0.0005 0.0001; do
-for beta in 0.00025; do
+for beta in 0.001 0.0005 0.0001; do
+# for beta in 0.00025; do
   # try various surge intervals [yr]
-  for TT in 5 10; do
+  for TT in 5; do
     # dt needs to be defined in the loop
     dt=0.05
+    # Number of time interval based on dt
+    SNT=$(awk -v dt=$dt -v t_f=$TT 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
 
     # Restart needs to be defined in loop diagnostic run is now restart variable
-    RESTART="crmpt12_dx_50_NT_2000_dt_1.0_MB_-0.41_OFF_Tma_-8.5_prog.result"
+    RESTART="${KEY}_dx_${dx}_NT_${SNT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_pseudo_dt_1.0_NT_2000_recovery.result"
 
-    # run the full pseduo surge simulation w/ current beta and surge length
-    full_pseudo
-
-    if [[ -f "$run_name" ]]; then
-      continue
-    fi
+    ls $RESTART
+    # # run the full pseduo surge simulation w/ current beta and surge length
+    # full_pseudo
+    #
+    # if [[ -f "$run_name" ]]; then
+    #   continue
+    # fi
   done
 done
