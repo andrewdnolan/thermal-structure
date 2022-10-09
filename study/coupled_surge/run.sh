@@ -96,12 +96,11 @@ for beta in 0.001 0.0005 0.0001; do
     # Restart needs to be defined in loop diagnostic run is now restart variable
     RESTART="${KEY}_dx_${dx}_NT_${SNT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_pseudo_dt_1.0_NT_2000_recovery.result"
 
-    ls $RESTART
-    # # run the full pseduo surge simulation w/ current beta and surge length
-    # full_pseudo
-    #
-    # if [[ -f "$run_name" ]]; then
-    #   continue
-    # fi
+    # run the full pseduo surge simulation w/ current beta and surge length
+    full_pseudo
+
+    if [[ -f "$run_name" ]]; then
+      continue
+    fi
   done
 done
