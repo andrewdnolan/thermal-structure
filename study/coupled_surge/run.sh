@@ -84,8 +84,8 @@ dt=0.05
 
 
 # try various slip coefs
-for beta in 0.001 0.0005 0.0001; do
-# for beta in 0.00025; do
+# for beta in 0.001 0.0005 0.0001; do
+for beta in 0.00025; do
   # try various surge intervals [yr]
   for TT in 5; do
     # dt needs to be defined in the loop
