@@ -158,9 +158,12 @@ Material 1
   ! these are in SI units - no problem, as long as the gas constant also is
   Activation Energy 1        = Real #Q1         ! -- [J mol^{-1}]
   Activation Energy 2        = Real #Q2         ! -- [J mol^{-1}]
-  Glen Enhancement Factor    = Real 1.0
   ! the temperature to switch between the two regimes in the flow law
   Limit Temperature          = Real -10.0       ! [C]
+
+  ! Lliboutry and Duval (1985) water content dependent enhancment factor
+  Glen Enhancement Factor    = Variable "Water Content"
+                               Real Procedure "../../bin/Thermodynamics" "Lliboutry_and_Duval_Enhancment"
 
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ! Thermodynamic Properties for Enthalpy:
