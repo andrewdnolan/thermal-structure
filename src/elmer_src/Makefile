@@ -14,7 +14,8 @@ FFLAGS=-fcheck=all
 NC_OBJS     := $(BIN_DIR)/NetcdfUGRIDOutputSolver
 LINKED_OBJS := $(BIN_DIR)/SurfaceBoundary \
 							 $(BIN_DIR)/mass_balance \
-							 $(BIN_DIR)/Thermodynamics
+							 $(BIN_DIR)/Thermodynamics \
+							 $(BIN_DIR)/SlipCoefficent
 
 # Modules to be built, and linked to elmer source
 MOD_SRCS := $(SRC_DIR)/surfacetemperature_mod.f90 \
@@ -49,7 +50,7 @@ fitpack_interface.mod  := $(BIN_DIR)/fitpack_interface.o \
 surfacetemperature.mod := $(BIN_DIR)/surfacetemperature_mod.o
 PositiveDegreeDays.mod := $(BIN_DIR)/PositiveDegreeDays.o\
  													$(BIN_DIR)/special_funcs.o
-													
+
 # Rules for creating executables
 $(BIN_DIR)/mass_balance            : $(fitpack_interface.mod)
 $(BIN_DIR)/SurfaceBoundary         : $(surfacetemperature.mod) $(PositiveDegreeDays.mod)
