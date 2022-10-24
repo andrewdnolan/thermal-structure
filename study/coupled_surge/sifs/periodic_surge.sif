@@ -552,7 +552,7 @@ Boundary Condition 1
   Velocity 1         = Real 0.0e0
   ! Velocity 2         = Real 0.0e0
 
-  Slip Coefficient 2 = Variable "water content"
+  Slip Coefficient 2 = Variable "water content", "Time"
                       Real Procedure  "SlipCoefficent" "periodic_surge"
 
 
