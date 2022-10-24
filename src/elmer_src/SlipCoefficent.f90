@@ -44,7 +44,9 @@ function periodic_surge(Model, Node, omega) result(beta)
   ! Get current time [a]
   Time    =   TimeVar % Values(1)
 
-  write(*,*) Time
+  WRITE (Message, '(A,E10.2)')  "time=", Time
+  CALL INFO(Caller, Message, Level=0)
+
 
   ! Check if within surge period and that the bed is temperate
   if (( MOD(Time, C_period) .lt. S_period ) .and. (omega .ge. omega_thresh)) then
