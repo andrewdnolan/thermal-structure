@@ -460,7 +460,7 @@ Solver 11
    Scalar Field 14 = String "Depth"
    Scalar Field 15 = String "Height"
    Scalar Field 16 = String "Densi"
-   Scalar Field 17 = String "Slip Coefficient 2"
+   ! Scalar Field 17 = String "Slip Coefficient 2"
 
    Compute LonLat = Logical False
 End
@@ -475,15 +475,15 @@ Solver 12
   ComputeAll         = Logical False
 End
 
-Solver 13
-  ! Export the slip coefficient. Needed to check that periodic surges
-  ! are working correctly
-  Equation      = "SaveBoundaryValues"
-  Procedure     = File "SaveData" "SaveBoundaryValues"
-  Exec Solver   = Before TimeStep
-  ! a dummy variable for the solver that does not show up
-  Variable      = String -nooutput "dummyvar"
-  Parameter 1   =  String "Slip Coefficient 2"
+! Solver 13
+!   ! Export the slip coefficient. Needed to check that periodic surges
+!   ! are working correctly
+!   Equation      = "SaveBoundaryValues"
+!   Procedure     = File "SaveData" "SaveBoundaryValues"
+!   Exec Solver   = Before TimeStep
+!   ! a dummy variable for the solver that does not show up
+!   Variable      = String -nooutput "dummyvar"
+!   Parameter 1   =  String "Slip Coefficient 2"
 End
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -493,7 +493,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(12) = 1 2 3 4 5 6 8 9 10 11 12 13
+  Active Solvers(11) = 1 2 3 4 5 6 8 9 10 11 12
 End
 
 Equation 2
@@ -564,9 +564,8 @@ Boundary Condition 1
   Velocity 1         = Real 0.0e0
   ! Velocity 2         = Real 0.0e0
 
-  Slip Coefficient 2 = Variable "water content", "Time"
-                       Real LUA "periodic_surge(tx[0], tx[1])"
-
+  Slip Coefficient 2 = Variable "water content"
+                       Real Procedure  "SlipCoefficent" "periodic_surge"
 
   Bottom Surface    = Variable Coordinate 1
                       Real cubic

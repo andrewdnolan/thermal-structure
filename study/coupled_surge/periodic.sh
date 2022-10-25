@@ -16,7 +16,7 @@ pseudo_run()
        s#<offset>#"$offset"#g;
        s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
-       s#<SS_itters>#"$SS_itters"#g;" "./sifs/pseudo_surge.sif" > "./sifs/${run_name}.sif"
+       s#<SS_itters>#"$SS_itters"#g;" "./sifs/periodic_surge.sif" > "./sifs/${run_name}.sif"
 
   # filepath to log file
   log_file="${KEY}/logs/${run_name}.log"
