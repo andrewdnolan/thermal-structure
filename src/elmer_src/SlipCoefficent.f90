@@ -46,7 +46,7 @@ function periodic_surge(Model, Node, omega) result(beta)
 
   ! Get current timestep, which is really time at end of timestep
   TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-  Get current time [a]
+  ! Get current time [a]
   Time    =   TimeVar % Values(1)
 
   ! Check if within surge period and that the bed is temperate
