@@ -460,6 +460,7 @@ Solver 11
    Scalar Field 14 = String "Depth"
    Scalar Field 15 = String "Height"
    Scalar Field 16 = String "Densi"
+   Scalar Field 17 = String "Slip Coefficient 2"
 
    Compute LonLat = Logical False
 End
@@ -474,6 +475,17 @@ Solver 12
   ComputeAll         = Logical False
 End
 
+Solver 13
+  ! Export the slip coefficient. Needed to check that periodic surges
+  ! are working correctly
+  Equation      = "SaveBoundaryValues"
+  Procedure     = File "SaveData" "SaveBoundaryValues"
+  Exec Solver   = Before TimeStep
+  ! a dummy variable for the solver that does not show up
+  Variable      = String -nooutput "dummyvar"
+  Parameter 1   =  String "Slip Coefficient 2"
+End
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! BEGIN EQUATION
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -481,7 +493,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(11) = 1 2 3 4 5 6 8 9 10 11 12
+  Active Solvers(12) = 1 2 3 4 5 6 8 9 10 11 12 13
 End
 
 Equation 2
