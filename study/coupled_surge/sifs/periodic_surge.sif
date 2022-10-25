@@ -565,7 +565,7 @@ Boundary Condition 1
   ! Velocity 2         = Real 0.0e0
 
   Slip Coefficient 2 = Variable "water content"
-                       Real Procedure  "SlipCoefficent" "periodic_surge"
+                       Real Procedure  "../../bin/SlipCoefficent" "periodic_surge"
 
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
