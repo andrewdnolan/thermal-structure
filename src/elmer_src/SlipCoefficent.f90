@@ -44,7 +44,7 @@ function periodic_surge(Model, Node, omega) result(beta)
   ! Water content threshold for ice to be "temperate"
   omega_thresh = 1.0e-3
 
-  Get current timestep, which is really time at end of timestep
+  ! Get current timestep, which is really time at end of timestep
   TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
   Get current time [a]
   Time    =   TimeVar % Values(1)
