@@ -1,5 +1,5 @@
 !==============================================================================
-function periodic_surge(Model, Node, InputArray) result(beta)
+function periodic_surge(Model, Node, omega) result(beta)
 !==============================================================================
   ! This function returns the time dependent slip coefficent for periodic
   ! surge simulations.
@@ -32,9 +32,9 @@ function periodic_surge(Model, Node, InputArray) result(beta)
   ! TO DO: should read parameters values from the constants section.
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-  ! copy input (should match the arguments!)
-  omega = InputArray(1)
-  time  = InputArray(2)
+  ! ! copy input (should match the arguments!)
+  ! omega = InputArray(1)
+  ! time  = InputArray(2)
 
   ! 5 year surge, 45 year quiescesnce, for a 50 year surge period
   S_period = 5.0_dp
@@ -44,14 +44,10 @@ function periodic_surge(Model, Node, InputArray) result(beta)
   ! Water content threshold for ice to be "temperate"
   omega_thresh = 1.0e-3
 
-  ! Get current timestep, which is really time at end of timestep
-  ! TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-  ! Get current time [a]
-  ! Time    =   TimeVar % Values(1)
-
-  WRITE (Message, '(A,E10.2)')  "time=", Time
-  CALL INFO(Caller, Message, Level=1)
-
+  Get current timestep, which is really time at end of timestep
+  TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
+  Get current time [a]
+  Time    =   TimeVar % Values(1)
 
   ! Check if within surge period and that the bed is temperate
   if (( MOD(Time, C_period) .lt. S_period ) .and. (omega .ge. omega_thresh)) then
