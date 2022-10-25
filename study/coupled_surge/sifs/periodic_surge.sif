@@ -484,7 +484,7 @@ End
 !   ! a dummy variable for the solver that does not show up
 !   Variable      = String -nooutput "dummyvar"
 !   Parameter 1   =  String "Slip Coefficient 2"
-End
+! End
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! BEGIN EQUATION
