@@ -65,7 +65,7 @@ dt=0.1
 
 beta=0.001
 
-# run the model for 500 years
-TT=500
+# run the model for 2000 years
+TT=2000
 # run the full pseduo surge simulation w/ current beta and surge length
 full_pseudo
