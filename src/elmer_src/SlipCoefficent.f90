@@ -36,9 +36,9 @@ function periodic_surge(Model, Node, omega) result(beta)
   ! omega = InputArray(1)
   ! time  = InputArray(2)
 
-  ! 5 year surge, 45 year quiescesnce, for a 50 year surge period
+  ! 5 year surge, 65 year quiescesnce, for a 50 year surge period
   S_period = 5.0_dp
-  Q_period = 45.0_dp
+  Q_period = 65.0_dp
   C_period = S_period + Q_period
 
   ! Water content threshold for ice to be "temperate"
