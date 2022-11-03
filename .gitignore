@@ -39,6 +39,7 @@ dask-worker-space/
 
 # include topograhy files
 !input_data/topography/*.dat
+!study/domain_clip/input_data/topography/*.dat
 # include spline knots of coefs
 !input_data/mass_balance/*.dat
 # include the files for testing fitpack interface
