@@ -213,7 +213,7 @@ End
 
 Solver 2
   Exec Interval(<M>)         = Integer <dyn_exec_int>
-  ! Timestep Scale(<M>)        = Real    <dyn_exec_int>
+  Timestep Scale                           = 10
 
   Equation                   = "HeightDepth"
   ! Exec Solver                = "Before Timestep"
@@ -225,7 +225,7 @@ End
 
 Solver 3
   Exec Interval(<M>)            = Integer <dyn_exec_int>
-  ! Timestep Scale(<M>)           = Real    <dyn_exec_int>
+  Timestep Scale                           = 10
 
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
@@ -268,7 +268,7 @@ End
 
 Solver 6
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
+  Timestep Scale                           = 10
 
   Equation                                 = "Navier-Stokes"
   Flow model                               = String "Stokes"
@@ -307,7 +307,7 @@ End
 
 Solver 7
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  Timestep Scale(<M>)                      = <dyn_exec_int>
+  Timestep Scale                           = 10
 
   Equation                                = "Free Surface Evolution"
   Variable                                = String "Zs"
@@ -363,7 +363,7 @@ End
 ! Deformational Heat
 Solver 9
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
+  Timestep Scale                           = 10
 
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
