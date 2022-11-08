@@ -247,19 +247,20 @@ SS_itters=10
 beta=0.001
 
 # run the model for 2000 years
-TT=2100
-
+TT=2000
 
 # Surge intervals
-S_P=5.00                       # (s)urge  (p)eriod
-Q_P=25.0                       # (q)uies. (p)eriod
+S_P=2.00                       # (s)urge  (p)eriod
+Q_P=18.0                       # (q)uies. (p)eriod
+
 # calculate surge cycle period; from the set surge/quiescent interval
 C_P=$(cycle_period $S_P $Q_P)  # (c)ycle  (p)eriod
+
 # number of surge cycles
 NC=$(number_of_cycles $TT $C_P)
+
 # timestep array lenghts
 M=$((2*NC))
-
 # get the timestep sizes array
 dt_arr=($(fill_timestep_sizes $NC $ST_dt $QT_dt))
 # get the timestep intervals array

@@ -213,7 +213,7 @@ End
 
 Solver 2
   Exec Interval(<M>)         = Integer <dyn_exec_int>
-  Timestep Scale                           = 10
+  Timestep Over Intervals    = Logical True
 
   Equation                   = "HeightDepth"
   ! Exec Solver                = "Before Timestep"
@@ -225,7 +225,8 @@ End
 
 Solver 3
   Exec Interval(<M>)            = Integer <dyn_exec_int>
-  Timestep Scale                           = 10
+  Timestep Over Intervals       = Logical True
+  ! Timestep Scale(<M>)           = Real    <dyn_exec_int>
 
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
@@ -268,7 +269,7 @@ End
 
 Solver 6
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  Timestep Scale                           = 10
+  Timestep Over Intervals                  = Logical True
 
   Equation                                 = "Navier-Stokes"
   Flow model                               = String "Stokes"
@@ -306,8 +307,10 @@ Solver 6
 End
 
 Solver 7
-  Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  Timestep Scale                           = 10
+  Exec Interval(<M>)                      = Integer <dyn_exec_int>
+  Timestep Over Intervals                 = Logical True
+
+  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
 
   Equation                                = "Free Surface Evolution"
   Variable                                = String "Zs"
@@ -346,6 +349,11 @@ Solver 7
 End
 
 Solver 8
+  Exec Interval(<M>)       = Integer <dyn_exec_int>
+  Timestep Over Intervals  = Logical True
+
+  ! Timestep Scale(<M>)      = Real    <dyn_exec_int>
+
   ! Exec Solver              = "before timestep"
   Equation                 = "MapCoordinate"
   Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
@@ -363,7 +371,8 @@ End
 ! Deformational Heat
 Solver 9
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  Timestep Scale                           = 10
+  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
+  Timestep Over Intervals                  = Logical True
 
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"
@@ -467,6 +476,7 @@ Solver 11
    Scalar Field 8  = String "Surface_Enthalpy"
    Scalar Field 9  = String "W"
    Scalar Field 10 = String "Q_lat"
+
    ! Free Surface Solver Fields
    Scalar Field 11 = String "Zs"
    Scalar Field 12 = String "Zbed"
