@@ -149,6 +149,7 @@ calc_number_of_timesteps()
 
   echo $sum
 }
+
 parse_json()
 { # Parse model parameters from .json config file
 
@@ -203,8 +204,61 @@ parse_json()
     ' $1 )
 }
 
+log_runtime()
+{ # Log the simulation runtime as function of pertinent params
+  #-----------------------------------------------------------------------------
+  #
+  # Variables:
+  # ---------
+  #  KEY     ---> glacier identifer
+  #  dx      ---> mesh resolution. ${KEY}/mesh_dx${dx}/mesh.* should exists
+  #  T_ma    ---> air temp. [C] @ $z_ref from "params/ref_params.sif" file
+  #  offset  ---> Mass balance anomoly [m i.e. yr-1]
+  #  ST_dt   ---> surging thermal timestep   [yr]
+  #  SD_dt   ---> surging dynamic timestep   [yr]
+  #  QT_dt   ---> quies.  thermal timestep   [yr]
+  #  QD_dt   ---> quies.  dynamic timestep   [yr]
+  #  SP      ---> active phase length        [yr]
+  #  QP      ---> quiescent period length    [yr]
+  #  TT      ---> Total length of simulation [yr]
+  #  beta    ---> slip coeffiecent value
+  #  runtime ---> Total simulation length    [sec]
+  #-----------------------------------------------------------------------------
+  local OUT_fp="result/${KEY}/${KEY}.periodic_surge.time_profile"
+
+  if [ ! -f "$OUT_fp" ]; then
+      echo "#dx offset T_ma ST_dt SD_dt QT_dt QD_dt SP QP TT beta runtime" |
+      awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' >> \
+      $OUT_fp
+  fi
+
+  echo "${dx} ${offset} ${T_ma} ${ST_dt} ${SD_dt} ${QT_dt} ${QD_dt} ${S_P} ${Q_P} ${TT} ${beta} ${runtime}" |
+  awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' >> \
+  $OUT_fp
+}
+
 periodic_run()
-{
+{ # Run a periodic surging simulation
+  #-----------------------------------------------------------------------------
+  # This function:
+  #         1) upates the template sif file,
+  #         2) runs the prognostic Elmer/Ice simulation,
+  #         3) adds the .sif file and params as attributes to the NetCDF
+  #
+  # Variables:
+  # ---------
+  #  KEY          ---> glacier identifer
+  #  dx           ---> mesh resolution. ${KEY}/mesh_dx${dx}/mesh.* should exists
+  #  T_ma         ---> air temp. [C] @ $z_ref from "params/ref_params.sif" file
+  #  offset       ---> Mass balance anomoly [m i.e. yr-1]
+  #  SS_itters    ---> Number of S.S. itterations for diagnostic simulation
+  #  run_name     ---> unique simulation identifer
+  #  M            ---> length of timestep related arrays
+  #  dt_arr       ---> timestep array of length $M            [yr]
+  #  NT_arr       ---> timstep intervals array of length $M   [-]
+  #  dyn_exec_arr ---> interval to exec stokes solver array of length $M [-]
+  #-----------------------------------------------------------------------------
+
   # Update the .SIF FILE with the model run specifc params
   sed "s#<M>#"$M"#g;
        s#<DX>#"$dx"#g;
@@ -222,14 +276,29 @@ periodic_run()
   # filepath to log file
   log_file="${KEY}/logs/${run_name}.log"
 
-  # Run the model
-  # docker exec elmerenv /bin/sh -c "cd shared_directory/Thesis/thermal-structure/study/coupled_surge;
-  #                                  ElmerSolver ./sifs/${run_name}.sif "
-
   ElmerSolver ./sifs/${run_name}.sif
+
+  # add the params as a global attribute to the netcdf file
+  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
+                                        -a "params"                \
+                                           "result/${KEY}/nc/${run_name}.nc"
+  # add the sif as a global attribute to the netcdf file
+  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
+                                        -a "sif"                \
+                                           "result/${KEY}/nc/${run_name}.nc"
 
   # Remove the sif file
   rm "./sifs/${run_name}.sif"
+
+}
+
+periodic_simulation()
+{
+  # parse the parameters from the json files
+  parse_json "params/${KEY}.json"
+
+  # check for any overwrites of the default parameters
+  
 
 }
 
