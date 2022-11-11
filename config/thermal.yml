@@ -20,6 +20,7 @@ dependencies:
   - dask-jobqueue
   - jupyterlab
   - rise
+  - tqdm
   - pip:
     - SALib
     - sshuttle

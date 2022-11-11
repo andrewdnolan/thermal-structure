@@ -9,9 +9,9 @@ module load openmpi/4.0.3
 module load elmerfem/9.0
 
 # for netcdf postprocessing in fortran
-module load nco
 module load netcdf
 module load netcdf-fortran
+module load nco
 
 # for json parsing from the command line
 module load perl
