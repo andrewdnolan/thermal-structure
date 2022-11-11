@@ -81,6 +81,22 @@ parse_json()
 
 diagnostic_run()
 {
+  #-----------------------------------------------------------------------------
+  # Run a diagnostic simulation. This function:
+  #         1) upates the template sif file,
+  #         2) runs the diagnostic Elmer/Ice simulation,
+  #         3) adds the .sif file and params as attributes to the NetCDF
+  #
+  # Variables:
+  # ---------
+  #  KEY       ---> glacier identifer
+  #  dx        ---> mesh resolution. ${KEY}/mesh_dx${dx}/mesh.* should exists
+  #  T_ma      ---> mean annual air temp. [C] @ $z_ref from "params/ref_params.sif" file
+  #  offset    ---> Mass balance anomoly [m i.e. yr-1]
+  #  SS_itters ---> Number of S.S. itterations for diagnostic simulation
+  #  run_name  ---> unique simulation identifer
+  #-----------------------------------------------------------------------------
+
   # Update the .SIF FILE with the model run specifc params
   sed "s#<DX>#"$dx"#g;
        s#<FIT>#"$FIT"#g;
@@ -115,6 +131,26 @@ diagnostic_run()
 
 prognostic_run()
 {
+  #-----------------------------------------------------------------------------
+  # Run a prognostic simulation. This function:
+  #         1) upates the template sif file,
+  #         2) runs the prognostic Elmer/Ice simulation,
+  #         3) adds the .sif file and params as attributes to the NetCDF
+  #
+  # Variables:
+  # ---------
+  #  KEY       ---> glacier identifer
+  #  dx        ---> mesh resolution. ${KEY}/mesh_dx${dx}/mesh.* should exists
+  #  T_ma      ---> mean annual air temp. [C] @ $z_ref from "params/ref_params.sif" file
+  #  offset    ---> Mass balance anomoly [m i.e. yr-1]
+  #  SS_itters ---> Number of S.S. itterations for diagnostic simulation
+  #  run_name  ---> unique simulation identifer
+  #
+  #  dt        ---> timestep             [yr]
+  #  NT        ---> Number of timesteps  [-]
+  # 
+  #-----------------------------------------------------------------------------
+
   # Update the .SIF FILE with the model run specifc params
   sed "s#<DX>#"$dx"#g;
        s#<dt>#"$dt"#g;
