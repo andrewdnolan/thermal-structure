@@ -11,13 +11,12 @@
 #SBATCH --error=logs/crmpt12/crmpt12_%A_%a.err    # standard error
 # in the previous two lines %A" is replaced by jobID and "%a" with the array index
 
-
 SLURM_ARRAY_TASK_ID=3
 
 echo "Starting task $SLURM_ARRAY_TASK_ID"
 
 # load the neccessary packages
-source ../../config/modulefile.cc.cedars
+source ../../config/modulefile.cc.cedar
 
 CMD=$(  sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/crmpt12/crmpt12.commands)
 

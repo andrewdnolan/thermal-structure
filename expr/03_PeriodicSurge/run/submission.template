@@ -14,7 +14,7 @@
 echo "Starting task $SLURM_ARRAY_TASK_ID"
 
 # load the neccessary packages
-source ../../config/modulefile.cc.cedars
+source ../../config/modulefile.cc.cedar
 
 CMD=$(  sed -n "${{SLURM_ARRAY_TASK_ID}}p" ./run/{KEY}/{KEY}.commands)
 
