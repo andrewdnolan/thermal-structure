@@ -46,10 +46,19 @@ Constants
 
   Seasonality         = Logical True
 
+  ! Mass Balance Forcing:
+  !~~~~~~~~~~~~~~~~~~~~~~
   Mass Balance Offset = Real <offset>  ! m y^{-1}
-  T_mean              = real <T_mean>  ! Mean annual air temp @ z_ref [C]
+  T_mean              = Real <T_mean>  ! Mean annual air temp @ z_ref [C]
+
+  ! Periodic Surge Forcing:
+  !~~~~~~~~~~~~~~~~~~~~~~~~
+  beta                = Real <beta>    ! [???]
+  surge_period        = Real <SP>   ! [yr]
+  quiescent_period    = Real <QP>   ! [yr]
 
   !Physical Constants:
+  !~~~~~~~~~~~~~~~~~~~~~~~~
   Gas Constant        = real #R        ! [J mol^{-1} K^{-1}]
   Pressure Variable   = String "Pressure"
 End
@@ -69,11 +78,10 @@ Simulation
   Steady State Min Iterations = 1
   Steady State Max Iterations = <SS_itters>
 
-  Timestep Intervals(<M>)          = Integer <NT_arr>  ![a]
-  Timestep Sizes(<M>)              = Real    <dt_arr>  ![a]
-  Output Intervals(<M>)            = Integer <NT_arr>
+  Timestep Intervals(<M>)     = Integer <NT_arr>  ![a]
+  Timestep Sizes(<M>)         = Real    <dt_arr>  ![a]
+  Output Intervals(<M>)       = Integer <NT_arr>
 
-  ! Post File                   = "VTU/<run_name>.vtu"
   Output File                 = "<run_name>.result"               !\"
   Max Output Level            = 3
 

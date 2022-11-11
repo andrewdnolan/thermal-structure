@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 """
-initialize.py:
+periodic_surge.py:
 
-Using the bash functions in the initialize.sh script, run the initialization
+Using the bash functions in the periodic_surge.sh script, run a periodic surge
 sequence for a given parameter combination. initialization sequence includes
     - diagnostic simulation
     - prognostic simulation
@@ -12,6 +12,7 @@ sequence for a given parameter combination. initialization sequence includes
 
 import os
 import sys
+import json
 import argparse
 import subprocess
 from argparse import RawTextHelpFormatter
@@ -22,13 +23,19 @@ def main(argv):
     # bash (environmental) variables, and the second entry
     # is a more descriptive name, which makes the help
     # docstring be more readable
-    varibales = [("diag_SS_itters", "diagnostic_SS_iterations"),
-                 ("KEY",            "key"                     ),
-                 ("dx",             "horzontal_spacing"       ),
-                 ("offset",         "offset"                  ),
-                 ("T_ma",           "Temp_mean_annual"        ),
-                 ("t_f",            "time_final"              ),
-                 ("prog_SS_itters", "prognostic_SS_iterations")]
+    varibales = [("KEY",            "key"              ),
+                 ("dx",             "horzontal_spacing"),
+                 ("TT",             "time_final"       ),
+                 ("SP",             "surge_period"     ),
+                 ("QP",             "quies_period"     ),
+                 ("ST_dt",          "ST_dt"            ),
+                 ("SD_dt",          "SD_dt"            ),
+                 ("QT_dt",          "QT_dt"            ),
+                 ("QD_dt",          "QD_dt"            ),
+                 ("beta",           "slip_coef"        ),
+                 ("offset",         "offset"           ),
+                 ("T_ma",           "Temp_mean_annual" ),
+                 ("SS_itters",      "SS_iterations"    )]
 
     # create a dictionary of dictionaries, to store passed values
     # and map between flag name for variables and the bash environmental
@@ -56,6 +63,30 @@ def main(argv):
                         help = "Horzontal gridcell spacing [m]. \n"\
                                "Mesh directory for $dx should already exist.")
 
+    parser.add_argument('-TT', f'--{vars["TT"]["flag_var"]}', type=float,
+                        help = "Final time [a] for the transient simulation. \n")
+
+    parser.add_argument('-SP',f'--{vars["SP"]["flag_var"]}', type=str,
+                        help = "Scalar offset to the mass balance curve. [m a-1] \n")
+
+    parser.add_argument('-QP',f'--{vars["QP"]["flag_var"]}', type=str,
+                        help = "Scalar offset to the mass balance curve. [m a-1] \n")
+
+    parser.add_argument('-beta',f'--{vars["beta"]["flag_var"]}', type=str,
+                        help = "Scalar offset to the mass balance curve. [m a-1] \n")
+
+    parser.add_argument(f'-{vars["ST_dt"]["flag_var"]}', type=float,
+                        help = "Thermal timestep length [a] during surging \n")
+
+    parser.add_argument(f'-{vars["SD_dt"]["flag_var"]}', type=float,
+                        help = "Dynamic timestep length [a] during surging \n")
+
+    parser.add_argument(f'-{vars["QT_dt"]["flag_var"]}', type=float,
+                        help = "Thermal timestep length [a] during quiesience \n")
+
+    parser.add_argument(f'-{vars["QD_dt"]["flag_var"]}', type=float,
+                        help = "Dynamic timestep length [a] during quiesience \n")
+
     parser.add_argument('-off',f'--{vars["offset"]["flag_var"]}', type=str,
                         help = "Scalar offset to the mass balance curve. [m a-1] \n")
 
@@ -64,27 +95,32 @@ def main(argv):
                                " `params/ref_params.sif` file. \nReference value for"\
                                " 'z_ref' = 2193 [m a.s.l.] (mean elev. of Kaskawulsh)")
 
-    parser.add_argument('-dt',f'--{vars["dt"]["flag_var"]}', type=float,
-                        help = "Timestep length [a] for the transient simulation",
-                        default = 1.0)
-
-    parser.add_argument('-t_f',f'--{vars["t_f"]["flag_var"]}', type=float,
-                        help = "Final time [a] for the transient simulation. \n"\
-                               "The number of time steps ($NT) is calculated as \n"\
-                               "        `NT = t_f // dt`")
-
-    parser.add_argument('-it_diag','--diagnostic_SS_iterations', type=int,
-                        help = "Number of (S)teady (S)tate itterations for the\n"\
-                               "diagnostic simulation",
-                        default = 25)
-
-    parser.add_argument('-it_prog','--prognostic_SS_iterations', type=int,
-                        help = "Number of (S)teady (S)tate itterations for the \n"\
-                               "prognostic simulation",
+    parser.add_argument('-itters',f'--{vars["SS_itters"]["flag_var"]}', type=int,
+                        help = "Number of (S)teady (S)tate itterations",
                         default = 10)
 
 
     args, _ = parser.parse_known_args(argv)
+
+
+    # get the glacier identifer
+    key = args.__getattribute__(vars['KEY']['flag_var'])
+
+    # raise error if no key is given
+    if key is None:
+        raise EnvironmentError("${KEY} not set")
+
+    # check if there is a param dictionary for the key
+    elif os.path.exists(f'./params/{key}.json'):
+        # if so, open and store it 
+        with open(f'./params/{key}.json', "r") as f:
+            json_params = json.load(f)
+
+    # set the environmental varable, values have to be string
+    os.environ['KEY'] = str(key)
+
+    # after we've already access, remove KEY from dictionary
+    vars.pop('KEY', None)
 
 
     for var in vars:
@@ -93,6 +129,12 @@ def main(argv):
         value = args.__getattribute__(vars[var]['flag_var'])
 
         # make sure all the varibales without default values are set
+        if value is None:
+            # check the json params dictionary for a default values
+            if var in json_params:
+                value = json_params[var]
+
+        #
         if value is None:
             raise EnvironmentError(f"\"{vars[var]['flag_var']}\" not set")
 
@@ -103,7 +145,7 @@ def main(argv):
     # load the functions from the initialization script,
     # then w/ the environmental variables set,
     # run a single initialization simulation
-    cmd   = "source initialize.sh; full_initialization"
+    cmd   = "source periodic_surging.sh; periodic_simulation"
 
     # Actually run Elmer/Ice!
     result = subprocess.run([cmd],

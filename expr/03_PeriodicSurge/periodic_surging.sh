@@ -232,7 +232,7 @@ log_runtime()
       $OUT_fp
   fi
 
-  echo "${dx} ${offset} ${T_ma} ${ST_dt} ${SD_dt} ${QT_dt} ${QD_dt} ${S_P} ${Q_P} ${TT} ${beta} ${runtime}" |
+  echo "${dx} ${offset} ${T_ma} ${ST_dt} ${SD_dt} ${QT_dt} ${QD_dt} ${SP} ${QP} ${TT} ${beta} ${runtime}" |
   awk -v OFS='\t' '{print $1 "\t" $2 "\t" $3 "\t" $4 "\t" $5 "\t" $6 "\t" $7 "\t" $8 "\t" $9 "\t" $10 "\t" $11 "\t" $12}' >> \
   $OUT_fp
 }
@@ -253,6 +253,8 @@ periodic_run()
   #  offset       ---> Mass balance anomoly [m i.e. yr-1]
   #  SS_itters    ---> Number of S.S. itterations for diagnostic simulation
   #  run_name     ---> unique simulation identifer
+  #  SP           ---> surge period [yr]
+  #  QP           ---> quiescent period [yr]
   #  M            ---> length of timestep related arrays
   #  dt_arr       ---> timestep array of length $M            [yr]
   #  NT_arr       ---> timstep intervals array of length $M   [-]
@@ -262,6 +264,8 @@ periodic_run()
   # Update the .SIF FILE with the model run specifc params
   sed "s#<M>#"$M"#g;
        s#<DX>#"$dx"#g;
+       s#<SP>#"$SP"#g;
+       s#<QP>#"$QP"#g;
        s#<KEY>#"$KEY"#g;
        s#<beta>#"$beta"#g;
        s#<T_mean>#"$T_ma"#g;
@@ -293,52 +297,92 @@ periodic_run()
 }
 
 periodic_simulation()
-{
-  # parse the parameters from the json files
-  parse_json "params/${KEY}.json"
+{ # Run a full periodic simulation including pre and post processing
+  #-----------------------------------------------------------------------------
 
-  # check for any overwrites of the default parameters
-  
+  # parameter dictionary for griding NetCDFs
+  param_dict="{\"beta\"   : ${beta},
+               \"SP\"     : ${SP},
+               \"QP\"     : ${QP},
+               \"T_ma\"   : ${T_ma},
+               \"offset\" : ${offset}}"
 
+  # calculate surge cycle period; from the set surge/quiescent interval
+  C_P=$(cycle_period $SP $QP)  # (c)ycle  (p)eriod
+  # number of surge cycles
+  NC=$(number_of_cycles $TT $C_P)
+  # timestep array lenghts
+  M=$((2*NC))
+  # get the timestep sizes array
+  dt_arr=($(fill_timestep_sizes $NC $ST_dt $QT_dt))
+  # get the timestep intervals array
+  NT_arr=($(fill_timestep_intervals $NC $ST_dt $QT_dt $SP $QP))
+  # get the array of intervals to execute the dynamic solver at
+  dyn_exec_arr=($(fill_dynamicexec_intervals $NC $SD_dt $QD_dt $ST_dt $QT_dt))
+
+  # prognostic run name
+  run_name="${KEY}_dx_${dx}_TT_${TT}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_SP_${SP}_QP_${QP}"
+
+  RESTART="crmpt12_dx_50_NT_100_dt_0.05_MB_-0.41_OFF_Tma_-8.5_B_0.001_pseudo_dt_1.0_NT_2000_recovery.result"
+
+  # Start the timer
+  start=$(date +%s.%N)
+
+  # create and run the .sif file from the template
+  periodic_run
+
+  # End the timer
+  end=$(date +%s.%N)
+
+  # Execution time of the solver
+  runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+
+  # record the runtimes for future reference
+  log_runtime $KEY $dx $T_ma $offset $ST_dt $SD_dt $QT_dt $QD_dt $SP $QP $TT $beta $runtime
+
+  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+  #                                -params "${param_dict}"
 }
 
-# parse the parameters from the json files
-parse_json "params/crmpt12.json"
-
-offset=-0.41
-T_ma=-8.5
-KEY='crmpt12'
-# diagnostic run is now restart variable
-RESTART="crmpt12_dx_50_NT_100_dt_0.05_MB_-0.41_OFF_Tma_-8.5_B_0.001_pseudo_dt_1.0_NT_2000_recovery.result"
-# limit to 10 S.S. itters for transient runs
-SS_itters=10
-
-beta=0.001
-
-# run the model for 2000 years
-TT=2000
-
-# Surge intervals
-S_P=2.00                       # (s)urge  (p)eriod
-Q_P=18.0                       # (q)uies. (p)eriod
-
-# calculate surge cycle period; from the set surge/quiescent interval
-C_P=$(cycle_period $S_P $Q_P)  # (c)ycle  (p)eriod
-
-# number of surge cycles
-NC=$(number_of_cycles $TT $C_P)
-
-# timestep array lenghts
-M=$((2*NC))
-# get the timestep sizes array
-dt_arr=($(fill_timestep_sizes $NC $ST_dt $QT_dt))
-# get the timestep intervals array
-NT_arr=($(fill_timestep_intervals $NC $ST_dt $QT_dt $S_P $Q_P))
-# get the array of intervals to execute the dynamic solver at
-dyn_exec_arr=($(fill_dynamicexec_intervals $NC $SD_dt $QD_dt $ST_dt $QT_dt))
-
-# prognostic run name
-run_name="${KEY}_dx_${dx}_TT_${TT}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_SP_${S_P}_QP_${Q_P}"
-
-# create file form template
-periodic_run
+# # parse the parameters from the json files
+# parse_json "params/crmpt12.json"
+#
+# offset=-0.41
+# T_ma=-8.5
+# KEY='crmpt12'
+# # diagnostic run is now restart variable
+# RESTART="crmpt12_dx_50_NT_100_dt_0.05_MB_-0.41_OFF_Tma_-8.5_B_0.001_pseudo_dt_1.0_NT_2000_recovery.result"
+# # limit to 10 S.S. itters for transient runs
+# SS_itters=10
+#
+# beta=0.001
+#
+# # run the model for 2000 years
+# TT=2000
+#
+# # Surge intervals
+# SP=2.00                       # (s)urge  (p)eriod
+# QP=18.0                       # (q)uies. (p)eriod
+#
+# # calculate surge cycle period; from the set surge/quiescent interval
+# C_P=$(cycle_period $SP $QP)  # (c)ycle  (p)eriod
+#
+# # number of surge cycles
+# NC=$(number_of_cycles $TT $C_P)
+#
+# # timestep array lenghts
+# M=$((2*NC))
+# # get the timestep sizes array
+# dt_arr=($(fill_timestep_sizes $NC $ST_dt $QT_dt))
+# # get the timestep intervals array
+# NT_arr=($(fill_timestep_intervals $NC $ST_dt $QT_dt $SP $QP))
+# # get the array of intervals to execute the dynamic solver at
+# dyn_exec_arr=($(fill_dynamicexec_intervals $NC $SD_dt $QD_dt $ST_dt $QT_dt))
+#
+# # prognostic run name
+# run_name="${KEY}_dx_${dx}_TT_${TT}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_SP_${SP}_QP_${QP}"
+#
+# # create file form template
+# periodic_run
