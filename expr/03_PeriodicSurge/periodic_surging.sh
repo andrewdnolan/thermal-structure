@@ -221,7 +221,7 @@ log_runtime()
   #  SP      ---> active phase length        [yr]
   #  QP      ---> quiescent period length    [yr]
   #  TT      ---> Total length of simulation [yr]
-  #  beta    ---> slip coeffiecent value
+  #  beta    ---> slip coeffiecent value     [????]
   #  runtime ---> Total simulation length    [sec]
   #-----------------------------------------------------------------------------
   local OUT_fp="result/${KEY}/${KEY}.periodic_surge.time_profile"
@@ -323,6 +323,8 @@ periodic_simulation()
   # prognostic run name
   run_name="${KEY}_dx_${dx}_TT_${TT}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_SP_${SP}_QP_${QP}"
 
+  # TO DO:
+  #     need to find a more intelligent way to find or specifcy the restart simulation
   RESTART="crmpt12_dx_50_NT_100_dt_0.05_MB_-0.41_OFF_Tma_-8.5_B_0.001_pseudo_dt_1.0_NT_2000_recovery.result"
 
   # Start the timer

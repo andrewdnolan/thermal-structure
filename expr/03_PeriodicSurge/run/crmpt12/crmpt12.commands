@@ -1,0 +1,6 @@
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 13 -beta 0.001 -TT 3000
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 0.001 -TT 3000
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 58 -beta 0.001 -TT 3000
+./periodic_surge.py -k "crmpt12" -SP 5 -QP 10 -beta 0.001 -TT 3000
+./periodic_surge.py -k "crmpt12" -SP 5 -QP 25 -beta 0.001 -TT 3000
+./periodic_surge.py -k "crmpt12" -SP 5 -QP 55 -beta 0.001 -TT 3000
