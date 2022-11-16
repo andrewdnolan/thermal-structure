@@ -1,7 +1,20 @@
 import numpy as np
 import xarray as xr
 from glob import glob
+from tqdm import tqdm
 from derived_fields import calc_percent_temperate, calc_relative_volume
+
+
+"""
+add out of memoery method for gridding the Elmer/Ice NetCDF
+    Need for the 2GB+ files written which take up to much memoery when gridded in memoery
+
+    https://github.com/pydata/xarray/issues/1215
+
+# open multiple zarr
+    https://discourse.pangeo.io/t/how-to-read-multiple-zarr-archives-at-once-from-s3/2564
+"""
+
 
 def __quads_to_tris(quads):
     """converts quad elements into tri elements
@@ -23,7 +36,33 @@ def __quads_to_tris(quads):
         tris[j + 1][2] = n0
     return tris
 
-def __preprocess_UGRID(ds):
+# def __create_gridded():
+
+def __dump_var(new_ds, old_ds, key):
+    """ add gridded variable to the new dataset
+    """
+    NT = new_ds.t.size         # number of timesteps
+    NX = new_ds.coord_1.size   # number nodes in the x direction
+    NZ = new_ds.coord_2.size   # number nodes in the z direction
+
+    var  = old_ds[key] # get the coresponding variable
+    dims = var.dims    # and it's dimensions
+
+    if ("nMesh_node" in dims) and ("time" in dims):
+        new_ds[key] = xr.DataArray(
+            var.values.reshape(NT, NZ, NX), dims=["t", "coord_2", "coord_1"]
+        )
+
+    # non timedependent variables?
+    elif "nMesh_node" in dims:
+        new_ds[key] = xr.DataArray(
+            var.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
+        )
+
+    return new_ds
+
+
+def __preprocess_UGRID(ds, out_fn=None):
     """Reshape the UGRID NetCDF results onto a structured grid.
 
     Parameters
@@ -44,77 +83,7 @@ def __preprocess_UGRID(ds):
     NX = np.unique(ds.Mesh_node_x).size # number nodes in the x direction
     NZ = NN // NX                       # number nodes in the z direction
 
-    # create a new dataset to populate
-    new_ds = xr.Dataset()
-
-    # copy encoding attrs from original file
-    new_ds.encoding = ds.encoding
-    # copy attributes from the original file
-    new_ds.attrs    = ds.attrs
-
-
-    # add time dimensions with values from UGRID source
-    new_ds = new_ds.expand_dims({"t": NT}).assign_coords({"t": ds.time.values})
-
-    # Grid the nodal X values and add as coordinate
-    new_ds.coords["X"] = xr.DataArray(
-        ds.Mesh_node_x.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
-    )
-
-    # check if Z coordinate is time dependent
-    if "time" in ds.Mesh_node_y.dims:
-        # Grid the time dependent nodal Z values and add as coordinate
-        new_ds.coords["Z"] = xr.DataArray(
-            ds.Mesh_node_y.values.reshape(NT, NZ, NX), dims = ["t", "coord_2", "coord_1"]
-        )
-    else:
-        # Grid the nodal Z values and add as coordinate
-        new_ds.coords["Z"] = xr.DataArray(
-            ds.Mesh_node_y.values.reshape(NZ, NX), dims = ["coord_2", "coord_1"]
-        )
-
-    # Grid the node number and add as a coordinate
-    new_ds.coords["NN"] = xr.DataArray(
-        ds.nMesh_node.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
-    )
-    # # extract nodes of quad elements from UGRID source
-    # new_ds["quad_elements"] = xr.DataArray(
-    #     ds.Mesh_face_nodes.values - 1, dims=["quad_element_number", "quad_element_node"]
-    # )
-    # # extract the element area from UGRID source
-    # new_ds["quad_elements_area"] = xr.DataArray(
-    #     ds.BulkElement_Area.values, dims=["quad_element_number"]
-    # )
-    # # split the quad elements into triangles for plotting with matplotlib
-    # new_ds["tri_elements"] = xr.DataArray(
-    #     __quads_to_tris(new_ds.quad_elements.values),
-    #     dims=["tri_element_number", "tri_element_node"],
-    # )
-
-    # loop over the elmer vairables
-    for key in ds.keys():
-
-        # these fields have already been processed as coordinates.
-        if key in ("Mesh_node_x", "Mesh_node_y", "Mesh_face_nodes"):
-            continue
-
-        var  = ds[key]   # get the coresponding variable
-        dims = var.dims  # and it's dimensions
-
-        if ("nMesh_node" in dims) and ("time" in dims):
-            new_ds[key] = xr.DataArray(
-                var.values.reshape(NT, NZ, NX), dims=["t", "coord_2", "coord_1"]
-            )
-
-        # non timedependent variables?
-        elif "nMesh_node" in dims:
-            new_ds[key] = xr.DataArray(
-                var.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
-            )
     return new_ds
-
-def __preprocess_elmer2nc(ds):
-    pass
 
 def __preprocess(ds, h_min=10.0):
     """Wrapper around various preprocessing functions.
@@ -185,22 +154,3 @@ def mf_dataset(files, preprocess=None, parallel=False, concat_dim=None, **open_k
 
 
     return combined
-
-# def parameter_ensemble():
-#
-#     def expand_dims(ds, fp):
-#         offset = float(fp.split('MB_')[-1].split('_OFF')[0])
-#         ds     = ds.expand_dims("Delta_MB").assign_coords(Delta_MB=('Delta_MB', [offset]))
-#         return ds
-#
-#     #https://docs.xarray.dev/en/stable/user-guide/io.html#netcdf
-#
-#     # open the files
-#     open_tasks    = [dask.delayed(xr.open_dataset)(f) for f in file_names]
-#     # preprocess according to how the file was generated
-#     preproc_tasks = [dask.delayed(test_open._preprocess)(task) for task in open_tasks]
-#     # add parameter dim for concatenation
-#     expand_tasks  = [dask.delayed(expand_dims)(task, f) for task, f in zip(preproc_tasks, file_names)]
-#
-#     datasets   = dask.compute(expand_tasks)
-#     return None
