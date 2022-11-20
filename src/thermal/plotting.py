@@ -50,7 +50,7 @@ def get_axis_limits(src, H_min=10):
 
     # Mask to find passive nodes along the free surface
     passive = xr.where((src.depth + src.height) <= (H_min+1.0),
-                       src.coord_1, pd.NA).isel(coord_2=-1)
+                       src.coord_1, np.nan).isel(coord_2=-1)
     # Get indexes of the ice free nodes
     ice_free = passive.diff('coord_1')*passive.coord_1.isel(coord_1=slice(0,-1))
     # Get terminus index, want the min along time dimension (i.e. maximum extent)
