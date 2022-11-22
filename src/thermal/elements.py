@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Functions / classes for working with element wise data, designed for a strcuted
+Functions for working with element wise data, designed for a strcuted
 quadrilateral mesh
 """
 

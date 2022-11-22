@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 
+
 import numpy as np
 import pandas as pd
 import xarray as xr
+import derived_fields
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.animation import FuncAnimation
@@ -40,24 +42,13 @@ def custom_diverging(norm, cold='Reds', warm='Blues'):
 def get_axis_limits(src, H_min=10):
     """ Find the appropriate x_lim and y_lim
     """
-    # function to find terminus postion as a function of time
-    find_Term = lambda x: x.where(~x.isnull(), drop=True).max('coord_1')
-
     # (T)otal (D)omain (L)ength [km]
     TDL = float(src.X.max()) / 1e3
-    # (N)umber of (H)orizontal (N)odes
-    NHN = int(src.coord_1.max())
 
-    # Mask to find passive nodes along the free surface
-    passive = xr.where((src.depth + src.height) <= (H_min+1.0),
-                       src.coord_1, np.nan).isel(coord_2=-1)
-    # Get indexes of the ice free nodes
-    ice_free = passive.diff('coord_1')*passive.coord_1.isel(coord_1=slice(0,-1))
-    # Get terminus index, want the min along time dimension (i.e. maximum extent)
-    term_idx = int(NHN - find_Term(ice_free).min('t'))
-
-    # Get the maximum glacier lenght [km]
-    Length = float(src.X.isel(coord_1=term_idx, coord_2=-1))/1e3
+    # get the time dependent length [km]
+    Length_t = derived_fields.calculate_length(src, H_min)
+    # get the maximum lenght [km]
+    Length = Length_t.compute().max('t')
 
     # Scale the maximum by 5% for some padding, then round to the nearest 1/2 km
     # ref: https://stackoverflow.com/a/50580761/10221482
