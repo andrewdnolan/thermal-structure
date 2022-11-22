@@ -314,11 +314,45 @@ Solver 6
   Calculate Loads = Logical True
 End
 
+
 Solver 7
   Exec Interval(<M>)                      = Integer <dyn_exec_int>
   Timestep Over Intervals                 = Logical True
 
-  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
+  Equation                                = "Strain Rate"
+  Procedure                               = "ElmerIceSolvers" "ComputeStrainRate"
+
+  ! this is just a dummy, hence no output is needed
+  Variable                                = -nooutput "Eij"
+  Variable DOFs                           = 1
+
+  ! Variable we will export with 5 degrees of freedom
+  Exported Variable 1                     = "StrainRate"
+  Exported Variable 1 DOFs                = 5 !in 2D
+
+  ! the name of the variable containing the flow solution (U,V,W,Pressure)
+  Flow Solver Name = String "Flow Solution"
+  ! the name of the strain-rate solution (default is 'StrainRate')
+  StrainRate Variable Name = String "StrainRate"
+
+  ! Only solves a 1 DOF system for each of the 5 components of the strain-rate
+  ! so, no need for anything fancy for the linear system solver
+  Linear System Solver = Direct
+  Linear System Direct Method = umfpack
+
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  ! Note: we do NOT export strainrate 3 (yy) because it is all zeros for
+  !       2D simulation; as product of how coordinates are defined
+  !       in the simulation section.
+  !
+  !       nor do we export the strainrate 5 (trace) b/c we can just compute that
+  !       ourselves with xx and zz if we need it.
+  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+End
+
+Solver 8
+  Exec Interval(<M>)                      = Integer <dyn_exec_int>
+  Timestep Over Intervals                 = Logical True
 
   Equation                                = "Free Surface Evolution"
   Variable                                = String "Zs"
@@ -356,11 +390,9 @@ Solver 7
   Exported Variable 3                     = -dofs 1 "Zs Accumulation Flux 2"
 End
 
-Solver 8
+Solver 9
   Exec Interval(<M>)       = Integer <dyn_exec_int>
   Timestep Over Intervals  = Logical True
-
-  ! Timestep Scale(<M>)      = Real    <dyn_exec_int>
 
   ! Exec Solver              = "before timestep"
   Equation                 = "MapCoordinate"
@@ -377,9 +409,8 @@ Solver 8
 End
 
 ! Deformational Heat
-Solver 9
+Solver 10
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
-  ! Timestep Scale(<M>)                      = Real    <dyn_exec_int>
   Timestep Over Intervals                  = Logical True
 
   Equation                                 = "DeformationalHeat"
@@ -406,7 +437,7 @@ End
 
 
 ! Enthalpy Solver
-Solver 10
+Solver 11
   Equation                                 = String "Enthalpy Equation"
   Procedure                                = File "ElmerIceSolvers" "EnthalpySolver"
   Variable                                 = String "Enthalpy_h"
@@ -457,7 +488,7 @@ Solver 10
 End
 
 
-Solver 11
+Solver 12
    Exec Solver    = String  "after timestep"
    ! Exec Condition = Variable "Time"
    !                  Real lua "netcdf_cond(tx[0], 10)"
@@ -472,33 +503,34 @@ Solver 11
 
    Optimize Bandwidth = Logical False
 
-  ! Stokes Solver Fields
-   Scalar Field 1  = String "Pressure"
-   Scalar Field 2  = String "velocity 1"
-   Scalar Field 3  = String "velocity 2"
-   ! Enthalpy Solver Fields
-   Scalar Field 4  = String "Enthalpy_h"
-   Scalar Field 5  = String "Water Content"
-   Scalar Field 6  = String "Temperature"
-   Scalar Field 7  = String "Phase Change Enthalpy"
-   Scalar Field 8  = String "Surface_Enthalpy"
-   Scalar Field 9  = String "W"
-   Scalar Field 10 = String "Q_lat"
-
-   ! Free Surface Solver Fields
-   Scalar Field 11 = String "Zs"
-   Scalar Field 12 = String "Zbed"
-   Scalar Field 13 = String "Mass Balance"
-   ! Misc Solver Fields
-   Scalar Field 14 = String "Depth"
-   Scalar Field 15 = String "Height"
-   Scalar Field 16 = String "Densi"
-   ! Scalar Field 17 = String "Slip Coefficient 2"
+   ! Stokes Solver Fields
+    Scalar Field 1  = String "Pressure"
+    Scalar Field 2  = String "velocity 1"
+    Scalar Field 3  = String "velocity 2"
+    ! Enthalpy Solver Fields
+    Scalar Field 4  = String "Enthalpy_h"
+    Scalar Field 5  = String "Water Content"
+    Scalar Field 6  = String "Temperature"
+    Scalar Field 7  = String "Phase Change Enthalpy"
+    Scalar Field 8  = String "Surface_Enthalpy"
+    Scalar Field 9  = String "W"
+    Scalar Field 10 = String "Q_lat"
+    Scalar Field 11 = String "Enthalpy Heat Diffusivity"
+    ! Free Surface Solver Fields
+    Scalar Field 12 = String "Mass Balance"
+    ! Misc Solver Fields
+    Scalar Field 13 = String "Height"
+    Scalar Field 14 = String "Densi"
+   ! Strain Rate Solver Exports
+    Scalar Field 15 = String "strainrate 1" !xx
+    Scalar Field 16 = String "strainrate 2" !zz
+    Scalar Field 17 = String "strainrate 4" !xz
+    ! Scalar Field 18 = String "strainrate 5" !trace
 
    Compute LonLat = Logical False
 End
 
-Solver 12
+Solver 13
   Equation           = "NormalVector"
   Exec Solver        = Before Simulation
   Procedure          = "ElmerIceSolvers" "ComputeNormalSolver"
@@ -526,14 +558,14 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(11) = 1 2 3 4 5 6 8 9 10 11 12
+  Active Solvers(12) = 1 2 3 4 5 6 7 9 10 11 12 13
 End
 
 Equation 2
   Name               = "Equation2"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(1)  = 7
+  Active Solvers(1)  = 8
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END EQUATION

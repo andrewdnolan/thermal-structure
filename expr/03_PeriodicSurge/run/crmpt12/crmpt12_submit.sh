@@ -2,7 +2,7 @@
 #SBATCH --array=1-3%3
 #SBATCH --job-name=crmpt12_periodic                # base job name for the array
 #SBATCH --mem-per-cpu=4G                           # maximum 200M per job
-#SBATCH --time=232:00:00                           # maximum walltime per job
+#SBATCH --time=200:00:00                           # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
