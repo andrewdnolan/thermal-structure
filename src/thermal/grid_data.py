@@ -8,6 +8,12 @@ import argparse
 # functions from local src code
 from open import dataset as open_dataset
 
+"""
+Need to support dask:
+https://github.com/ualberta-rcg/python-dask/blob/master/cluster-examples/dask-mpi.py
+
+https://docs.csc.fi/support/tutorials/dask-python/
+"""
 def main(argv):
     #---------------------------------------------------------------------------
     # Specify command line arguments
@@ -47,8 +53,10 @@ def main(argv):
         # set to empty dict, loop below will not itterate
         param_dict = dict()
 
-    # open and preprocess (i.e grid) the dataset
-    ds = open_dataset(in_fn)
+    # open and preprocess (i.e grid) the dataset, out of memory
+    ds = open_dataset(in_fn, chunks={'time':'auto', 'nMesh_node':-1})
+    # Note: need single chunk along the reshaping dimension (nMesh_node)
+    # https://github.com/pydata/xarray/discussions/7217#discussioncomment-4150763
 
     # loop over ensemble parameter values
     for key in param_dict:
@@ -56,8 +64,16 @@ def main(argv):
         # expand the dimmension along parameter values to concatentate along
         ds = ds.expand_dims(key).assign_coords({key: (key, [val])})
 
-    # write the gridded dataset to disk for future use
-    ds.to_netcdf(out_fn, "w")
+    # split and check the requested file extension
+    out_fp, out_ext = os.path.splitext(out_fn)
+
+    # call approraite function based on file extension
+    if out_ext == ".zarr":
+        ds.to_zarr(out_fn, mode="w")
+    elif out_ext == ".nc":
+        ds.to_netcdf(out_fn, mode="w")
+    else:
+        raise NotImplementedError('Only .nc and .zarr formats supported currently')
 
 if __name__ == '__main__':
     main(sys.argv[1:])

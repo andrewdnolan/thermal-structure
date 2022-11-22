@@ -2,19 +2,27 @@ import numpy as np
 import xarray as xr
 from glob import glob
 from tqdm import tqdm
-from derived_fields import calc_percent_temperate, calc_relative_volume
+from derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
 
 """
-add out of memoery method for gridding the Elmer/Ice NetCDF
-    Need for the 2GB+ files written which take up to much memoery when gridded in memoery
-
-    https://github.com/pydata/xarray/issues/1215
-
 # open multiple zarr
     https://discourse.pangeo.io/t/how-to-read-multiple-zarr-archives-at-once-from-s3/2564
 """
 
+# dictionary of 1D variables and vertical index they are define along
+vars_1D = { "q_lat" : -2,
+            "mass balance" : -1,
+            "surface_enthalpy" : -1}
+
+# mapping of variables which we seek to rename.
+rename_dict = {'velocity 1'   : 'vel_x',
+               'velocity 2'   : 'vel_z',
+               'strainrate 1' : 'SR_xx',
+               'strainrate 2' : 'SR_zz',
+               'strainrate 4' : 'SR_xz',
+               'strainrate 5' : 'SR_ii',
+               'enthalpy heat diffusivity' : 'kappa_cold'}
 
 def __quads_to_tris(quads):
     """converts quad elements into tri elements
@@ -36,54 +44,43 @@ def __quads_to_tris(quads):
         tris[j + 1][2] = n0
     return tris
 
-# def __create_gridded():
-
-def __dump_var(new_ds, old_ds, key):
-    """ add gridded variable to the new dataset
-    """
-    NT = new_ds.t.size         # number of timesteps
-    NX = new_ds.coord_1.size   # number nodes in the x direction
-    NZ = new_ds.coord_2.size   # number nodes in the z direction
-
-    var  = old_ds[key] # get the coresponding variable
-    dims = var.dims    # and it's dimensions
-
-    if ("nMesh_node" in dims) and ("time" in dims):
-        new_ds[key] = xr.DataArray(
-            var.values.reshape(NT, NZ, NX), dims=["t", "coord_2", "coord_1"]
-        )
-
-    # non timedependent variables?
-    elif "nMesh_node" in dims:
-        new_ds[key] = xr.DataArray(
-            var.values.reshape(NZ, NX), dims=["coord_2", "coord_1"]
-        )
-
-    return new_ds
-
-
 def __preprocess_UGRID(ds, out_fn=None):
-    """Reshape the UGRID NetCDF results onto a structured grid.
+    """Reshape the NetCDF from Elmer onto a structured grid.
 
     Parameters
     ----------
     ds : `xarray.Dataset`
-        Parsed Dataset written by the "NetcdfUGRIDOutputSolver.f90" file
+        Dataset written by the "NetcdfUGRIDOutputSolver.f90" file
 
     Returns
     -------
-    new_ds : `xarray.Dataset`
-        Processed Dataset which has been gridded and has common coordinate and
-        dimensions as the "result2nc" created NetCDF files
+    gridded : `xarray.Dataset`
+        Dataset which has been gridded and has common coordinate and dimensions
+        as the "result2nc" created NetCDF files
 
     """
+
     # Get grid info
     NT = ds.time.size                   # number of timesteps
     NN = ds.nMesh_node.size             # number of nodes
     NX = np.unique(ds.Mesh_node_x).size # number nodes in the x direction
     NZ = NN // NX                       # number nodes in the z direction
 
-    return new_ds
+    # reshape the array (i.e. unflatten), with fortran convetion
+    gridded = ds.coarsen(nMesh_node=NX).construct(nMesh_node=("coord_2", "coord_1"))
+
+    # drop variables no longer of use on structured mesh
+    # NOTE:
+    # - "BulkElement_Area" is dropped since is on the element faces, whereas
+    #    all the data is gridded on nodes.
+    # - "BulkElement_Area" is only written once, so not updated as mesh is extruded
+    gridded = gridded.drop_vars(['Mesh_face_nodes', 'Mesh', 'BulkElement_Area'])
+
+    # rename the coordinate variable
+    gridded = gridded.rename({'time' : 't',
+                              'Mesh_node_x' : 'X',
+                              'Mesh_node_y' : 'Z'})
+    return gridded
 
 def __preprocess(ds, h_min=10.0):
     """Wrapper around various preprocessing functions.
@@ -93,16 +90,31 @@ def __preprocess(ds, h_min=10.0):
     else:
         print('no other support implemented yet. To be Done')
 
+    # loop over the 1D variables, and only store the pertinent info
+    for key in vars_1D:
+        # double check the variable is in the source file
+        if key in ds:
+            # get the vertical index the variables is defined a
+            index = vars_1D[key]
+            ds[key] = ds[key].isel(coord_2=index)
+
+    # rename variables to be more commpact
+    for var in rename_dict:
+        # double check the variable is in the source file
+        if var in src:
+            # if so, rename the variable to something more compact
+            src = src.rename({var : rename_dict[var]})
+
+
     # filter valid ice thickness, add small amount to h_min to deal with roundoff
     ds["height"] = xr.where(ds.height <= h_min + 0.1, 0, ds.height)
     # calculate velocity magnitude from velocity components
-    ds['vel_m']  = np.sqrt(ds['velocity 1']**2 + ds['velocity 2']**2)
-    # rename velocities to be more commpact, and match notation of "vel_m"
-    ds = ds.rename({"velocity 1" : "vel_x", "velocity 2" : "vel_z"})
+    ds['vel_m']  = calc_magnitude(ds['vel_x'], ds['vel_z'])
+
     # calcute the percent temperate
     ds['percent_temperate'] = calc_percent_temperate(ds)
-    # calcute the percent temperate
-    ds['relative_volume']   = calc_relative_volume(ds)
+    # calcute the glacier volume as a function of time
+    ds['relative_volume']   = calc_volume(ds)
 
     return ds
 
@@ -111,46 +123,3 @@ def dataset(filename, **kwargs):
     ds = xr.open_dataset(filename, **kwargs)
     ds = __preprocess(ds)
     return ds
-
-def mf_dataset(files, preprocess=None, parallel=False, concat_dim=None, **open_kwargs):
-
-    # check if glob was passed to function
-    if (type(files) == str) and ('*' in files):
-        paths = sorted(glob(files))
-    elif (type(files) == str) and ('*' not in files):
-        raise ValueError('If `type(files)==str` then must be a glob (i.e. include a *)')
-
-    if parallel:
-        import dask
-
-        # wrap the open_dataset, getattr, and preprocess with delayed
-        open_ = dask.delayed(dataset)
-        getattr_ = dask.delayed(getattr)
-        if preprocess is not None:
-            preprocess = dask.delayed(preprocess)
-    else:
-        open_ = dataset
-        getattr_ = getattr
-
-
-    datasets = [open_(p, **open_kwargs) for p in paths]
-    closers  = [getattr_(ds, "_close") for ds in datasets]
-    if preprocess is not None:
-        datasets = [preprocess(ds) for ds in datasets]
-
-    if parallel:
-        # calling compute here will return the datasets/file_objs lists,
-        # the underlying datasets will still be stored as dask arrays
-        datasets, closers = dask.compute(datasets, closers)
-
-
-    combined = xr.concat(datasets, dim=concat_dim)
-
-    def multi_file_closer():
-        for closer in closers:
-            closer()
-
-    combined.set_close(multi_file_closer)
-
-
-    return combined
