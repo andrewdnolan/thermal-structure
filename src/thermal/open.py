@@ -101,9 +101,9 @@ def __preprocess(ds, h_min=10.0):
     # rename variables to be more commpact
     for var in rename_dict:
         # double check the variable is in the source file
-        if var in src:
+        if var in ds:
             # if so, rename the variable to something more compact
-            src = src.rename({var : rename_dict[var]})
+            ds = ds.rename({var : rename_dict[var]})
 
 
     # filter valid ice thickness, add small amount to h_min to deal with roundoff
