@@ -4,6 +4,8 @@
 Constants
 """
 
+# seconds per year                [s a^{-1}]
+spy = 365.25 * 24. * 60. * 60.
 # ice density                     [kg m^{-3}]
 rho_i = 910.0
 # snow/surface density            [kg m^{-3}]
