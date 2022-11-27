@@ -1,7 +1,6 @@
 import numpy as np
 import xarray as xr
 from glob import glob
-from tqdm import tqdm
 from derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
 
