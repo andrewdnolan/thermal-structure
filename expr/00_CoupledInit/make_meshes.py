@@ -7,22 +7,22 @@ import thermal.mesh as meshing
 
 # input glaciers and desired mesh resolutions for coarse grid searches
 glaciers = { # small
-             'crmpt12'   : 50,  # Δx [m]
+             'crmpt12'   : [50, 15], # Δx [m]
              # 'crmpt18-a' : 50,  # Δx [m]
              # 'crmpt18-b' : 50,  # Δx [m]
-             'glc1-a'    : 50,  # Δx [m]
+             'glc1-a'    : [50, 15],  # Δx [m]
              # 'glc1-b'    : 50,  # Δx [m]
              # # medium
              # 'lilk-a'    : 100, # Δx [m]
              # 'lilk-b'    : 100, # Δx [m]
-             'klun-a'    : 100, # Δx [m]
+             'klun-a'    : [100, 30], # Δx [m]
              # 'klun-b'    : 100, # Δx [m]
-             'sprg'      : 100, # Δx [m]
+             # 'sprg'      : 100, # Δx [m]
              # # large
              # 'fish'      : 200, # Δx [m]
              # 'klut-a'    : 200, # Δx [m]
              # 'klut-b'    : 200, # Δx [m]
-             'twds-b'    : 200, # Δx [m]
+             # 'twds-b'    : 200, # Δx [m]
             }
 
 
@@ -30,7 +30,7 @@ glaciers = { # small
 rel_fp = "./expr/00_CoupledInit/result"
 
 for key in glaciers.keys():
-    Δx     = glaciers[key]
+    Δx, Nz = glaciers[key]
     out_fp = os.path.join(rel_fp, key, "mesh_dx{}".format(Δx))
     nc_fp  = f'result/{key}/nc/'
     gridded_fp = f'result/{key}/gridded/'
@@ -39,7 +39,7 @@ for key in glaciers.keys():
     # Mesh
     #-----
     # Make the mesh
-    stat = meshing.make_mesh(key , Δx, out_fp)
+    stat = meshing.make_mesh(key , Δx, out_fp, Nz=Nz)
 
     #-------
     # NetCDF
