@@ -46,9 +46,9 @@ def get_axis_limits(src, H_min=10):
     TDL = float(src.X.max()) / 1e3
 
     # get the time dependent length [km]
-    Length_t = derived_fields.calculate_length(src, H_min)
+    Length_t = derived_fields.calc_length(src, H_min)
     # get the maximum lenght [km]
-    Length = Length_t.compute().max('t')
+    Length = float(Length_t.compute().max('t'))
 
     # Scale the maximum by 5% for some padding, then round to the nearest 1/2 km
     # ref: https://stackoverflow.com/a/50580761/10221482

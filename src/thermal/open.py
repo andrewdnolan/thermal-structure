@@ -10,8 +10,7 @@ from derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 """
 
 # dictionary of 1D variables and vertical index they are define along
-vars_1D = { "q_lat" : -2,
-            "mass balance" : -1,
+vars_1D = { "mass balance" : -1,
             "surface_enthalpy" : -1}
 
 # mapping of variables which we seek to rename.

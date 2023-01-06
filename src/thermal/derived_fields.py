@@ -1,9 +1,23 @@
 #!/usr/bin/env python3
 
+import warnings
 import numpy as np
 import xarray as xr
 from scipy import integrate
 from elements import calc_element_area, calc_element_mean
+
+def check_filtered(func):
+    """ Decorator to check if the ice thickness has been filtered.
+        If not, a warning is raised.
+    """
+    def inner(src):
+        # check if "h" greater than zero in all gricells, suggesting "h" was not
+        # filtered correctly, OR the glacier has reached the end of the domain
+        # NOTE: bottom most gridcell (coord_2=0) is excluded, since h always = 0
+        if (src.height.isel(coord_2=slice(1,None)) < 0).all():
+            warnings.warn('Make sure fictious ice thicknes has been removed.')
+        return func(src)
+    return inner
 
 def calc_magnitude(a, b):
     """ Calculate vector magnitude.
@@ -15,6 +29,7 @@ def calc_magnitude(a, b):
 
     return xr.apply_ufunc(func, a, b, dask="allowed")
 
+@check_filtered
 def calc_volume(ds):
     """ Compute the glacier volume per unit width [m^2], by trapeziod integration
 
@@ -28,6 +43,7 @@ def calc_volume(ds):
                           kwargs={"axis": -1},
                           dask="parallelized")
 
+@check_filtered
 def calc_percent_temperate(src, dz_var='height'):
     """ Calculate the percentage temperate using element areas
     """
@@ -49,7 +65,22 @@ def calc_percent_temperate(src, dz_var='height'):
     # convert to percentage [%]
     return (A_temp / A_totl) * 100
 
-def calculate_length(src, H_min=10.):
+@check_filtered
+def calc_mean_enthalpy(src):
+    """ Calculate the weighted (by element area) mean enthalpy [J kg-1]
+    """
+
+    # Calculate the elemental area [m2]
+    elm_area = calc_element_area(src)
+    # Calculate mean elemental enthalpy [J kg-1]
+    elm_enth = calc_element_mean(src, 'enthalpy_h')
+    # Calculate the total glacier area [m2]
+    tot_area = elm_area.sum('element')
+
+    # return the weighted mean [J kg-1]
+    return (elm_enth * elm_area/tot_area).sum('element')
+
+def calc_length(src, H_min=10.):
     """Calculate the glacier length [km]
 
     Inputs:
@@ -82,3 +113,6 @@ def calculate_length(src, H_min=10.):
     Length = src.X.isel(coord_1=term_idx, coord_2=-1)/1e3
 
     return Length
+
+def calc_Peclet(src, dim="X"):
+    np.diff(np.sign(src['mass balance'].isel(t=0, coord_2=-1)), prepend=-1) == 2
