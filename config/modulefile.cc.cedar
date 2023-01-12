@@ -21,4 +21,4 @@ module load python/3.8.10
 
 # Lazy way
 module load scipy-stack
-source $HOME/py4elmer/bin/activate
+source $HOME/python_envs/py4elmer/bin/activate

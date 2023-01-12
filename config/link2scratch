@@ -1,19 +1,19 @@
 # set the default shell to bash
 SHELL=/bin/bash
 
-# path to scratch repo 
-scratch=/home/anolan/scratch/thermal-structure2
-# path to git repo, where symbolic links point to 
+# path to scratch repo
+scratch=/home/anolan/scratch/thermal-structure
+# path to git repo, where symbolic links point to
 project=/home/anolan/projects/def-gflowers/anolan/thermal-structure
 
-# list of dirs we need to create a symbolic link to 
+# list of dirs we need to create a symbolic link to
 link := $(scratch)/src \
 	$(scratch)/bin \
-	$(scratch)/input_data 
+	$(scratch)/input_data
 # list of dirs to make, will copy neccessary files later
 dirs := $(scratch)/expr/00_CoupledInit \
 	$(scratch)/expr/01_UQ \
-	$(scratch)/expr/03_PeriodicSurge 
+	$(scratch)/expr/03_PeriodicSurge
 
 # Rule to make other rules
 all: $(dirs) $(link)
@@ -23,5 +23,5 @@ $(link): $(scratch)/%: $(project)/%
 	ln -s $^ $@
 
 # make the directory structure on the scratch file system
-$(dirs): 
-	mkdir -p $@ 
+$(dirs):
+	mkdir -p $@
