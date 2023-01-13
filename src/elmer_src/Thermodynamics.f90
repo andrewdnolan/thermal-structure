@@ -321,46 +321,26 @@ function Limit_Enthalpy_rho(Model, Node, InputArray) result(H_max)
   end function GetParam
 end function Limit_Enthalpy_rho
 
-function Limit_Enthalpy_surf(Model, Node, InputArray) result(H_max)
+function Limit_Enthalpy_depth(Model, Node, InputArray) result(H_max)
 
   use DefUtils
   implicit none
 
-  integer       :: Node, i, N_n, N_s, N_v
+  integer       :: Node
   TYPE(Model_t) :: Model
-  REAL(KIND=dp) :: InputArray(2), &
+  REAL(KIND=dp) :: InputArray(3), &
                    depth,         &  ! depth below free sufrace     [m]
+                   MB,            &  ! surface mass balance         [m a-1]
+                   h_aq,          &  ! firn aquifer thickness       [m]
                    H_f,           &  ! enthalpy of fusion           [J kg-1]
                    H_max,         &  ! Limit enthalpy (returned)    [J kg-1]
                    w_max_en,      &  ! max englacial water content  [-]
                    w_max_aq,      &  ! max water content in frin aq [-]
                    L_heat            ! Latnet heat of fusion        [J kg-1]
-  logical :: first_time=.true.
-
-  ! Variables to keep track of between calls to the solver
-  save first_time,N_v,N_s,N_n
-
-  !-------------------------
-  ! First time loop
-  !-------------------------
-  ! Variable declaration that only needs to be run once (i.e. first time)
-  IF (first_time) THEN
-    ! set first_time to false for all subsequent time steps
-    first_time=.false.
-
-    ! Loop over all model nodes
-    DO i=1,model % NumberOfNodes
-      IF (model%nodes%x(i+1) < model%nodes%x(i)) THEN
-        EXIT
-      ENDIF
-    ENDDO
-    N_n = Model % NumberOfNodes ! Number of Nodes in Models
-    N_s = i                     ! Number of surface nodes
-    N_v = N_n/i                 ! Number of vertical nodes
-  ENDIF
 
   ! Read constants from sif file
   !-----------------------------
+  h_aq     = GetParam(Model, "h_aq")                     ![m]
   L_heat   = GetParam(Model, "L_heat")                   ![J kg-1]
   w_max_en = GetParam(Model, "w_max_en")                 ![-]
   w_max_aq = GetParam(Model, "w_max_aq")                 ![-]
@@ -368,10 +348,11 @@ function Limit_Enthalpy_surf(Model, Node, InputArray) result(H_max)
   ! Unpack input array
   !-------------------
   depth = InputArray(1) ! depth from surface [m]
-  H_f   = InputArray(2) ! Enthalpy of fusion [J kg-1]
+  MB    = InputArray(2) ! surface mass balance [m a-1]
+  H_f   = InputArray(3) ! Enthalpy of fusion [J kg-1]
 
-  ! If density less than poreclose off, allow more water content
-  if (depth .le. 8.0) then
+  ! If within the frin aquifer, allow more water content
+  if ((depth .le. h_aq) .and. (MB .ge. 0.0)) then
     ! Eqn. (10) from Aschwanden et al. 2012
     H_max = H_f + w_max_aq*L_heat
   else
@@ -398,4 +379,4 @@ function Limit_Enthalpy_surf(Model, Node, InputArray) result(H_max)
     end if
 
   end function GetParam
-end function Limit_Enthalpy_surf
+end function Limit_Enthalpy_depth
