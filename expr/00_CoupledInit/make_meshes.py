@@ -7,22 +7,9 @@ import thermal.mesh as meshing
 
 # input glaciers and desired mesh resolutions for coarse grid searches
 glaciers = { # small
-             'crmpt12'   : [50, 15], # Δx [m]
-             # 'crmpt18-a' : 50,  # Δx [m]
-             # 'crmpt18-b' : 50,  # Δx [m]
-             'glc1-a'    : [50, 15],  # Δx [m]
-             # 'glc1-b'    : 50,  # Δx [m]
-             # # medium
-             # 'lilk-a'    : 100, # Δx [m]
-             # 'lilk-b'    : 100, # Δx [m]
-             'klun-a'    : [200, 30], # Δx [m]
-             # 'klun-b'    : 100, # Δx [m]
-             # 'sprg'      : 100, # Δx [m]
-             # # large
-             # 'fish'      : 200, # Δx [m]
-             # 'klut-a'    : 200, # Δx [m]
-             # 'klut-b'    : 200, # Δx [m]
-             # 'twds-b'    : 200, # Δx [m]
+             'crmpt12'   : [50,  15], # Δx, Nz [m]
+             # larger
+             'klun-a'    : [200, 30], # Δx, Nz [m]
             }
 
 
@@ -31,7 +18,7 @@ rel_fp = "./expr/00_CoupledInit/result"
 
 for key in glaciers.keys():
     Δx, Nz = glaciers[key]
-    out_fp = os.path.join(rel_fp, key, "mesh_dx{}".format(Δx))
+    out_fp = os.path.join(rel_fp, key, "mesh_dx{}".format(Δx, Nz))
     nc_fp  = f'result/{key}/nc/'
     gridded_fp = f'result/{key}/gridded/'
 
@@ -91,8 +78,10 @@ for key in glaciers.keys():
     # Make run dir
     if not os.path.exists(f'run/'):
         os.mkdir('run/')
+    if not os.path.exists(f'run/{key}/'):
+        os.mkdir(f'run/{key}/')
 
     # Add .gitkeep file to run folder so dir struc is preserved on GitHub
-    if not os.path.exists(os.path.join(f'run/', '.gitkeep')):
-        with open(os.path.join(f'run/', '.gitkeep'), 'w') as f:
+    if not os.path.exists(os.path.join(f'run/{key}/', '.gitkeep')):
+        with open(os.path.join(f'run/{key}/', '.gitkeep'), 'w') as f:
             pass
