@@ -1,9 +1,8 @@
 name: thermal
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3.7
+  - python=3.9.6
   - ipython
   - pint
   - scipy
@@ -16,8 +15,11 @@ dependencies:
   - netCDF4
   - h5netcdf
   - matplotlib
+  - cmocean
   - dask
+  - distributed>=2022.9.2
   - dask-jobqueue
+  - zarr
   - jupyterlab
   - rise
   - tqdm
