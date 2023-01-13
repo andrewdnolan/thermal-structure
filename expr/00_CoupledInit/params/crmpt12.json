@@ -16,10 +16,9 @@
     "value": -9999.0
   },
   "dx": 50,
-  "dt": 1.0,
+  "dt": 0.1,
+  "Dynamic_int": 10,
   "TT": 2000,
-  "fit": "spline",
-  "k": 2,
 
   "memory": "4000M",
   "walltime": "12:00:00",
