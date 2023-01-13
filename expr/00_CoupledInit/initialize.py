@@ -29,6 +29,7 @@ def main(argv):
                  ("T_ma",           "Temp_mean_annual"        ),
                  ("dt",             "time_step"               ),
                  ("t_f",            "time_final"              ),
+                 ("Dynamic_int",    "Dynamic_exec_interval"   ),
                  ("prog_SS_itters", "prognostic_SS_iterations")]
 
     # create a dictionary of dictionaries, to store passed values
@@ -73,6 +74,11 @@ def main(argv):
                         help = "Final time [a] for the transient simulation. \n"\
                                "The number of time steps ($NT) is calculated as \n"\
                                "        `NT = t_f // dt`")
+
+    parser.add_argument('-Dynamic_int','--Dynamic_exec_interval', type=int,
+                        help = "Interval to execute the dynamic solver, relative"\
+                               "to the thermodynamic solver",
+                        default = 1)
 
     parser.add_argument('-it_diag','--diagnostic_SS_iterations', type=int,
                         help = "Number of (S)teady (S)tate itterations for the\n"\
