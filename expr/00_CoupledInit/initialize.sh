@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 # TO DO:
 #    [ ] set global flag for wether to write log files. No need on westgrid becuase
@@ -9,9 +8,6 @@
 #    [ ] set optional flag for executing the Elmer commands from the docker container
 #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# source ../../src/utils/elmer_log.sh
-source ../../src/utils/initialization.sh
 
 parse_json()
 {
@@ -67,16 +63,6 @@ parse_json()
     $params = decode_json $_;
     say $params->{TT}
     ' $1 )
-  # parse MB curve fit type
-  FIT=$(   perl -MJSON -0lnE '
-    $params = decode_json $_;
-    say $params->{fit}
-    ' $1 )
-  # parse MB curve fit type
-  k=$(   perl -MJSON -0lnE '
-    $params = decode_json $_;
-    say $params->{k}
-    ' $1 )
 }
 
 diagnostic_run()
@@ -99,7 +85,6 @@ diagnostic_run()
 
   # Update the .SIF FILE with the model run specifc params
   sed "s#<DX>#"$dx"#g;
-       s#<FIT>#"$FIT"#g;
        s#<KEY>#"$KEY"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
@@ -148,7 +133,7 @@ prognostic_run()
   #
   #  dt        ---> timestep             [yr]
   #  NT        ---> Number of timesteps  [-]
-  # 
+  #
   #-----------------------------------------------------------------------------
 
   # Update the .SIF FILE with the model run specifc params
@@ -156,7 +141,6 @@ prognostic_run()
        s#<dt>#"$dt"#g;
        s#<NT>#"$NT"#g;
        s#<KEY>#"$KEY"#g;
-       s#<FIT>#"$FIT"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<RESTART>#"$RESTART"#g
