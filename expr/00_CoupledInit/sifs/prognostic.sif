@@ -64,7 +64,7 @@ Simulation
   Coordinate System           = "Cartesian 2D"
   Simulation Type             = "Transient"
   Timestepping Method         = "BDF"
-  BDF order                   = 3
+  BDF order                   = 2
 
   Steady State Min Iterations = 1
   Steady State Max Iterations = <SS_itters>
@@ -295,8 +295,10 @@ Solver 6
   Source at Surface     = Logical False
 
   ! "Q_lat" is zero everywhere when "Latent Heat Source" == "Mass"
-  Exported Variable 1   = -dofs 1 "Q_lat" ! [J m-3 a-1]
-  Exported Variable 2   = -dofs 1 "Densi" ! [kg m^-3]
+  Exported Variable 1   = -dofs 1 "Q_lat"       ! [J m-3 a-1]
+  Exported Variable 2   = -dofs 1 "Densi"       ! [kg m^-3]
+  Exported Variable 3   = -dofs 1 "surf_melt"   ! [m]
+  Exported Variable 4   = -dofs 1 "runoff_frac" ! [-]
 End
 
 ! Navier-Stokes Equation (Stokes Flow)
@@ -433,7 +435,7 @@ Solver 11
   Linear System Convergence Tolerance      = 1.0E-07
   Linear System Residual Output            = 1
   Linear System Abort Not Converged        = Logical False
-  
+
   ! ! Linear System Direct Solver
   ! !----------------------------------------------
   ! Linear System Solver                     = String "Direct"
@@ -445,7 +447,7 @@ Solver 11
 
   ! Non-linear Solver Params
   Nonlinear System Newton After Tolerance  = 1.0E-06
-  Nonlinear System Convergence Tolerance   = 1.0E-05
+  Nonlinear System Convergence Tolerance   = 1.0E-04
   Nonlinear System Max Iterations          = 50
   Nonlinear System Relaxation Factor       = Real 1.0
   Nonlinear System Reset Newton            = Logical True
@@ -509,7 +511,8 @@ Solver 12
    Scalar Field 14 = String "Depth"
    Scalar Field 15 = String "Height"
    Scalar Field 16 = String "Densi"
-
+   Scalar Field 17 = String "surf_melt"
+   Scalar Field 18 = String "runoff_frac"
    Compute LonLat = Logical False
 End
 
