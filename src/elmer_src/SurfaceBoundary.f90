@@ -349,7 +349,6 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   ! Solver name
   CHARACTER(*), PARAMETER :: Caller = 'Surface_Processes'
-
   !----------------------------------------------------------------------------
   ! external variables
   !----------------------------------------------------------------------------
@@ -360,13 +359,16 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   TYPE(Element_t),   POINTER :: Element
   TYPE(ValueList_t), POINTER :: Params
 
-  TYPE(Variable_t), POINTER  :: Surf_Enthalpy, &
+  TYPE(Variable_t), POINTER  :: Surf_Enthalpy, &  ! Surface  Enthalpy     [J kg-1]
+                                Enth,          &  ! Enthalpy              [J kg-1]
                                 Q_lat_vol,     &  ! Latent (volumetric) Heat source  [J m-3 y-1]
                                 H_f,           &  ! Phase Change Enthalpy [J kg-1]
                                 Depth,         &  ! Depth below surf      [m]
                                 Height,        &  ! Height above bed      [m]
                                 TimeVar,       &  ! Time                  [yr]
                                 MB,            &  ! Mass Balance (i.e.)   [m yr]
+                                RunOff,        &  ! fraction of melt that runsoff [-]
+                                surf_melt,     &  ! surface melt from PDD [m]
                                 Dens              ! Ice Depth             [m]
 
   !----------------------------------------------------------------------------
@@ -375,7 +377,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Misc. internal integers
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  INTEGER       :: i, n,        &  ! index counter
+  INTEGER       :: i, n, k,     &  ! index counter
                    cont,        &  ! vertically alligned node index counter
                    e,           &  ! element counter
                    d,           &  ! julian calendar day  counter
@@ -410,14 +412,20 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    L_heat,      &  ! Latent heat of fusion [J kg-1]
                    f_dd,        &  ! Degree-day factor     [m K^-1 a^-1]
                    h_aq,        &  ! Firn aquifer thick    [m]
-                   r_frac,      &  ! Runoff fraction       [-]
-                   Q_lat,       &  ! latent heat approx.   [J kg-1]
                    rho_i,       &  ! denisty of ice        [Kg m^-3]
                    rho_w,       &  ! denisty of water      [Kg m^-3]
                    rho_s,       &  ! denisty of snow       [Kg m^-3]
+                   rho_f,       &  ! pore close off dens.  [kg m^-3]
+                   rho,         &  ! nodal density         [kg m^-3]
                    C_firn,      &  ! Surf. Dens. const.    [-]
                    z_trans,     &  ! firn/ice trans. depth [m]
                    Melt,        &  ! surf. (snow) melting  [m s.e.]
+                   water,       &  ! water content         [-]
+                   w_res,       &  ! residule water cont.  [-]
+                   dz,          &  ! vert. layer thickess  [m]
+                   Q_lat,       &  ! latent heat source.   [J m-3 yr-1]
+                   Q_max,       &  ! Max. possible Q_lat   [J m-3 yr-1]
+                   pump,        &  !
                    PDD(365) = 0    ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Enthalpy related params
@@ -434,7 +442,10 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! How the heat souce is treated. Either Mass (J/kg) or Volumetric (J/m)
   character(len=max_name_len) :: Heat_Source ! How the heat souce is treated
 
-  LOGICAL :: GotIt, Seasonality, Source_at_Surface, first_time=.true.
+  ! how to set the maximum englacial water content
+  CHARACTER(*), PARAMETER :: omega_maximum = 'denisty'
+
+  LOGICAL :: GotIt, Seasonality, Source_at_Surface, first_time=.true., percolate
 
   ! Variables to keep track of between calls to the solver
   save first_time,N_v,N_s,N_n
@@ -468,9 +479,12 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   Height        => VariableGet( Model % Variables, "Height") ! [m]
   Dens          => VariableGet( Model % Variables, "Densi")  ! [kg m-3]
   MB            => VariableGet( Model % Variables, "mass balance") ! [m y-1]
+  Enth          => VariableGet( Model % Variables, "Enthalpy_h")   ! [J kg-1]
   H_f           => VariableGet( Model % Variables, "Phase Change Enthalpy") ! [J kg-1]
   Surf_Enthalpy => VariableGet( Model % Variables, "Surface_Enthalpy") ![J kg-1]
-  Q_lat_vol     => VariableGet( Model % Variables, "Q_lat") ![J m-3 yr-1]
+  Q_lat_vol     => VariableGet( Model % Variables, "Q_lat")       ![J m-3 yr-1]
+  surf_melt     => VariableGet( Model % Variables, "surf_melt")   ![m]
+  RunOff        => VariableGet( Model % Variables, "runoff_frac") ![-]
 
   ! Physical Parameters
   rho_i       = GetParam(Model,  "rho_i")                   ![kg m-3]
@@ -485,8 +499,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   f_dd        = GetParam(Model, "f_dd")                     ![m K-1 yr-1]
   T_melt      = GetParam(Model, "T_melt")                   ![K]
   ! Firn Aquifer Parameters
+  rho_f       = GetParam(Model, "rho_f")                    ![kg m-3]
   h_aq        = GetParam(Model, "h_aq")                     ![m]
-  r_frac      = GetParam(Model, "r_frac")                   ![-]
   C_firn      = GetParam(Model, "C_firn")                   ![-]
   w_max_aq    = GetParam(Model, "w_max_aq")
   w_max_en    = GetParam(Model, "w_max_en")
@@ -602,40 +616,29 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
       PDD = Cavlo_Greve_PDDs(T,std) * N_years    ! [K d]
 
-      ! ! only loop over DOY within current timestep
-      ! DO d=doy_i,doy_ip1
-      !   ! Subtract the melting temperature to find the daily positive degrees
-      !   PDD(d) = MAX(T(d)-T_melt, T_melt) ! [C+ d]
-      ! END DO
-
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate surface heating term
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
-
         if ( Seasonality ) then
           ! Calculate surace melt in meters of snow equivalent
-          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1 ![m] <= [m K-1 d-1] * [K d]
+          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1.0 ![m] <= [m K-1 d-1] * [K d]
         else
           ! since no seasonality sum up all the melt for the year
-          Melt = f_dd * SUM(PDD) ![m] <= [m K-1 d-1] * [K d]
+          Melt = f_dd * SUM(PDD)    ![m] <= [m K-1 d-1] * [K d]
           ! then partition the melt equally (via fraction of year)
           Melt = Melt * (dt/1.0)    ![m] <= [m] * [a] / [a]
         end if
-
-        ! Eqn. (9) Wilson and Flowers (2013)
-        Q_lat = (1 - r_frac) * (rho_w/h_aq) * L_heat * Melt * (1.0 / dt) ! [J m-3 yr-1]
-
-        ! calculate maximum enthalpy: above the ELA account for the maximum
-        ! water content being higher due to the porosity of firn
-        Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_aq * L_heat
       ElSE
         ! below the ELA so no latent heat source available
         Q_lat = 0.0
-        ! below the ELA bound max water content at englacial values.
-        Enthalpy_max = H_f % Values ( H_f % perm(n) ) + w_max_en * L_heat
+        ! for our purposes here, melt is zero below the ELA
+        Melt  = 0.0
       ENDIF
+
+      ! export the melt within the timestep [m]
+      surf_melt % Values (surf_melt % perm(n)) = Melt
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
@@ -651,55 +654,19 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
         T_surf = SUM(T)/365.0 + 273.15
       end if
 
-      if (n .eq. N_n) write(*,*) doy_i, doy_ip1, doy_ip1-doy_i, T_surf-273.15
+      ! print info for the headwall, just as a debugging measure
+      if (n .eq. N_n) write(*,*) doy_i, doy_ip1, doy_ip1-doy_i, T_surf-273.15, N_v
 
       ! Temperature can't exced the melting point at the surface
-      if (T_surf > 273.15) then
-        T_surf = 273.15
+      if (T_surf > 273.15_dp) then
+        T_surf = 273.15_dp
       endif
 
       ! Convert surface air temp to enthalpy
-      H_surf = (CapA/2.0*(T_surf**2 - T_ref**2) + CapB*(T_surf-T_ref)) ! [J kg-1]
-      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
-
-      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      ! Add surface heating and surface enthalpy by the specified methods
-      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-      SELECT CASE(TRIM(Heat_Source))
-      CASE("volumetric")
-
-        if (Source_at_Surface) then
-          ! heat source prescribe @ free surface.
-          ! conflicts w/ Dirichlet condition for airtemp
-          ! left as avilable option only for debugging/demonstration
-          cont = n
-        else
-          ! heat source prescribed one layer below surface
-          ! so as not to conflict w/ Dirichlet B.C.
-          cont = n-N_s
-        end if
-
-        ! Volumetric heat source from Wilson and Flowers (2013)
-        Q_lat_vol % values (Q_lat_vol % perm(cont)) = Q_lat            ! [J m-3 yr-1]
-        ! Just a Dirichlet B.C. based on air temp
-        H_surf = H_surf                                                ! [J kg-1]
-
-      CASE("mass")
-
-        ! Volumetric heat source is 0.0 everywhere
-        Q_lat_vol % values (Q_lat_vol % perm(n)) = 0.0                 ! [J m-3 yr-1]
-        ! Add the surface heating to the surface enthalpy
-        H_surf = (Q_lat*dt) / rho_s + H_surf  ! [J kg-1] <= [J m-3 a-1] * [a] * [m3 kg-1] + [J kg-1]
-        ! Limit the surface enthalpy based on max englacial water content
-        if (H_surf .ge. Enthalpy_max) H_surf = Enthalpy_max
-
-      END SELECT
-
-      ! Set the surface enthalpy
+      H_surf = (CapA/2.0_dp*(T_surf**2.0 - T_ref**2.0) + CapB*(T_surf-T_ref)) ! [J kg-1]
+      ! Set the surface enthalpy for the Dirichlet Surface B.C.
       Surf_Enthalpy % values (Surf_Enthalpy % perm(n)) = H_surf
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set variable (w/ depth) surface density in the accumulation zone
@@ -717,17 +684,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           ! approximate firn/ice transiton depth [Cuffey and Paterson, pg. 19]
           z_trans = (1.00 / C_firn) * 1.9
 
-          ! check if ice-thickness is less than the firn/ice transition depth
-          if (Height % values (Height % perm(cont)) .le. z_trans) then
-            ! Re-scale transition depth to match the ice-thicnkess [kg m-3]
-            Dens % values ( Dens % perm(cont) ) = &
-            rho_i - (rho_i - rho_s) * exp(-(1.9 / Height % values (Height % perm(cont))) &
-                                          * Depth % values (Depth % perm(cont)))
-          else
-            ! EQN (2.2) from Cuffey and Paterson [kg m-3]
-            Dens % values ( Dens % perm(cont) ) = &
-            rho_i - (rho_i - rho_s) * exp(-C_firn * Depth % values (Depth % perm(cont)))
-          endif
+          ! EQN (2.2) from Cuffey and Paterson [kg m-3]
+          Dens % values ( Dens % perm(cont) ) = &
+          rho_i - (rho_i - rho_s) * exp(-C_firn * Depth % values (Depth % perm(cont)))
 
         else
           ! if below the ELA, set all nodes to density of ice [kg m-3]
@@ -742,10 +701,108 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+      ! Pseudo percolation scheme for latent heat release
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+      ! surface melt available for refreezing [kg m-2]
+      pump = Melt * rho_w
+      ! start at the bottom of the first layer
+      i = 2
+
+      ! if no melt within timestep, then no runoff has occured either [-]
+      if (pump .eq. 0.0_dp) RunOff % values ( RunOff % perm(n)) = 0.0_dp
+
+      ! loop over vertical nodes as long as theres still meltwater to refreeze
+      do while (pump .ne. 0.0_dp)
+        ! index of kth vertical node, only works with vertically structured mesh
+        k   = n-(i-1)*N_s
+        ! kth layer thicnkess [m]
+        dz  = Depth % values (Depth % perm(k-N_s)) - Depth % values (Depth % perm(k))
+        ! denisty of current node, as set above
+        rho = Dens % values ( Dens % perm(k) )
+
+        ! check if percolation can still occur
+        select case (trim(omega_maximum))
+          case ("depth")
+            ! check if within the firn aquifer
+            if (Depth % values (Depth % perm(k)) .le. h_aq) then
+              percolate = .true.
+            else
+              percolate = .false.
+            end if
+
+          case ("denisty")
+
+            ! check if nodal density is less than pore close off
+            if (rho .le. rho_f) then
+              percolate = .true.
+            else
+              percolate = .false.
+            end if
+        end select
+
+        if (percolate) then
+          ! current water content [-]
+          water = (Enth % values (Enth % perm(k)) - H_f % values (H_f % perm(k))) / L_heat
+
+          ! residual water content [kg m-3], i.e. water content left to be filled:
+          ! based on:
+          !     1. density i.e. porosity
+          !     2. difference b/w current and maximum water content
+          w_res = (w_max_aq-water) * (1.0_dp - rho/rho_i) * rho_w
+
+          ! residual water content [kg m-3] is bounded by zero, enforce that bound
+          w_res = max(w_res, 0.0_dp)
+
+          ! Upper limit for heat source [J m-3 yr-1] based on residual water content
+          Q_max = w_res * L_heat * (1.0_dp/dt)
+          ! assume all available meltwater refreezes [J m-3 yr-1]
+          Q_lat = (pump / (dz * dt)) * L_heat
+
+          if ( Q_lat .gt. Q_max ) then
+            ! more meltwater was refrozen than the gridcell can accomodate
+
+            ! amount of excess surface melt still available [kg m-2]
+            pump = (Q_lat - Q_max) * dz * dt * (1.0_dp/L_heat)
+
+            ! set the volumetric heat source variable [J m-3 yr-1]
+            Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_max
+            ! Note: if the gridcell is fully staurated (i.e. omega == Sr) then
+            !       both w_res and Q_max are zero, i.e. no heat is added, but the
+            !       melt can still percolate to the next cell
+          else
+            ! remaining meltwater has been refrozen within the current timestep
+            pump = 0.0_dp
+            ! set the volumetric heat source variable [J m-3 yr-1]
+            Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_lat
+            ! All melt has been consumed, so no-runoff occurs [-]
+            RunOff % values ( RunOff % perm(n)) = 0.0_dp
+          end if
+
+        else
+          ! refreezing can no longer occur. either have reached the bottom of the
+          ! firn aquifer or the pore close off density
+
+          ! whatever melt is left is instaneously runoff.
+          ! runoff value is specified at the free surface (n) for convinence
+          RunOff % values ( RunOff % perm(n)) = pump / (Melt * rho_w)
+
+          ! Set the pump to zero, to stop while loop
+          pump = 0.0_dp
+        endif
+
+        ! procede to the next vertical layer
+        i = i + 1
+
+        ! We've reached the bottom of the vertical column, cut the itteration
+        if (i==N_v) pump=0.0_dp
+      end do !percolation while loop
+
+      !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set a seasonal snow layer, a crude approximation
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! if mean air temp less than 0 C set surface denisty to that of snow
-      if ( T_surf .le. 273.15 ) then
+      if ( T_surf .le. 273.15_dp ) then
         Dens % values ( Dens % perm(n)) = rho_s
       end if
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
