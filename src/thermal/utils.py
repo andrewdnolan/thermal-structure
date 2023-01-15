@@ -36,7 +36,7 @@ def calc_Temp(H, P):
     # Temperature relative to pressure melting
     T_prime = calc_T_prime(P)
     # temperature only defineed where H is less than H of fusion
-    return np.where(T < T_prime, T_prime, T )
+    return np.where(T > T_prime, T_prime, T )
 
 class surface_AirTemp:
 
