@@ -266,7 +266,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     end if
   else
     ! set the "timestep" as one year
-    dt = 1.0
+    dt = 1.0_dp
+    ! single year "timestep" for diagnostic solution
+    N_years = 1.0_dp
     ! if steady state get yearly amount of melt
     doy_i   = 1
     doy_ip1 = 365
@@ -433,6 +435,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           ! assume all available meltwater refreezes [J m-3 yr-1]
           Q_lat = (pump / (dz * dt)) * L_heat
 
+
+          if (n .eq. N_n-40) write(*,*) i, w_max_aq, water, Q_lat/1e3, Q_max/1e3, w_res
+
           if ( Q_lat .gt. Q_max ) then
             ! more meltwater was refrozen than the gridcell can accomodate
 
@@ -445,6 +450,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
             !       both w_res and Q_max are zero, i.e. no heat is added, but the
             !       melt can still percolate to the next cell
           else
+            if (n .eq. N_n-40) write(*,*) "All melts been consumed at node", i
             ! remaining meltwater has been refrozen within the current timestep
             pump = 0.0_dp
             ! set the volumetric heat source variable [J m-3 yr-1]
@@ -454,6 +460,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           end if
 
         else
+
+          if (n .eq. N_n-40) write(*,*) "reached pore close off at node", i
           ! refreezing can no longer occur. either have reached the bottom of the
           ! firn aquifer or the pore close off density
 
