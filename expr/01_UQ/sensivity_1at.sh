@@ -132,7 +132,7 @@ prognostic_run()
 KEY='crmpt12'
 dx=50
 T_ma=-8.5
-offset=-0.41
+offset=-0.35
 SS_itters=25
 Dynamic_int=10
 dt=0.1
@@ -145,7 +145,7 @@ IFS="," read -r id h_aq f_dd r_frac C_firn w_en w_aq Q_geo  \
 
 for C_firn in 0.15; do
 
-  run_name="crmpt12-diag_C_${C_firn}_25itters"
+  run_name="crmpt12-diag_C_${C_firn}_25itters_Tma_${T_ma}"
 
   SS_itters=25
 
@@ -156,7 +156,7 @@ for C_firn in 0.15; do
 
   # run_name="w_aq_depth_haq${h_aq}_fdd_${f_dd}_prog_seasonal_rho"
 
-  run_name="crmpt12_prog_C_${C_firn}_3kya"
+  run_name="crmpt12_prog_C_${C_firn}_3kya_Tma_${T_ma}"
 
   SS_itters=10
   prognostic_run
