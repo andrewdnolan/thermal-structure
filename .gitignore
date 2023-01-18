@@ -44,6 +44,8 @@ dask-worker-space/
 !input_data/mass_balance/*.dat
 # include the files for testing fitpack interface
 !include/fitpack/test/data/*.dat
+# can ignore my notes
+misc/
 
 # Fortran files
 *.o
