@@ -77,10 +77,10 @@ Simulation
   Output File                 = "<run_name>.result"               !\"
   Max Output Level            = 3
 
-  Restart File                = "<RESTART>"
-  Restart Position            = 0
-  Restart Time                = Real 0.0
-  Restart Before Initial Conditions = Logical True
+  ! Restart File                = "<RESTART>"
+  ! Restart Position            = 0
+  ! Restart Time                = Real 0.0
+  ! Restart Before Initial Conditions = Logical True
   Initialize Dirichlet Conditions   = Logical False
   ! Convergence Monitor         = Logical True
   ! Convergence Monitor File    = "<convg_file>"
@@ -115,20 +115,18 @@ End
 ! BEGIN INITIAL CONDITIONS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Initial Condition 1
-  ! Dynamic Variables from restart file
-  Velocity 1       = Equals "Velocity 1"
-  Velocity 2       = Equals "Velocity 2"
-  Pressure         = Equals "Pressure"
+  Velocity 1       = Real 0.0
+  Velocity 2       = Real 0.0
   Mesh Velocity 1  = Real 0.0
   Mesh Velocity 2  = Real 0.0
-  ! Thermodynamic Variables from restart file
-  W                = Equals "W"             ! [J kg-1]
-  Densi            = Equals "Densi"         ! [kg m-3]
-  Enthalpy_h       = Equals "Enthalpy_h"    ! [J kg-1]
-  Temperature      = Equals "Temperature"   ! [C]
-  Water Content    = Equals "Water Content" ! [-]
-  Surface Enthalpy = Equals "Surface Enthalpy"
+  Densi            = real 910.0
+  ! Initial Condition is isothermal and temperate
+  enthalpy_h       = real 134404.00  ! [J kg-1]
+  Temperature      = real 0.0        ! [C]
+  Surface_Enthalpy = real 134404.00  ! [J kg-1]
+  Water Content    = Real 0.0        ! [-]
 End
+
 
 Initial Condition 2
   Zs    = Variable Coordinate 1
