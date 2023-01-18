@@ -13,7 +13,7 @@ done
 
 # folder structures to copy to scratch
 for dir in "logs/" "result/"; do
-	rsync -ar --filter="-! */" $dir $dest/$dir
+	rsync -ar --filter="-! */" --delete $dir $dest/$dir
 done
 
 # copy the mesh files

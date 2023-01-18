@@ -9,6 +9,7 @@ project=/home/anolan/projects/def-gflowers/anolan/thermal-structure
 # list of dirs we need to create a symbolic link to
 link := $(scratch)/src \
 	$(scratch)/bin \
+	$(scratch)/config \
 	$(scratch)/input_data
 # list of dirs to make, will copy neccessary files later
 dirs := $(scratch)/expr/00_CoupledInit \
