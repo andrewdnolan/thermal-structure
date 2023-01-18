@@ -435,8 +435,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           ! assume all available meltwater refreezes [J m-3 yr-1]
           Q_lat = (pump / (dz * dt)) * L_heat
 
-
-          if (n .eq. N_n-40) write(*,*) i, w_max_aq, water, Q_lat/1e3, Q_max/1e3, w_res
+          ! if (n .eq. N_n-40) write(*,*) i, w_max_aq, water, Q_lat/1e3, Q_max/1e3, w_res
 
           if ( Q_lat .gt. Q_max ) then
             ! more meltwater was refrozen than the gridcell can accomodate
