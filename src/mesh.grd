@@ -24,6 +24,6 @@ Element Divisions 1 = 554
 Element Divisions 2 = 15
 ! Allow for unequally spaced vertical coordinate
 Element Ratios 1 = 1
-Element Ratios 2 = -50
+Element Ratios 2 = -4
 Element Densities 1 = 1
-Element Densities 2 = 50
+Element Densities 2 = 4
