@@ -33,7 +33,7 @@ Enthalpy Heat Capacity B = real 152.5 !                                 [J kg-1 
 ! Surface density realted params
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 rho_f  = real 830.0     ! pore close off density       [kg m^{-3}]
-C_firn = real 0.05      ! surf dens profile constant   [-]
+C_firn = real 0.15      ! surf dens profile constant   [-]
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@
