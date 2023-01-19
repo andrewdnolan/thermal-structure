@@ -143,10 +143,10 @@ prognostic_run()
        s#<KEY>#"$KEY"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
+       #s#<RESTART>#"$RESTART"#g
        s#<run_name>#"$run_name"#g;
        s#<Dynamic_int>#"$Dynamic_int"#g
        s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
-       #s#<RESTART>#"$RESTART"#g
 
   # filepath to log file
   log_file="logs/${KEY}/${run_name}.log"
@@ -202,23 +202,23 @@ full_initialization(){
   param_dict="{\"T_ma\"   : ${T_ma},
                \"offset\" : ${offset}}"
 
-  # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  # # steady-state run
-  # #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  #
-  # # let's allow for X number of steady state itterations
-  # SS_itters=$diag_SS_itters
-  #
-  # # make the run name based on model params
-  # run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag"
-  #
-  # # run the model for a given offset
-  # diagnostic_run $dx $FIT $KEY $offset $run_name $SS_itters
-  #
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  # steady-state run
+  #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+  # let's allow for X number of steady state itterations
+  SS_itters=$diag_SS_itters
+
+  # make the run name based on model params
+  run_name="${KEY}_dx_${dx}_MB_${offset}_OFF_Tma_${T_ma}_diag"
+
+  # run the model for a given offset
+  diagnostic_run $dx $FIT $KEY $offset $run_name $SS_itters
+
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+  python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+                                 -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+                                 -params "${param_dict}"
 
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # transient run
