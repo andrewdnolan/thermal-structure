@@ -20,6 +20,9 @@ pip install --no-index --upgrade pip
 # install the various packages needed ontop of scipy stack
 pip install --no-index xarray jupyterlab dask_jobqueue bokeh seaborn zarr distributed
 
+# install the local pyton module (thermal)
+pip install --editable ../src/thermal/
+
 # Steps three and four form https://docs.alliancecan.ca/wiki/Advanced_Jupyter_configuration
 echo -e '#!/bin/bash\nunset XDG_RUNTIME_DIR\njupyter lab --ip $(hostname -f) --no-browser' \
         > $VIRTUAL_ENV/bin/jupyterlab.sh
