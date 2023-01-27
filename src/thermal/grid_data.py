@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import argparse
+from dask.distributed import Client
 
 # functions from local src code
 from open import dataset as open_dataset
@@ -14,6 +15,21 @@ https://github.com/ualberta-rcg/python-dask/blob/master/cluster-examples/dask-mp
 
 https://docs.csc.fi/support/tutorials/dask-python/
 """
+
+def start_cluster():
+
+    # check if scheduler file set, i.e. on slurm cluster
+    if 'SCHEDULER_FILE' in os.environ:
+        # get the scheduler file
+        scheduler_file = os.environ['SCHEDULER_FILE']
+        # start the client
+        client = Client(scheduler_file=scheduler_file)
+    # otherwise on local workstation: just make use of resources avail.
+    else:
+        client = Client()
+
+    return client
+
 def main(argv):
     #---------------------------------------------------------------------------
     # Specify command line arguments
@@ -52,6 +68,13 @@ def main(argv):
     else:
         # set to empty dict, loop below will not itterate
         param_dict = dict()
+
+    # start the dask distributed cluster
+    client = start_cluster()
+
+    print(client)
+    print()
+    print(len(client.scheduler_info()['workers']))
 
     # open and preprocess (i.e grid) the dataset, out of memory
     ds = open_dataset(in_fn, chunks={'time':'auto', 'nMesh_node':-1})
