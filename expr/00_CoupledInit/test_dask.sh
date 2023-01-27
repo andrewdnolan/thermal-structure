@@ -25,7 +25,7 @@ sleep 15
 # Start a bunch of workers connected to the scheduler and wait
 for worker in `seq $NUM_WORKERS`
 do
-dask-worker tcp://192.168.1.27:8786 \
+dask-worker --scheduler-file $SCHEDULER_FILE \
              --no-dashboard \
              --no-nanny \
              --nworkers 1 \
