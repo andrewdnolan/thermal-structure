@@ -7,7 +7,7 @@ import argparse
 from dask.distributed import Client
 
 # functions from local src code
-from open import dataset as open_dataset
+from thermal.open import dataset as open_dataset
 
 """
 Need to support dask:

@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 from glob import glob
-from derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
+from .derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
 
 """

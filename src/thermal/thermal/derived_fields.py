@@ -4,7 +4,7 @@ import warnings
 import numpy as np
 import xarray as xr
 from scipy import integrate
-from elements import calc_element_area, calc_element_mean
+from .elements import calc_element_area, calc_element_mean
 
 def check_filtered(func):
     """ Decorator to check if the ice thickness has been filtered.
