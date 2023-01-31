@@ -11,6 +11,7 @@ setup(
     # url="https://github.com/icepack/icepack",
     packages=find_packages(where='thermal', exclude=["add_attr.py","grid_data.py", "mesh.py"]),
     install_requires=[
+        "click",
         "numpy",
         "scipy",
         "matplotlib",
@@ -22,5 +23,9 @@ setup(
         "seaborn",
         "zarr",
         "distributed"
-    ]
+    ],
+    entry_points="""
+        [console_scripts]
+        downsample=thermal.scripts.downsample:downsample
+    """,
 )
