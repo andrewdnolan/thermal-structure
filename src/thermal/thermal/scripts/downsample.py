@@ -34,7 +34,7 @@ def downsample(in_fp, out_fp, selection_type, start, stop, stride):
     print()
 
     # open the input file
-    with xr.open_dataset(in_fp) as src:
+    with xr.open_dataset(in_fp, chunks={'time':'auto'}) as src:
 
         print()
         print('input file is open')
