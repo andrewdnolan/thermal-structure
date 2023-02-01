@@ -21,7 +21,7 @@ pip install --no-index --upgrade pip
 pip install --no-index xarray jupyterlab dask_jobqueue bokeh seaborn zarr dask==2023.1.0 distributed==2023.1.0
 
 # install the local pyton module (thermal)
-pip install --editable ../src/thermal/ --no-deps
+pip install --editable $HOME/project/thermal-structure/src/thermal/ --no-deps
 
 # Steps three and four form https://docs.alliancecan.ca/wiki/Advanced_Jupyter_configuration
 echo -e '#!/bin/bash\nunset XDG_RUNTIME_DIR\njupyter lab --ip $(hostname -f) --no-browser' \
