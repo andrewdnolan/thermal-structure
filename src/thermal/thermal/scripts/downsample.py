@@ -21,7 +21,7 @@ import xarray as xr
 @click.option('--stride',help="slice stride",)
 
 def downsample(in_fp, out_fp, selection_type, start, stop, stride):
-    """ Downsample the input NetCDF file, along the 'time' (or 't') dimension. 
+    """ Downsample the input NetCDF file, along the 'time' (or 't') dimension.
     """
     # set the index datatypes based on indexing method:
     if selection_type == 'isel':
@@ -29,8 +29,16 @@ def downsample(in_fp, out_fp, selection_type, start, stop, stride):
     else:
         idx_type = float
 
+    print()
+    print('opening input file')
+    print()
+
     # open the input file
     with xr.open_dataset(in_fp) as src:
+
+        print()
+        print('input file is open')
+        print()
 
         # find the time dimensions name
         if 't' in src:
@@ -49,8 +57,23 @@ def downsample(in_fp, out_fp, selection_type, start, stop, stride):
             # if no stride provided, just select the start and stop timesteps
             dict = {var : list(map(idx_type, [start, stop]))}
 
+        print()
+        print('Subsetting open file')
+        print()
+
         # after wrangling the dictionary arguments, actually do the selection
         subset = getattr(src, selection_type)(dict)
 
+        print()
+        print('Subsetting of open file DONE!')
+        print()
+
+
+    print()
+    print('Writing new file!')
+    print()
     # after the subsetting, write the file to disk as NetCDF
     subset.to_netcdf(out_fp)
+    print()
+    print('New file written!')
+    print()
