@@ -18,7 +18,7 @@ source $HOME/python_envs/py4elmer/bin/activate
 # update pip
 pip install --no-index --upgrade pip
 # install the various packages needed ontop of scipy stack
-pip install --no-index xarray jupyterlab dask_jobqueue bokeh seaborn zarr dask distributed
+pip install --no-index xarray jupyterlab dask_jobqueue bokeh seaborn zarr dask distributed netCDF4
 
 # install the local pyton module (thermal)
 pip install --editable $HOME/project/thermal-structure/src/thermal/ --no-deps
