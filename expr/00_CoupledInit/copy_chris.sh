@@ -3,7 +3,7 @@
 #SBATCH --time=00:15:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
-#SBATCH --mem-per-cpu=2000M
+#SBATCH --mem-per-cpu=4000M
 #SBATCH --output=copy_chris_%A.out   # standard output
 #SBATCH --error=copy_chris_%A.err    # standard error
 
