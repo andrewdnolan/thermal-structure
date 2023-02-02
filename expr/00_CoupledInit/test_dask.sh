@@ -25,14 +25,12 @@ dask-scheduler --host 127.0.0.1 \
 sleep 15
 
 # Start a bunch of workers connected to the scheduler and wait
-for worker in `seq $NUM_WORKERS`
-do
+for worker in $(seq $NUM_WORKERS); do
 dask-worker --scheduler-file $SCHEDULER_FILE \
              --no-dashboard \
              --no-nanny \
              --nworkers 1 \
-             --nthreads $THREADS_PER_WORKER \
-             --memory-limit $MEM_PER_WORKER &
+             --nthreads $THREADS_PER_WORKER &
 done
 sleep 15
 
