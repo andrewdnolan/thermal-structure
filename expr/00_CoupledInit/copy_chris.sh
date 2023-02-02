@@ -28,4 +28,4 @@ dask-worker --scheduler-file $SCHEDULER_FILE --no-dashboard --no-nanny --nworker
 touch in
 touch out
 
-PYTHONPATH=$PYTHONPATH:thermal-structure/src/thermal python3 thermal-structure/src/thermal/grid_data.py in -out_fn out
+PYTHONPATH=$PYTHONPATH:../../src/thermal python3 src/thermal/grid_data.py in -out_fn out
