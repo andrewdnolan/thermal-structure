@@ -2,10 +2,12 @@
 #SBATCH --job-name=DaskSingleNode
 #SBATCH --time=00:15:00
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=12
-#SBATCH --mem-per-cpu=2G
+#SBATCH --cpus-per-task=4
+#SBATCH --mem-per-cpu=2000M
+#SBATCH --output=test_dask_%A.out   # standard output
+#SBATCH --error=test_dask_%A.err    # standard error
 
-export NUM_WORKERS=12
+export NUM_WORKERS=4
 export THREADS_PER_WORKER=1
 export MEM_PER_WORKER=2GB
 
@@ -32,6 +34,7 @@ dask-worker --scheduler-file $SCHEDULER_FILE \
              --nthreads $THREADS_PER_WORKER \
              --memory-limit $MEM_PER_WORKER &
 done
+sleep 15
 
 time python3 ../../src/thermal/grid_data.py "./result/crmpt12/nc/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.50_OFF_Tma_-8.5_prog.nc" \
                                     -out_fn "./result/crmpt12/gridded/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.50_OFF_Tma_-8.5_prog.zarr"
