@@ -14,7 +14,7 @@ module load StdEnv/2020 gcc/9.3.0 openmpi/4.0.3 python/3.8.10 scipy-stack
 virtualenv $SLURM_TMPDIR/venv
 source $SLURM_TMPDIR/venv/bin/activate
 pip install --no-index --upgrade pip
-pip install --no-index dask distributed xarray
+pip install --no-index dask distributed xarray zarr
 
 export SCHEDULER_FILE=${SLURM_JOB_ID}-scheduler.json
 dask-scheduler --host 127.0.0.1 --no-dashboard --scheduler-file $SCHEDULER_FILE &
@@ -28,5 +28,5 @@ dask-worker --scheduler-file $SCHEDULER_FILE --no-dashboard --no-nanny --nworker
 touch in
 touch out
 
-PYTHONPATH=$PYTHONPATH:../../src/thermal python3 "../../src/thermal/grid_data.py "./result/crmpt12/nc/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.50_OFF_Tma_-8.5_prog.nc" \
+PYTHONPATH=$PYTHONPATH:../../src/thermal python3 ../../src/thermal/grid_data.py "./result/crmpt12/nc/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.50_OFF_Tma_-8.5_prog.nc" \
                                     -out_fn "./result/crmpt12/gridded/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.50_OFF_Tma_-8.5_prog.zarr"
