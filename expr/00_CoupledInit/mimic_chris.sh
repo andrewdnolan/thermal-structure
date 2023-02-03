@@ -4,8 +4,8 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem-per-cpu=4000M
-#SBATCH --output=mimic_chris_%A.out   # standard output
-#SBATCH --error=mimic_chris_%A.err    # standard error
+#SBATCH --output=sys_flush_%A.out   # standard output
+#SBATCH --error=sys_flush_%A.err    # standard error
 
 
 module load StdEnv/2020 gcc/9.3.0 openmpi/4.0.3 python/3.8.10 scipy-stack

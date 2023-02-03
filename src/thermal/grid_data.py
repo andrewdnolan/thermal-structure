@@ -76,6 +76,9 @@ def main(argv):
     print()
     print(len(client.scheduler_info()['workers']))
 
+    # prevent buffered output?
+    sys.stdout.flush()
+
     # open and preprocess (i.e grid) the dataset, out of memory
     ds = open_dataset(in_fn, chunks={'time':'auto', 'nMesh_node':-1})
     # Note: need single chunk along the reshaping dimension (nMesh_node)
