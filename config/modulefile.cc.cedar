@@ -17,7 +17,7 @@ module load nco
 module load perl
 
 # Load python 3
-module load python/3.8.10
+module load python/3.10.2
 
 # Lazy way
 module load scipy-stack

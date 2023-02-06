@@ -23,6 +23,7 @@ dependencies:
   - jupyterlab
   - rise
   - tqdm
+  - memory_profiler
   - pip:
     - SALib
     - sshuttle

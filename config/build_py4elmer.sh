@@ -3,7 +3,7 @@
 # script for building python environment on cedar
 
 # Load python 3
-module load python/3.8.10
+module load python/3.10.2
 # Lazy scipy stack
 module load scipy-stack
 
@@ -18,7 +18,7 @@ source $HOME/python_envs/py4elmer/bin/activate
 # update pip
 pip install --no-index --upgrade pip
 # install the various packages needed ontop of scipy stack
-pip install --no-index xarray jupyterlab dask_jobqueue bokeh seaborn zarr dask distributed netCDF4
+pip install --no-index dask==2023.1.0 distributed==2023.1.0 xarray zarr dask_jobqueue jupyterlab bokeh seaborn 
 
 # install the local pyton module (thermal)
 pip install --editable $HOME/project/thermal-structure/src/thermal/ --no-deps
