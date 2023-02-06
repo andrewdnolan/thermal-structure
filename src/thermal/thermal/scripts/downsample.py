@@ -1,45 +1,88 @@
 #!/usr/bin/env python3
 
+import os
 import click
+import warnings
+import numpy as np
 import xarray as xr
+
+def find_open_method(fp): 
+    """Figure out how to open source file, based on file extension
+    """
+    # split and check the input file extension
+    __, file_ext = os.path.splitext(fp)
+
+    # call approraite function based on file extension
+    if file_ext == ".zarr":
+        open_method = 'open_zarr'
+    elif file_ext == ".nc":
+        open_method = 'open_dataset'
+    else:
+        raise NotImplementedError('Only .nc and .zarr formats supported')
+
+    return open_method
+
+def find_save_method(fp): 
+    """Figure out how to save subsampled file, based on file extension
+    """
+    # split and check the input file extension
+    __, file_ext = os.path.splitext(fp)
+
+    # call approraite function based on file extension
+    if file_ext == ".zarr":
+        save_method = 'to_zarr'
+    elif file_ext == ".nc":
+        save_method = 'to_netccdf'
+    else:
+        raise NotImplementedError('Only .nc and .zarr formats supported')
+
+    return save_method
 
 @click.command()
 @click.option("-i", "--in_fp",
-                help="filepath to NetCDF file to subsample",
+                help="filepath to NetCDF/Zarr file to subsample",
                 type=click.Path(exists=True), required=True)
 @click.option("-o", "--out_fp",
-                help="filepath to resulting NetCDF",
+                help="filepath to resulting NetCDF/Zarr",
                 type=click.Path(), required=True)
 @click.option('--index', 'selection_type', flag_value='isel',
                 help="use index to subsample (i.e. `isel`)",
                 default=True, show_default=True)
 @click.option('--value', 'selection_type', flag_value='sel',
-                help="use value to subsample (i.e. `sel`)",
-)
-@click.option('--start', help="index start", required=True)
-@click.option('--stop',  help="index stop, use -1 for final", required=True)
-@click.option('--stride',help="slice stride",)
+                help="use value to subsample (i.e. `sel`)",)
+@click.option('--start', help="index start", 
+                default=0, show_default=True)
+@click.option('--stop',  help="index stop, use -1 for final",
+                default=-1, show_default=True)
+@click.option('--stride', help="slice stride",)
+@click.option('--years_worth', type=click.INT, help="Write a full years worth of data very N years or N timesteps",)
 
-def downsample(in_fp, out_fp, selection_type, start, stop, stride):
+
+def downsample(in_fp, out_fp, selection_type, start, stop, stride, years_worth):
     """ Downsample the input NetCDF file, along the 'time' (or 't') dimension.
     """
+
+    if years_worth and (selection_type=='isel'): 
+        warnings.warn('--years_worth flag only works in "--value" (.sel) mode')
+        # force selection type to value (i.e. sel)
+        selection_type == 'sel'
+    if years_worth and stride: 
+        raise KeyError('Use either --years_worth or --stride flags, not both')
+
+
     # set the index datatypes based on indexing method:
     if selection_type == 'isel':
         idx_type = int
     else:
         idx_type = float
 
-    print()
-    print('opening input file')
-    print()
+    # call approraite function based on file extension
+    open_method = find_open_method(in_fp)
+    save_method = find_save_method(out_fp)
 
-    # open the input file
-    with xr.open_dataset(in_fp, chunks={'time':'auto'}) as src:
-
-        print()
-        print('input file is open')
-        print()
-
+    # open the input file with approiate method
+    with getattr(xr, open_method)(in_fp, chunks={'time':'auto'}) as src:
+        
         # find the time dimensions name
         if 't' in src:
             var='t'
@@ -57,23 +100,38 @@ def downsample(in_fp, out_fp, selection_type, start, stop, stride):
             # if no stride provided, just select the start and stop timesteps
             dict = {var : list(map(idx_type, [start, stop]))}
 
-        print()
-        print('Subsetting open file')
-        print()
+        # (N)umber of (T)ime(s)teps (P)er (Y)ear
+        NTsPY  = src[var].where(np.floor(src[var])==2, drop=True).size
 
+
+        # years worth flag ONLY works with value indexing
+        if years_worth: 
+
+            # if final time value wasn't passed find the final time value in the file
+            if stop == -1: 
+                # get the final time value, rounded to the nearest whole number
+                final = round(float(getattr(src[var], 'isel')({var : -1})), 0)
+            else: 
+                # if passed use passed value
+                final = stop 
+
+            # years we want all the data: 
+            #   add the stride to deal with non-inclusive indexing
+            years = np.arange(0, final + years_worth, years_worth)
+            # create dicionary to find time values
+            conditional_dict ={'cond' : np.floor(src[var]).isin(years), 'drop' : True}
+
+            # Get the time values which fall wihtin the years we want data
+            times_idx = src[var].where(**conditional_dict)
+
+            # subsampling dictionary selecting discrete timeslices
+            dict = {var : times_idx}
+         
         # after wrangling the dictionary arguments, actually do the selection
         subset = getattr(src, selection_type)(dict)
 
-        print()
-        print('Subsetting of open file DONE!')
-        print()
-
-
-    print()
-    print('Writing new file!')
-    print()
-    # after the subsetting, write the file to disk as NetCDF
-    subset.to_netcdf(out_fp)
-    print()
-    print('New file written!')
-    print()
+        # need to re-chunk the subsetted data to prevent corrupting the data
+        subset = subset.chunk("auto")
+        
+    # after the subsetting, write the file to disk 
+    getattr(subset, save_method)(out_fp, mode="w")

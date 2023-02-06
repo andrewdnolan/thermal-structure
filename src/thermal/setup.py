@@ -19,8 +19,10 @@ setup(
         "zarr",
         "distributed"
     ],
-    entry_points="""
-        [console_scripts]
-        downsample=thermal.scripts.downsample:downsample
-    """,
+    entry_points={
+        'console_scripts' : [
+        'downsample.py = thermal.scripts.downsample:downsample',
+        'grid_data.py  = thermal.scripts.grid_data:grid_data'
+        ],
+    }
 )
