@@ -96,6 +96,8 @@ create_dask_cluster
 start=$((SLURM_ARRAY_TASK_ID * CHUNK_SIZE))
 stop=$((start + CHUNK_SIZE))
 for j in $(seq $start $stop); do 
+  # add one to j since sed is indexed at 1
+  j=$((j + 1))
   # only ran 286 runs, so make sure we don't go over 
   if [[ $j -le 286 ]]; then 
     # run the post processing commands
