@@ -1,12 +1,14 @@
 #!/bin/bash
 #SBATCH --array=0-5%6
 #SBATCH --job-name=dask_gridding
-#SBATCH --time=06:00:00           # 
+#SBATCH --time=06:00:00           
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=4000M
-#SBATCH --output=dask_%A_%a.out   # standard output
-#SBATCH --error=dask_%A_%a.err    # standard error
+#SBATCH --mail-type=ALL                      # send all mail (way to much)
+#SBATCH --mail-user=andrew.d.nolan@maine.edu # email to spend updates too
+#SBATCH --output=dask_%A_%a.out              # standard output
+#SBATCH --error=dask_%A_%a.err               # standard error
 
 # how many files to itterate over in a the for loop  
 CHUNK_SIZE=48
@@ -59,13 +61,13 @@ post_proccess()
   # grid the NetCDF file written by the NetcdfUGRIDOutputSolver, 
   # convert from NetCDF to Zarr file format
   time grid_data.py -i "${SLURM_TMPDIR}/${run_name}.nc" \
-              -o "${SLURM_TMPDIR}/${run_name}.zarr" \
-              -p "${param_dict}"
+                    -o "${SLURM_TMPDIR}/${run_name}.zarr" \
+                    -p "${param_dict}"
 
   # run the subsampling script, write a years worth of data every 10 years
   time downsample.py -i "${SLURM_TMPDIR}/${run_name}.zarr" \
-                -o  "${SLURM_TMPDIR}/thinned/${run_name}.zarr" \
-                --value --years_worth 10
+                     -o  "${SLURM_TMPDIR}/thinned/${run_name}.zarr" \
+                     --value --years_worth 10
 
   # tar the full zarr file, and write the tar to scratch
   time tar -cf "result/crmpt12/gridded/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}" "${run_name}.zarr"
