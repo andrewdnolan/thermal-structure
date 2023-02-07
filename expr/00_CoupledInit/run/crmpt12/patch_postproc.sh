@@ -99,6 +99,6 @@ for j in $(seq $start $stop); do
   # only ran 286 runs, so make sure we don't go over 
   if [[ $j -le 286 ]]; then 
     # run the post processing commands
-    post_procces $j
+    post_proccess $j
   fi
 done 
