@@ -5,6 +5,7 @@ import click
 import warnings
 import numpy as np
 import xarray as xr
+from pandas.errors import InvalidIndexError
 
 def find_open_method(fp): 
     """Figure out how to open source file, based on file extension
@@ -32,7 +33,7 @@ def find_save_method(fp):
     if file_ext == ".zarr":
         save_method = 'to_zarr'
     elif file_ext == ".nc":
-        save_method = 'to_netccdf'
+        save_method = 'to_netcdf'
     else:
         raise NotImplementedError('Only .nc and .zarr formats supported')
 
@@ -126,9 +127,27 @@ def downsample(in_fp, out_fp, selection_type, start, stop, stride, years_worth):
 
             # subsampling dictionary selecting discrete timeslices
             dict = {var : times_idx}
-         
-        # after wrangling the dictionary arguments, actually do the selection
-        subset = getattr(src, selection_type)(dict)
+        
+        try: 
+            # after wrangling the dictionary arguments, actually do the selection
+            subset = getattr(src, selection_type)(dict)
+
+        except InvalidIndexError: 
+            # Sometimes when there's blow up from CFL condition violation, the time 
+            # dimension will have NaNs (i.e. really big floats). These break the indexing
+            # scheme, due to repeat values (i.e. some really big floats). 
+            #
+            # So, we catch that error here and filter the time axis to remove duplicates, 
+            # which should fix things (hopfully)
+
+            # get the unique time indexes. ref: https://stackoverflow.com/a/51077784/10221482
+            _, valid_idxs = np.unique(src[var], return_index=True)
+            
+            # use isel to get unique time values
+            src = src.isel({var : valid_idxs})
+
+            # after wrangling the duplicates, try do the selection again
+            subset = getattr(src, selection_type)(dict)
 
         # need to re-chunk the subsetted data to prevent corrupting the data
         subset = subset.chunk("auto")

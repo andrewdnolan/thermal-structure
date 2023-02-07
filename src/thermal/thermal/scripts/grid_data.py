@@ -38,7 +38,7 @@ def find_save_method(fp):
     if file_ext == ".zarr":
         save_method = 'to_zarr'
     elif file_ext == ".nc":
-        save_method = 'to_netccdf'
+        save_method = 'to_netcdf'
     else:
         raise NotImplementedError('Only .nc and .zarr formats supported')
 
