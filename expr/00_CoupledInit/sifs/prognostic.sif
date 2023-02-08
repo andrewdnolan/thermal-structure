@@ -71,7 +71,7 @@ Simulation
 
   Timestep Intervals          = <NT>  ![a]
   Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = <NT>
+  Output Intervals            = # 500 / <dt>
 
   ! Post File                   = "VTU/test.vtu"
   Output File                 = "<run_name>.result"               !\"
