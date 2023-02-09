@@ -30,9 +30,9 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Header
   CHECK KEYWORDS Warn
-  Mesh DB           "./result/crmpt12/" "mesh_dx50" !\"
-  Include Path      "./result/crmpt12/"                    !\"
-  Results Directory "./result/crmpt12/"                    !\"
+  Mesh DB           "./result/<KEY>/" "mesh_dx<DX>" !\"
+  Include Path      "./result/<KEY>/"               !\"
+  Results Directory "./result/<KEY>/"               !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -46,15 +46,20 @@ Constants
 
   Seasonality         = Logical True
 
-  Mass Balance Offset = Real -0.41 ! m y^{-1}
-  T_mean              = real -8.5  ! Mean annual air temp @ z_ref [C]
+  Mass Balance Offset = Real <offset> ! m y^{-1}
+  T_mean              = real <T_mean>  ! Mean annual air temp @ z_ref [C]
 
   !Physical Constants:
   Gas Constant        = real #R        ! [J mol^{-1} K^{-1}]
   Pressure Variable   = String "Pressure"
 
   !Parameters varied as part of UQ
-  C_firn   = real 0.15    ! surf dens profile constant   [-]
+  C_firn   = real <C_firn>    ! surf dens profile constant   [-]
+  w_max_en = real <w_en>      ! max englacial water content  [-]
+  w_max_aq = real <w_aq>      ! max water content in frin aq [-]
+  h_aq     = real <h_aq>      ! frin aquifer thickness       [m]
+  f_dd     = real <f_dd>      ! degree day factor            [m K-1 d-1]
+  r_frac   = real <r_frac>    ! melt fraction that runs off  [-]
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END CONSTANTS
@@ -70,14 +75,14 @@ Simulation
   BDF order                   = 2
 
   Steady State Min Iterations = 1
-  Steady State Max Iterations = 10
+  Steady State Max Iterations = <SS_itters>
 
-  Timestep Intervals          = 30000  ![a]
-  Timestep Sizes              = 0.1  ![a]
-  Output Intervals            = 30000
+  Timestep Intervals          = <NT> ![a]
+  Timestep Sizes              = <dt> ![a]
+  Output Intervals            = # 500 / <dt> 
 
-  ! Post File                   = "VTU/test.vtu"
-  Output File                 = "percol_nz15_diag_rhof_830_C_0.15_ISOTHERMAL_IC_3kya.result"               !\"
+
+  Output File                 = "<run_name>.result"
   Max Output Level            = 3
 
   ! Restart File                = "<RESTART>"
@@ -124,30 +129,30 @@ Initial Condition 1
   Mesh Velocity 2  = Real 0.0
   Densi            = real 910.0
   ! Initial Condition (Guess) is isothermal and temperate
-  enthalpy_h       = real 134404.00  ! [J kg-1]
+  enthalpy_h       = real <enth_IC>  ! [J kg-1]
   Temperature      = real 0.0        ! [C]
-  Surface_Enthalpy = real 134404.00  ! [J kg-1]
+  Surface_Enthalpy = real <enth_IC>  ! [J kg-1]
   Water Content    = Real 0.0        ! [-]
 End
 
 Initial Condition 2
   Zs    = Variable Coordinate 1
           Real
-           include  "../../input_data/topography/crmpt12_surf.dat"
+           include  "../../input_data/topography/<KEY>_surf.dat"
           End
 
   RefZs = Variable Coordinate 1
           Real
-           include  "../../input_data/topography/crmpt12_surf.dat"
+           include  "../../input_data/topography/<KEY>_surf.dat"
           End
   Zbed  = Variable Coordinate 1
          Real
-          include  "../../input_data/topography/crmpt12_bed.dat"
+          include  "../../input_data/topography/<KEY>_bed.dat"
          End
 
   Bottom Surface = Variable Coordinate 1
          Real
-          include  "../../input_data/topography/crmpt12_bed.dat"
+          include  "../../input_data/topography/<KEY>_bed.dat"
          End
 
   Zs Accumulation Flux 1     = Real 0.0e0
@@ -250,8 +255,8 @@ End
 
 
 Solver 3
-  Exec Interval              = 10
-  Timestep Scale             = 10
+  Exec Interval              = <Dynamic_int>
+  Timestep Scale             = <Dynamic_int>
   Equation                   = "HeightDepth"
   Procedure                  = "StructuredProjectToPlane" "StructuredProjectToPlane"
   Active Coordinate          = Integer 2
@@ -260,8 +265,8 @@ Solver 3
 End
 
 Solver 4
-  Exec Interval                 = 10
-  Timestep Scale                = 10
+  Exec Interval                 = <Dynamic_int>
+  Timestep Scale                = <Dynamic_int>
   Equation                      = String "DataToFieldSolver"
   Procedure                     = File "DataToFieldSolver" "DataToFieldSolver"
   Linear System Residual Output = Integer 0
@@ -281,7 +286,7 @@ End
 ! Surface Heating Solver
 Solver 6
   Equation              = String "SurfaceBoundary"
-  Procedure             = File "../../bin/percolation" "Surface_Processes"
+  Procedure             = File "../../bin/SurfaceBoundary" "Surface_Processes"
   Variable              = String "Surface_Enthalpy"
   Variable DOFs         = 1
 
@@ -303,8 +308,8 @@ End
 
 ! Navier-Stokes Equation (Stokes Flow)
 Solver 7
-  Exec Interval                            = 10
-  Timestep Scale                           = 10
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
 
   Equation                                 = "Navier-Stokes"
   Flow model                               = String "Stokes"
@@ -336,8 +341,8 @@ Solver 7
 End
 
 Solver 8
-  Exec Interval                           = 10
-  Timestep Scale                          = 10
+  Exec Interval                           = <Dynamic_int>
+  Timestep Scale                          = <Dynamic_int>
 
   Equation                                = "Free Surface Evolution"
   Variable                                = String "Zs"
@@ -377,8 +382,8 @@ Solver 8
 End
 
 Solver 9
-  Exec Interval            = 10
-  Timestep Scale           = 10
+  Exec Interval            = <Dynamic_int>
+  Timestep Scale           = <Dynamic_int>
   Equation                 = "MapCoordinate"
   Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
   Active Coordinate        = Integer 2
@@ -394,8 +399,8 @@ End
 
 ! Deformational Heat
 Solver 10
-  Exec Interval                            = 10
-  Timestep Scale                           = 10
+  Exec Interval                            = <Dynamic_int>
+  Timestep Scale                           = <Dynamic_int>
   Equation                                 = "DeformationalHeat"
   Variable                                 = "W"                 ![MPa yr-1]
   Variable DOFs                            = 1
@@ -486,8 +491,8 @@ Solver 12
    Variable           = -nooutput "NetCDFOutPut"
    Active Coordinate  = Integer 2
 
-   OutPut Directory   = File "./result/crmpt12/nc"
-   Output File Name   = "percol_nz15_diag_rhof_830_C_0.15_ISOTHERMAL_IC_3kya"
+   OutPut Directory   = File "./result/<KEY>/nc"
+   Output File Name   = "<run_name>"
 
    Optimize Bandwidth = Logical False
 
@@ -593,11 +598,11 @@ Boundary Condition 1
   Velocity 2        = Real 0.0e0
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/crmpt12_bed.dat"
+                         include "../../input_data/topography/<KEY>_bed.dat"
                       End
   Zbed              = Variable Coordinate 1
                       Real cubic
-                         include "../../input_data/topography/crmpt12_bed.dat"
+                         include "../../input_data/topography/<KEY>_bed.dat"
                       End
 
   ! < Heat_Flux>
