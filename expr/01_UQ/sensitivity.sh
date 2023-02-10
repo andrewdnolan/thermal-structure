@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-parse_reference(){
+parse_reference()
+{
   #-----------------------------------------------------------------------------
   # Parse reference model parameter from the json file
   # perl code from: https://stackoverflow.com/a/27127626/10221482
@@ -52,7 +53,7 @@ post_proccess()
               \"${param}\" : ${value}}"
 
   # copy the source file from scratch to local (compute node's) SSD
-  time rsync -ah "result/crmpt12/nc/${run_name}.nc" "${SLURM_TMPDIR}"
+  time rsync -ah "result/${KEY}/nc/${run_name}.nc" "${SLURM_TMPDIR}"
 
   # grid the NetCDF file written by the NetcdfUGRIDOutputSolver, 
   # convert from NetCDF to Zarr file format
@@ -66,10 +67,10 @@ post_proccess()
                      --value --years_worth 10
 
   # tar the full zarr file, and write the tar to scratch
-  time tar -cf "result/crmpt12/gridded/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}" "${run_name}.zarr"
+  time tar -cf "result/${KEY}/gridded/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}" "${run_name}.zarr"
 
   # tar the thinned zarr file, and write the tar to scratch
-  time tar -cf "result/crmpt12/thinned/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}/thinned" "${run_name}.zarr"
+  time tar -cf "result/${KEY}/thinned/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}/thinned" "${run_name}.zarr"
 
   # delete files from SSD to make room for next files
   rm "${SLURM_TMPDIR}/${run_name}.nc"
@@ -144,7 +145,8 @@ prognostic_run()
 
 }
 
-make_runname(){
+make_runname()
+{
   # NOTE, these are NOT the evauated variables but their string "names"
   for var in  C_firn f_dd w_en w_aq IC; do 
 
@@ -166,6 +168,22 @@ make_runname(){
   echo "${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_1aTST_${param}_${value}"
 
   #note: param and value are also exported
+}
+
+log_runtime()
+{
+
+  local OUT_fp="result/${KEY}/${KEY}.sensitivity.time_profile"
+
+  if [ ! -f "$OUT_fp" ]; then
+      echo "#run_name runtime" |
+      awk -v OFS='\t' '{print $1 "\t" $2}' >> \
+                      $OUT_fp
+  fi
+
+  echo "${run_name} ${runtime}" |
+  awk -v OFS='\t'  '{print $1 "\t" $2}' >> \
+                  $OUT_fp
 }
 
 
@@ -208,4 +226,7 @@ test_sensitivity()
 
   # Execution time of the solver
   runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+
+  # log the runtime info 
+  log_runtime $run_name $runtime
 }
