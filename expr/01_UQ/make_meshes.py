@@ -2,15 +2,15 @@
 
 import os
 import sys
-sys.path.append('../../src')
-import thermal.mesh as meshing
+# sys.path.append('../../src')
+# import thermal.mesh as meshing
 
 # all the sensitivty test are done with crmpt12
 glacier = 'crmpt12'
 
 # instead of glaciers, we have a dictionary of different sensitivty test
 experiments = {
-                'initial_condition' : [50,  15], # Δx, Nz [m]
+                'crmpt12' : [50,  15], # Δx, Nz [m]
               }
 
 # filepath relative to top of git repo
@@ -23,9 +23,9 @@ for exp in experiments:
     nc_fp  = f'result/{exp}/nc/'
     gridded_fp = f'result/{exp}/gridded/'
 
-    #-----
+    # -----
     # Mesh
-    #-----
+    # -----
     if type(Nz) is list:
         for nz  in Nz:
             # append to the mesh name
