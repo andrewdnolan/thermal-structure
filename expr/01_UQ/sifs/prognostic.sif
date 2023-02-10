@@ -31,8 +31,8 @@
 Header
   CHECK KEYWORDS Warn
   Mesh DB           "./result/<KEY>/" "mesh_dx<DX>" !\"
-  Include Path      "./result/<KEY>/"                    !\"
-  Results Directory "./result/<KEY>/"                    !\"
+  Include Path      "./result/<KEY>/"               !\"
+  Results Directory "./result/<KEY>/"               !\"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END HEADER
@@ -46,7 +46,7 @@ Constants
 
   Seasonality         = Logical True
 
-  Mass Balance Offset = Real <offset>  ! m y^{-1}
+  Mass Balance Offset = Real <offset> ! m y^{-1}
   T_mean              = real <T_mean>  ! Mean annual air temp @ z_ref [C]
 
   !Physical Constants:
@@ -55,6 +55,9 @@ Constants
 
   !Parameters varied as part of UQ
   C_firn   = real <C_firn>    ! surf dens profile constant   [-]
+  w_max_en = real <w_en>      ! max englacial water content  [-]
+  w_max_aq = real <w_aq>      ! max water content in frin aq [-]
+  f_dd     = real <f_dd>      ! degree day factor            [m K-1 d-1]
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                             END CONSTANTS
@@ -72,18 +75,18 @@ Simulation
   Steady State Min Iterations = 1
   Steady State Max Iterations = <SS_itters>
 
-  Timestep Intervals          = <NT>  ![a]
-  Timestep Sizes              = <dt>  ![a]
-  Output Intervals            = <NT>
+  Timestep Intervals          = <NT> ![a]
+  Timestep Sizes              = <dt> ![a]
+  Output Intervals            = # 500 / <dt> 
 
-  ! Post File                   = "VTU/test.vtu"
-  Output File                 = "<run_name>.result"               !\"
+
+  Output File                 = "<run_name>.result"
   Max Output Level            = 3
 
-  Restart File                = "<RESTART>"
-  Restart Position            = 0
-  Restart Time                = Real 0.0
-  Restart Before Initial Conditions = Logical True
+  ! Restart File                = "<RESTART>"
+  ! Restart Position            = 0
+  ! Restart Time                = Real 0.0
+  ! Restart Before Initial Conditions = Logical True
   Initialize Dirichlet Conditions   = Logical False
   ! Convergence Monitor         = Logical True
   ! Convergence Monitor File    = "<convg_file>"
@@ -118,19 +121,16 @@ End
 ! BEGIN INITIAL CONDITIONS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Initial Condition 1
-  ! Dynamic Variables from restart file
-  Velocity 1       = Equals "Velocity 1"
-  Velocity 2       = Equals "Velocity 2"
-  Pressure         = Equals "Pressure"
+  Velocity 1       = Real 0.0
+  Velocity 2       = Real 0.0
   Mesh Velocity 1  = Real 0.0
   Mesh Velocity 2  = Real 0.0
-  ! Thermodynamic Variables from restart file
-  W                = Equals "W"             ! [J kg-1]
-  Densi            = Equals "Densi"         ! [kg m-3]
-  Enthalpy_h       = Equals "Enthalpy_h"    ! [J kg-1]
-  Temperature      = Equals "Temperature"   ! [C]
-  Water Content    = Equals "Water Content" ! [-]
-  Surface Enthalpy = Equals "Surface Enthalpy"
+  Densi            = real 910.0
+  ! Initial Condition (Guess) is isothermal and temperate
+  enthalpy_h       = real <enth_IC>  ! [J kg-1]
+  Temperature      = real 0.0        ! [C]
+  Surface_Enthalpy = real <enth_IC>  ! [J kg-1]
+  Water Content    = Real 0.0        ! [-]
 End
 
 Initial Condition 2
