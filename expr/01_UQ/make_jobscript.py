@@ -161,7 +161,7 @@ def main(argv):
     args, _ = parser.parse_known_args(argv)
 
     # make sure a search type was specified
-    if args.keys is None:
+    if args.key is None:
         raise ValueError('No glacier identifier set, must use --key flag')
 
     # run the function to generate input file for parametric sens. tests
