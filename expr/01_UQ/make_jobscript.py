@@ -1,0 +1,149 @@
+#!/usr/bin/env python3
+
+import os
+import sys
+import json
+import argparse
+import numpy as np
+from itertools import product
+from dataclasses import dataclass
+
+cmd = "./sensitivity.py -dx {dx} --key \"{key}\" -t_f {t_f} -dt {dt} -Dynamic_int {dyn_int} -off {off} -T_ma {T_ma} "\
+      "-C_firn {C_firn:1.4f} -f_dd {f_dd} -w_en {w_en} -w_aq {w_aq} -IC {IC}"
+
+def find_precision(stride):
+    """ Find the floating point precision needed
+    Input:
+        stride (float): parameter increment (i.e., stride)
+    Output:
+        NDP      (int): (N)umber of (D)ecimal (P)laces
+    """
+    NDP = len(str(stride).split('.')[-1])
+    return NDP
+
+class sensitivity_test:
+
+    def __init__(self, key):
+        # Glacier identifer (e.g. crmpt12)
+        self.key = key
+        # parameter file for the specified glacier (type: dictionary)
+        self.json = self.parse_json()
+
+    def parse_json(self):
+        """ Read and parse the input parameter files
+        """
+
+        # open the json file
+        with open(f'params/{self.key}.json') as file:
+            j = json.load(file)
+
+        return j
+
+    def fill_template(self):
+        """ fill the template file with the approriate parameters
+        Inputs:
+            key      (str) --> Glacier identifer (e.g. crmpt12)
+            M        (str) --> Number of  jobs in SLURM job array
+            S        (str) --> Stride for jobs in SLURM job array
+            WT       (str) --> Walltime allocation (hh:mm:ss)
+            MEM      (str) --> Memeory  allocation (GB)
+            run_type (str) --> Run type (gridsearch or linesearch)
+        """
+
+        # read the submission template
+        with open(f'./run/submission.template', 'r') as f:
+            template = f.read()
+
+        # pack the json params into another dict
+        params = dict(KEY      = self.key,
+                      run_name = self.key,
+                      M        = self.json['memory'],
+                      S        = self.json['stride'],
+                      WT       = self.json['walltime'],
+                      MEM      = self.json['memory'])
+
+        # fill the submission template with the set parameters and write to disk
+        with open(f'./run/{key}/{key}_{run_type}.sh', 'w') as f:
+            f.write(template.format(**params))
+
+    def write_cmdfile(self, search_type):
+
+        # open the commands file used by the job array
+        with open(f'./run/{self.key}/{search_type}.commands', 'w') as f:
+
+            # dump the command in the text file
+            f.write(self.commands)
+
+    def write_jobscript(self, run_type):
+        # read the submission template
+        with open(f'./run/submission.template', 'r') as f:
+            template = f.read()
+
+        # pack the json params into another dict
+        params = dict(KEY         = self.key,
+                      run_name    = self.key,
+                      M           = len(self.commands.split('\n'))-1,
+                      S           = self.json['stride'],
+                      WT          = self.json['walltime'],
+                      MEM         = self.json['memory'],
+                      search_type = run_type)
+
+        # fill the submission template with the set parameters and write to disk
+        with open(f'./run/{self.key}/{run_type}_submit.sh', 'w') as f:
+            f.write(template.format(**params))
+
+    def prep_gridsearch(self):
+        """
+        """
+
+        # fixed parameters during the gridsearch
+        fixed = dict(key     = self.key,
+                     t_f     = self.json['TT'],
+                     dx      = self.json['dx'],
+                     dt      = self.json['dt'],
+                     dyn_int = self.json['Dynamic_int'],
+                     off     = self.json['MB'],
+                     T_ma    = self.json['T_ma'])
+        
+        # dictionary of reference parameter values
+        default = {key: self.json['params'][key]['reference'] for key in self.json['params']}
+
+        # create an empty string to start concatenating too
+        commands = ""
+        
+        # function to unpack the parameter range info contained in the json
+        unpack_params = lambda x: getattr(np, x['spacing'])(x['start'], x['stop'], x['samples'])
+
+        # loop over the parameters we are testing 
+        for key in self.json['params']: 
+            # unpack th paramater values, and loop over them.
+            for val in unpack_params(self.json['params'][key]): 
+                
+                # make a copy of the default dictionary
+                params = default.copy()
+                # update with the current value of the current 
+                params[key] = val
+
+                # dump the default and varied params into the string, with end of line character
+                commands += cmd.format(**fixed, **params) + '\n'
+
+        # dump the commands str as an attribute
+        self.commands = commands
+
+
+# initialize our class
+sens_test = sensitivity_test('crmpt12')
+# from the passed parameter get the run commands
+sens_test.prep_gridsearch()
+
+print(sens_test.commands)
+# def gridsearch(args):
+
+#     # initialize our class
+#     init = initialization(args.key)
+#     # from the passed parameter get the run commands
+#     init.prep_gridsearch()
+#     # dump the run commands into a command file
+#     init.write_cmdfile('gridsearch')
+#     # update the job submission script
+#     init.write_jobscript('gridsearch')
