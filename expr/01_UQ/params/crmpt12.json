@@ -1,27 +1,50 @@
 {
-  "MB": {
-    "range": [
-      -0.5,
-      0.01,
-      -0.25
-    ],
-    "value": -9999.0
-  },
-  "T_ma": {
-    "range": [
-      -9.0,
-      0.1,
-      -8.0
-    ],
-    "value": -9999.0
-  },
-  "dx": 50,
-  "dt": 1.0,
-  "TT": 2000,
-  "fit": "spline",
-  "k": 2,
+    "dx"   : 50,
+    "dt"   : 0.1,
+    "Dynamic_int": 10,
+    "TT"   : 3000,
+    "T_ma" : -8.5, 
+    "MB"   : -0.37,
 
-  "memory": "4000M",
-  "walltime": "12:00:00",
-  "stride" : 40
+    "memory"  : "4000M",
+    "walltime": "48:00:00",
+    "stride"  : 40,
+
+    "params" : {
+        "C_firn": {
+            "start"     : 0.05, 
+            "stop"      : 0.5, 
+            "samples"   : 10, 
+            "spacing"   : "geomspace", 
+            "reference" : 0.15
+            }, 
+        "f_dd": {
+            "start"     : 0.001, 
+            "stop"      : 0.008, 
+            "samples"   : 8, 
+            "spacing"   : "linspace", 
+            "reference" : 0.006
+            },
+        "w_en": {
+            "start"     : 0.0, 
+            "stop"      : 3.0, 
+            "samples"   : 7, 
+            "spacing"   : "linspace", 
+            "reference" : 1.0
+            }, 
+        "w_aq": {
+            "start"     : 1.00, 
+            "stop"      : 15.0, 
+            "samples"   : 8, 
+            "spacing"   : "linspace", 
+            "reference" : 5.0
+            }, 
+        "IC": {
+            "start"     : 0.000, 
+            "stop"      : -10.0, 
+            "samples"   : 11, 
+            "spacing"   : "linspace", 
+            "reference" : 0.0
+            }
+    }
 }
