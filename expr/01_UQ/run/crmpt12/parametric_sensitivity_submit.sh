@@ -1,14 +1,14 @@
 #!/bin/bash
-#SBATCH --array=1-{M}%{S}
-#SBATCH --job-name={run_name}_%A                      # base job name for the array
-#SBATCH --mem-per-cpu={MEM}                        # maximum 200M per job
-#SBATCH --time={WT}                                # maximum walltime per job
+#SBATCH --array=1-44%44
+#SBATCH --job-name=crmpt12_%A                      # base job name for the array
+#SBATCH --mem-per-cpu=4000M                        # maximum 200M per job
+#SBATCH --time=48:00:00                                # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=ALL                            # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu       # email to spend updates too
-#SBATCH --output=logs/{KEY}/{run_name}_%A_%a.out   # standard output
-#SBATCH --error=logs/{KEY}/{run_name}_%A_%a.err    # standard error
+#SBATCH --output=logs/crmpt12/crmpt12_%A_%a.out   # standard output
+#SBATCH --error=logs/crmpt12/crmpt12_%A_%a.err    # standard error
 # in the previous two lines %A" is replaced by jobID and "%a" with the array index
 
 echo "Starting task $SLURM_ARRAY_TASK_ID"
@@ -16,7 +16,7 @@ echo "Starting task $SLURM_ARRAY_TASK_ID"
 # load the neccessary packages
 source ../../config/modulefile.cc.cedar
 
-CMD=$(  sed -n "${{SLURM_ARRAY_TASK_ID}}p" ./run/{KEY}/{search_type}.commands)
+CMD=$(  sed -n "${SLURM_ARRAY_TASK_ID}p" ./run/crmpt12/parametric_sensitivity.commands)
 
 # excute the ith model run
 eval "$CMD"
@@ -25,4 +25,4 @@ eval "$CMD"
 STATUS=$?
 
 # save the job statuses to file with unique filename per submission
-echo $SLURM_ARRAY_TASK_ID $STATUS >> ./run/{KEY}/{KEY}_$SLURM_ARRAY_JOB_ID.status
+echo $SLURM_ARRAY_TASK_ID $STATUS >> ./run/crmpt12/crmpt12_$SLURM_ARRAY_JOB_ID.status
