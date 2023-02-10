@@ -74,16 +74,23 @@ class sensitivity_test:
             # dump the command in the text file
             f.write(self.commands)
 
-    def write_jobscript(self, run_type):
+    def write_jobscript(self, run_type, stride=None):
         # read the submission template
         with open(f'./run/submission.template', 'r') as f:
             template = f.read()
+        
+        # number of model runs
+        M = len(self.commands.split('\n'))-1
+
+        # if the stride is not set, run all the model runs at the same time
+        if not stride: 
+            stride=M
 
         # pack the json params into another dict
         params = dict(KEY         = self.key,
                       run_name    = self.key,
-                      M           = len(self.commands.split('\n'))-1,
-                      S           = self.json['stride'],
+                      M           = M,
+                      S           = stride,
                       WT          = self.json['walltime'],
                       MEM         = self.json['memory'],
                       search_type = run_type)
@@ -116,7 +123,7 @@ class sensitivity_test:
 
         # loop over the parameters we are testing 
         for key in self.json['params']: 
-            # unpack th paramater values, and loop over them.
+            # unpack th parameter values, and loop over them.
             for val in unpack_params(self.json['params'][key]): 
                 
                 # make a copy of the default dictionary
@@ -131,19 +138,34 @@ class sensitivity_test:
         self.commands = commands
 
 
-# initialize our class
-sens_test = sensitivity_test('crmpt12')
-# from the passed parameter get the run commands
-sens_test.prep_gridsearch()
+def parametric_sensitivity(args):
 
-print(sens_test.commands)
-# def gridsearch(args):
+    # initialize our class
+    sens_test = sensitivity_test(args.key)
+    # from the passed parameter get the run commands
+    sens_test.prep_gridsearch()
+    # dump the run commands into a command file
+    sens_test.write_cmdfile('parametric_sensitivity')
+    # update the job submission script
+    sens_test.write_jobscript('parametric_sensitivity', stride=args.job_s)
 
-#     # initialize our class
-#     init = initialization(args.key)
-#     # from the passed parameter get the run commands
-#     init.prep_gridsearch()
-#     # dump the run commands into a command file
-#     init.write_cmdfile('gridsearch')
-#     # update the job submission script
-#     init.write_jobscript('gridsearch')
+
+def main(argv):
+
+    # prepare to parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--key', help='Glacier identifier (e.g. crmpt12)', default=None)
+    parser.add_argument('-job_s', type=int, help='slurm job array stride', default=None)
+
+    # parse the arugments from the command line
+    args, _ = parser.parse_known_args(argv)
+
+    # make sure a search type was specified
+    if args.keys is None:
+        raise ValueError('No glacier identifier set, must use --key flag')
+
+    # run the function to generate input file for parametric sens. tests
+    parametric_sensitivity(args)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
