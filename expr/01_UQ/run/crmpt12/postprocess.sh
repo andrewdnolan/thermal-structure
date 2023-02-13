@@ -35,9 +35,13 @@ fi
 # set up the dask cluter for the instance of the job array
 create_dask_cluster
 
-for j in $(seq 44); do 
+for file in $(find ./result/crmpt12/nc/ -name "*.nc"); do 
 
+    # get the base filename ,with no path info 
+    fn="${file##*/}"
+    # strip the file extension, to get the runname 
+    run_name="${fn%%.nc}"
     # run the post processing commands
-    post_proccess $j
+    post_proccess
 
 done 

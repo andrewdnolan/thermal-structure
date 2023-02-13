@@ -42,15 +42,17 @@ create_dask_cluster()
 
 post_proccess()
 {
-  # get the j-th air temp and mass balance values
-  parse_params $1
+  # # get the j-th air temp and mass balance values
+  # parse_params $1
 
-  # based on the set parameter values, create a unique run name 
-  run_name=$(make_runname)
+  # # based on the set parameter values, create a unique run name 
+  # run_name=$(make_runname)
+  # # run "make_runname" again, so param and value are exported
+  # make_runname
 
   # create parameter json (dictionary) for gridding Zarr files
-  param_dict="{\"param\"   : ${param},
-              \"${param}\" : ${value}}"
+  # param_dict="{\"param\"   : ${param},
+  #             \"${param}\" : ${value}}"
 
   # copy the source file from scratch to local (compute node's) SSD
   time rsync -ah "result/${KEY}/nc/${run_name}.nc" "${SLURM_TMPDIR}"
@@ -58,8 +60,8 @@ post_proccess()
   # grid the NetCDF file written by the NetcdfUGRIDOutputSolver, 
   # convert from NetCDF to Zarr file format
   time grid_data.py -i "${SLURM_TMPDIR}/${run_name}.nc" \
-                    -o "${SLURM_TMPDIR}/${run_name}.zarr" \
-                    -p "${param_dict}"
+                    -o "${SLURM_TMPDIR}/${run_name}.zarr"  #\
+                    # -p "${param_dict}"
 
   # run the subsampling script, write a years worth of data every 10 years
   time downsample.py -i "${SLURM_TMPDIR}/${run_name}.zarr" \
