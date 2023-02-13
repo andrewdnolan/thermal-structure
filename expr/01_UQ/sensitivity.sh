@@ -20,12 +20,12 @@ parse_reference()
 parse_params()
 {
   IFS=" " read -r C_firn f_dd w_en w_aq IC \
-    <<< $(sed -n "${1}p" ./run/crmpt12/gridsearch.commands | cut -d " " -f 17,19,21,23,25)
+    <<< $(sed -n "${1}p" "./run/${KEY}/parametric_sensitivity.commands" | cut -d " " -f 17,19,21,23,25)
 }
 
 create_dask_cluster()
 {
-  export SCHEDULER_FILE="${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}-scheduler.json"
+  export SCHEDULER_FILE="${SLURM_JOB_ID}-scheduler.json"
   dask scheduler --host 127.0.0.1 --no-dashboard --scheduler-file $SCHEDULER_FILE &
   sleep 15
 
