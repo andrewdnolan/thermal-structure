@@ -39,5 +39,5 @@ for j in $(seq 44); do
 
     # run the post processing commands
     post_proccess $j
-  fi
+
 done 
