@@ -26,18 +26,18 @@
             "reference" : 0.006
             },
         "w_en": {
-            "start"     : 0.0, 
-            "stop"      : 3.0, 
+            "start"     : 0.00, 
+            "stop"      : 0.03, 
             "samples"   : 7, 
             "spacing"   : "linspace", 
-            "reference" : 1.0
+            "reference" : 0.01
             }, 
         "w_aq": {
-            "start"     : 1.00, 
-            "stop"      : 15.0, 
+            "start"     : 0.010, 
+            "stop"      : 0.150, 
             "samples"   : 8, 
             "spacing"   : "linspace", 
-            "reference" : 5.0
+            "reference" : 0.05
             }, 
         "IC": {
             "start"     : 0.000, 
