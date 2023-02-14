@@ -3,7 +3,7 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-import derived_fields
+from .derived_fields import calc_length
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.animation import FuncAnimation
@@ -45,7 +45,7 @@ def get_axis_limits(src, H_min=10):
     TDL = float(src.X.max()) / 1e3
 
     # get the time dependent length [km]
-    Length_t = derived_fields.calc_length(src, H_min)
+    Length_t = calc_length(src, H_min)
     # get the maximum lenght [km]
     Length = float(Length_t.compute().max('t'))
 

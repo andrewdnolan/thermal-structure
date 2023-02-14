@@ -157,6 +157,7 @@ def linesearch(args):
 
     init = initialization(args.key)
 
+    # set deaulf mass balance senetivity, but let it be overwritten on the command line 
     # allow for job and mass balance stride to be overwritten from .json values for linesearch
 
     if args.MB_s == None:

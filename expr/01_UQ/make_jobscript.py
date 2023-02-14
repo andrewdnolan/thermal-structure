@@ -9,7 +9,7 @@ from itertools import product
 from dataclasses import dataclass
 
 cmd = "./sensitivity.py -dx {dx} --key \"{key}\" -t_f {t_f} -dt {dt} -Dynamic_int {dyn_int} -off {off} -T_ma {T_ma} "\
-      "-C_firn {C_firn:1.4f} -f_dd {f_dd} -w_en {w_en} -w_aq {w_aq} -IC {IC}"
+      "-C_firn {C_firn:1.4f} -f_dd {f_dd} -w_en {w_en:1.3f} -w_aq {w_aq:1.2f} -IC {IC}"
 
 def find_precision(stride):
     """ Find the floating point precision needed

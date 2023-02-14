@@ -78,8 +78,10 @@ for key in glaciers.keys():
     # Make run dir
     if not os.path.exists(f'run/'):
         os.mkdir('run/')
+    if not os.path.exists(f'run/{key}/'):
+        os.mkdir(f'run/{key}/')
 
     # Add .gitkeep file to run folder so dir struc is preserved on GitHub
-    if not os.path.exists(os.path.join(f'run/', '.gitkeep')):
-        with open(os.path.join(f'run/', '.gitkeep'), 'w') as f:
+    if not os.path.exists(os.path.join(f'run/{key}/', '.gitkeep')):
+        with open(os.path.join(f'run/{key}/', '.gitkeep'), 'w') as f:
             pass

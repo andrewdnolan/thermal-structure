@@ -3,14 +3,23 @@
 Coupled model runs to initialize our synthetic geometries and solve for steady-
 state thermal structures.
 
-__Before you start__:   
+### Single initialization
 
-The `*.py` scripts should already be executable, but you should double check.
-If not make them executable with the command:
+The basis of this repository is the `initialize.py` script, which is a wrapper for the `bash` functions in the `initialize.sh` file.
+An example usage of script is:
 ```bash
-chmod +x ./initialize.py
-chmod +x ./make_submission.py
+./initialize.py -dx 50 --key "crmpt12" -t_f 3000 -dt 0.1 -Dynamic_int 10 -off -0.50 -T_ma -9.0
 ```
+where:
+  - `-dx 50`
+  - `--key "crmpt12"`
+  - `t_f 3000`
+  - `-dt 0.1`
+  - `-Dynamic_int 10`
+  - `-off -0.50`
+  - `-T_ma -9.0`
+
+This is useful for running one off simulations and doing some preliminary inquiry into parameter space.
 
 ### Gridsearch
 

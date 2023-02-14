@@ -26,6 +26,9 @@ parse_params()
     <<< $(sed -n "${1}p" ./run/crmpt12/gridsearch.commands | cut -d " " -f 13,15)
 }
 
+
+# TO DO: 
+#    - add random nummber generator for port to avoid conflicts w/ job array
 create_dask_cluster()
 {
   export SCHEDULER_FILE="${SLURM_JOB_ID}_${SLURM_ARRAY_TASK_ID}-scheduler.json"

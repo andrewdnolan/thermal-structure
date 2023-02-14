@@ -24,6 +24,8 @@
 #Q2 = 115.0e3                 ! -- [J mol^{-1}]
 #R  = 8.314                   ! -- [J mol^{-1} K^{-1}]
 
+$w_max_en = 0.01
+
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! BEGIN HEADER
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -47,6 +49,10 @@ Constants
 
   ELA                             = real <ELA>     ! [m a.s.l.]
   Mass Balance Offset             = Real <offset>  ! m y^{-1}
+  ! Enthalpy Related Params
+  w_max_en                        = real <w_max_en> ! max englacial water content  [-]
+  w_max_aq                        = real 0.10       ! max water content in frin aq [-]
+  r_frac                          = real <run_off>  ! melt fraction that runs off  [-]
 
   !Physical Constants:
   Gas Constant                    = real #R        ! [J mol^{-1} K^{-1}]
@@ -164,7 +170,9 @@ Material 1
   ! these are in SI units - no problem, as long as the gas constant also is
   Activation Energy 1        = Real #Q1         ! -- [J mol^{-1}]
   Activation Energy 2        = Real #Q2         ! -- [J mol^{-1}]
-  Glen Enhancement Factor    = Real 1.0
+  ! Lliboutry and Duval (1985) water content dependent enhancment factor
+  Glen Enhancement Factor    = Variable "Water Content"
+                               Real Procedure "../../bin/Thermodynamics" "Lliboutry_and_Duval_Enhancment"
   ! the temperature to switch between the two regimes in the flow law
   Limit Temperature          = Real -10.0       ! [C]
 
@@ -442,8 +450,7 @@ Body Force 1
   !                       Real lua "(rhoi*-gravity*tx[0])"
 
   ! Enthalpy (soft) Limiters
-  Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
-                           real Procedure "../../bin/Thermodynamics" "Limit_Enthalpy_rho"
+  <w_limiter>
   Enthalpy_h Lower Limit = real 0.0
   ! Mass Balance Forcing to calculate latent heat source
   Mass Balance = Variable Coordinate 2

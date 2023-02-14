@@ -14,3 +14,18 @@ __To Do__:
 
   - Temperature Dependent Slip Coefficent?
     - Section 2.4.2 from [Cohen et al. 2018](https://tc.copernicus.org/articles/12/2515/2018/tc-12-2515-2018.pdf)
+
+
+Notes from NWG:
+  - from GEF during card ride:
+    - we need to quantify how (and if) the changes in surge vigor during periodic surges are results of a less temperate area along the bed, or difference in driving stress
+
+Timestepping:
+  - Maybe we should be running all simulations with `dt <= 0.1` to account for seasonality.
+    - Could have added benefit that noise from low convergence tolerances will superimposed on seasonal cycle, which should be generally be less noisy and more amenable to spectral filtering.
+
+
+Maximum Water Content:
+  - Allowing a maximum englacial water content of 3 % might help with some of the "noise" and instability looking things below the firn aquifer (in addition to the sub annual timesteps).
+    - Also would allow for a more saturated colormap, and lessen the contrast to small variations in water content we are not comfortable interpreting given the discontinuous
+      diffusivities and low numerical tolerances.

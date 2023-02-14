@@ -184,9 +184,8 @@ log_runtime()
                   $OUT_fp
 }
 
-
-
-full_initialization(){
+full_initialization()
+{
   # Variables that need to be set:
   #    diag_SS_itters
   #    FIT
@@ -332,3 +331,4 @@ find_incomplete()
     done
   done
 }
+
