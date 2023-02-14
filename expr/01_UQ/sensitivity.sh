@@ -16,6 +16,22 @@ parse_reference()
     ' params/crmpt12.json )
 }
 
+parse_maximum()
+{
+  #-----------------------------------------------------------------------------
+  # Parse reference model parameter from the json file
+  # perl code from: https://stackoverflow.com/a/27127626/10221482
+  #-----------------------------------------------------------------------------
+  # $1 (var) --->   string 
+  #-----------------------------------------------------------------------------
+  export var=$1
+  # parse MB grid search start
+  maximum=$( perl -MJSON -0lnE '
+    $params = decode_json $_;
+    say $params->{params}->{$ENV{var}}->{stop}
+    ' params/crmpt12.json )
+}
+
 
 parse_params()
 {
@@ -148,7 +164,8 @@ prognostic_run()
 }
 
 make_runname()
-{
+{ var_set=0
+
   # NOTE, these are NOT the evauated variables but their string "names"
   for var in  C_firn f_dd w_en w_aq IC; do 
 
@@ -159,13 +176,20 @@ make_runname()
     
     # compare the current parameter value to the reference
     if awk "BEGIN {exit !($reference != $test_value)}"; then
-
       # if we need to do simultaneous parameter variation, this should be a list 
       # that we append varibale names and values to 
       param=$var
       value=$test_value
+      var_set=1
     fi
   done
+
+  # if the param and value vairiables have been unset, assume we are working with a reference value, 
+  if [[ $var_set -eq 0 ]]; then 
+    parse_reference $param
+
+    value=$reference
+  fi
 
   echo "${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_1aTST_${param}_${value}"
 
