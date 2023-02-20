@@ -97,20 +97,28 @@ def calc_length(src, H_min=10.):
 
     # (T)otal (D)omain (L)ength [km]
     TDL = float(src.X.max()) / 1e3
-    # (N)umber of (H)orizontal (N)odess
+    # (N)umber of (H)orizontal (N)odes
     NHN = int(src.coord_1.max())
 
     # ice thickness [m] along free surface
     H = src.height.isel(coord_2=-1)
-    # Mask to find passive nodes
-    passive = xr.where(H <= (H_min+1.0), src.coord_1, np.nan)
 
-    # Get indexes of the ice free nodes
-    ice_free = passive.diff('coord_1')*passive.coord_1.isel(coord_1=slice(0,-1))
-    # Get terminus index
-    term_idx = (NHN - find_Term(ice_free)).astype(int)
-    # Get the glacier lenght as a function of time [km]
-    Length = src.X.isel(coord_1=term_idx, coord_2=-1)/1e3
+    # check if all values are NAN, then return NAN
+    if H.isnull().all():
+        # copy coordinates of input dataset, but squeeze coordinates since 
+        # dataarray should have been reduced along them (i.e. coord_1, coord_2)
+        Length = xr.DataArray(np.nan, coords=H.coords).squeeze()
+        
+    #otherwise, calculate length as expected
+    else: 
+        # Mask to find passive nodes
+        passive = xr.where(H <= (H_min+1.0), src.coord_1, np.nan)
+        # Get indexes of the ice free nodes
+        ice_free = passive.diff('coord_1')*passive.coord_1.isel(coord_1=slice(0,-1))
+        # Get terminus index
+        term_idx = (NHN - find_Term(ice_free)).astype(int)
+        # Get the glacier length as a function of time [km]
+        Length = src.X.isel(coord_1=term_idx, coord_2=-1)/1e3
 
     return Length
 
