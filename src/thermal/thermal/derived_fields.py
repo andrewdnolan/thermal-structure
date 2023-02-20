@@ -15,7 +15,7 @@ def check_filtered(func):
         # filtered correctly, OR the glacier has reached the end of the domain
         # NOTE: bottom most gridcell (coord_2=0) is excluded, since h always = 0
         if (src.height.isel(coord_2=slice(1,None)) < 0).all():
-            warnings.warn('Make sure fictious ice thicknes has been removed.')
+            warnings.warn('Make sure fictitious ice thickness has been removed.')
         return func(src)
     return inner
 
@@ -31,9 +31,9 @@ def calc_magnitude(a, b):
 
 @check_filtered
 def calc_volume(ds):
-    """ Compute the glacier volume per unit width [m^2], by trapeziod integration
+    """ Compute the glacier volume per unit width [m^2], by trapezoid integration
 
-        This function work on both xrray and dask objects. Input ds would be a
+        This function work on both xarray and dask objects. Input ds would be a
         dask object, if it was chunked when it was read in
     """
     return xr.apply_ufunc(integrate.trapz,
@@ -84,15 +84,15 @@ def calc_length(src, H_min=10.):
     """Calculate the glacier length [km]
 
     Inputs:
-        src (xr.Dataset) --> Dataset with 'height' varibales. Supports dask
+        src (xr.Dataset) --> Dataset with 'height' variables. Supports dask
                              delayed objects
 
-        H_min    (float) --> Minimum ice thicknes used to filter passive nodes
+        H_min    (float) --> Minimum ice thickness used to filter passive nodes
 
     Outputs:
         (xr.DataArray)   --> Length [km] with 't' dimension / coordinate
     """
-    # function to find terminus postion as a function of time
+    # function to find terminus position as a function of time
     find_Term = lambda x: x.where(~x.isnull(), drop=True).max('coord_1')
 
     # (T)otal (D)omain (L)ength [km]
