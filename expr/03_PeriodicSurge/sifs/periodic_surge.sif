@@ -289,10 +289,11 @@ Solver 6
   ! Linear System Solver                     = Direct
   ! Linear System Direct Method              = "UMFPACK"
   Linear System Solver                     = "Iterative"
-  Linear System Iterative Method           = "BICGStab"
-  Linear System Max Iterations             = 5000
+  Linear System Iterative Method           = "BiCGStabl"
+  BiCGStabl Polynomial Degree              = 4
+  Linear System Max Iterations             = 1000
   Linear System Convergence Tolerance      = 1.0E-08
-  Linear System Abort Not Converged        = Logical True
+  Linear System Abort Not Converged        = Logical False
   Linear System Preconditioning            = "ILU0"
   ! Linear System Convergence Measure        = String "solution"
   ! Linear System Residual Output            = 10
