@@ -2,17 +2,15 @@
 
 import re
 import os
-import sys
 import glob
-import argparse
 import subprocess
 import numpy as np
 
 # Deal with relative path problems when using a module
 thermal_fp = os.path.dirname(__file__)
-git_top    = os.path.join(thermal_fp, '../..')
+git_top    = os.path.join(thermal_fp, '../../../')
 
-def update_template(L, Nx, Ny, grd_fp=os.path.join(thermal_fp, '../mesh.grd')):
+def update_template(L, Nx, Ny, grd_fp=os.path.join(thermal_fp, '../../mesh.grd')):
     """Update a templare ElmerGird file with approraite mesh parameters.
 
     Inputs:
@@ -111,40 +109,3 @@ def make_mesh(key, dx, out_fp, Nz=15, force=False):
                       'in the correct computing environment')
 
     return result
-
-
-def main(argv):
-
-    #---------------------------------------------------------------------------
-    # Specify command line arguments
-    #---------------------------------------------------------------------------
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-k','--key', type=str,
-                        help = "glacier identifier")
-    parser.add_argument('-dx','--horzontal_spacing', type=float,
-                        help = "Horzontal gridcell spacing [m]")
-    parser.add_argument('-Nz','--vertical_layers', type=int,
-                        help = "Number of vertical layers  [-]")
-    parser.add_argument('-o','--out_fp', type=str,
-                        help = "path folder where mesh.* files will be written."\
-                               " path should be relative to git trunk.")
-    args, _ = parser.parse_known_args(argv)
-
-    key    = args.key
-    dx     = args.horzontal_spacing
-    Nz     = args.vertical_layers
-    out_fp = args.out_fp
-
-    make_mesh(key=key, dx=dx, Nz=Nz, out_fp=out_fp)
-
-
-    # if args.use_LaTeX:
-    #     plt.rcParams['text.usetex'] = True
-    #
-    # if args.nc:
-    #     plot_from_src_path(args)
-    # elif args.params:
-    #     plot_from_json(args)
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
