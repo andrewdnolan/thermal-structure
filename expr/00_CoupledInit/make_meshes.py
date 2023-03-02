@@ -2,8 +2,7 @@
 
 import os
 import sys
-sys.path.append('../../src')
-import thermal.mesh as meshing
+from thermal import meshing 
 
 # input glaciers and desired mesh resolutions for coarse grid searches
 glaciers = { # small
