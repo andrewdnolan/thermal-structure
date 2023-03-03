@@ -1,0 +1,40 @@
+Elmer version: 9.0
+Elmer revision: cf291b69
+Elmer compilation date: 2021-11-03
+Solver input file: ./sifs/crmpt12_dx_50_nt_1000_dt_0.1_mb_-0.37_off_tma_-8.5_prog.sif
+File started at: 2023/03/03 16:58:16
+ 
+Variables in columns of matrix: ./result/crmpt12//crmpt12_dx_50_NT_1000_dt_0.1_MB_-0.37_OFF_Tma_-8.5_prog.timing
+   1: value: cpu time (s)
+   2: value: cpu time (s)
+   3: value: cpu time (s)
+   4: value: cpu time (s)
+   5: value: cpu time (s)
+   6: value: cpu time (s)
+   7: value: cpu time (s)
+   8: simulation: cpu time (s)
+   9: simulation: real time (s)
+  10: res: solver cpu time heightdepth
+  11: res: solver real time heightdepth
+  12: res: solver cpu time surfaceboundary
+  13: res: solver real time surfaceboundary
+  14: res: linsys cpu time flow solution
+  15: res: linsys real time flow solution
+  16: res: solver cpu time navier-stokes
+  17: res: solver real time navier-stokes
+  18: res: linsys cpu time zs
+  19: res: linsys real time zs
+  20: res: solver cpu time free surface evolution
+  21: res: solver real time free surface evolution
+  22: res: solver cpu time mapcoordinate
+  23: res: solver real time mapcoordinate
+  24: res: linsys cpu time w
+  25: res: linsys real time w
+  26: res: solver cpu time deformationalheat
+  27: res: solver real time deformationalheat
+  28: res: linsys cpu time enthalpy_h
+  29: res: linsys real time enthalpy_h
+  30: res: solver cpu time enthalpy equation
+  31: res: solver real time enthalpy equation
+  32: res: solver cpu time netcdfoutputsolve
+  33: res: solver real time netcdfoutputsolve
