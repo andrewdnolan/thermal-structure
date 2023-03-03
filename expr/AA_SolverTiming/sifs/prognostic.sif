@@ -84,7 +84,7 @@ Simulation
   Initialize Dirichlet Conditions   = Logical False
   Simulation Timing           = Logical True
   Convergence Monitor         = Logical True
-  Convergence Monitor File    = "<run_name>.convergence"
+  Convergence Monitor File    = "./result/<KEY>/<run_name>.convergence"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !                              END SIMULATION
