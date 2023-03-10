@@ -128,9 +128,14 @@ class sensitivity_test:
                 
                 # make a copy of the default dictionary
                 params = default.copy()
+
+                # check it we have a "refined" key, if so drop the refined suffix:
+                if '_refined' in key: 
+                    key = key.split('_refined')[0]
                 # update with the current value of the current 
                 params[key] = val
 
+                print(params)
                 # dump the default and varied params into the string, with end of line character
                 commands += cmd.format(**fixed, **params) + '\n'
 
