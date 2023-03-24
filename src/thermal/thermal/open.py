@@ -109,10 +109,18 @@ def __preprocess(ds, h_min=10.0):
     # calculate velocity magnitude from velocity components
     ds['vel_m']  = calc_magnitude(ds['vel_x'], ds['vel_z'])
 
-    # calcute the percent temperate
-    ds['percent_temperate'] = calc_percent_temperate(ds)
+    # only compute the percent temperate for coupled runs, 
+    # i.e. skip for isothermal results
+    if 'enthalpy_h' in ds: 
+        # calcute the percent temperate
+        ds['percent_temperate'] = calc_percent_temperate(ds)
+
     # calcute the glacier volume as a function of time
-    ds['relative_volume']   = calc_volume(ds)
+    volume = calc_volume(ds)
+    # write the initial volume in m^2
+    ds['initial_volume']  = volume.isel(t=0)
+    # write the time dependent "relative volume"
+    ds['relative_volume'] = volume / ds['initial_volume']
 
     return ds
 
