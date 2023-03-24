@@ -120,7 +120,7 @@ def __preprocess(ds, h_min=10.0):
     # write the initial volume in m^2
     ds['initial_volume']  = volume.isel(t=0)
     # write the time dependent "relative volume"
-    ds['relative_volume'] = volume / ds['initial_volume']
+    ds['relative_volume'] = volume / volume.isel(t=0)
 
     return ds
 
