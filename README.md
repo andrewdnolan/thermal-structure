@@ -4,6 +4,10 @@ This repository contains code used to investigate how glacier surges alter glaci
 To investigate this research question we employ a thermomechanically coupled numerical ice-flow model, `Elmer/Ice` in a 2D ($x-z$) configuration.
 This repository contains code used pre-process the necessary input data, execute and post-process the model runs, and do some plotting and analysis. 
 
+
+https://user-images.githubusercontent.com/32367657/227734840-fa76a693-07a7-4c8d-a49b-55b8ac3761b4.mp4
+
+
 ### Project layout: 
 
 The repository structure is as follows: 
