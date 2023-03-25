@@ -11,7 +11,12 @@ t_f=$NT        # b/c dt=1.0, NT==t_f
 key="crmpt12" # glacier identifier
 T_ma=0.0      # Dummy value for the air temperature
 
-for offset in $(seq -w -0.5 0.01 -0.35); do
+
+linesearch(){
+    # $1 --> start
+    # $2 --> stride
+    # $3 --> stop
+    for offset in $(seq -w $1 $2 $3); do
 
     # create parameter json (dictionary) for gridding NetCDF files
     param_dict="{\"offset\" : ${offset}}"
@@ -31,4 +36,13 @@ for offset in $(seq -w -0.5 0.01 -0.35); do
     grid_data.py -i "result/crmpt12/nc/${run_name}.nc" \
                  -o "result/crmpt12/gridded/${gridded_fn}.nc" \
                  -p "${param_dict}"
-done 
+
+    done 
+}
+
+# # run an inital coarse linesearch to find isothermal reference glacier
+# linesearch -0.5 0.01 -0.35
+
+# bisect the area between the two runs closest to V'=1, 
+# taking care not to repeat runs which have already been done
+linesearch -0.449 0.001 -0.441
