@@ -4,8 +4,8 @@ This repository contains code used to investigate how glacier surges alter glaci
 To investigate this research question we employ a thermomechanically coupled numerical ice-flow model, `Elmer/Ice` in a 2D ($x-z$) configuration.
 This repository contains code used pre-process the necessary input data, execute and post-process the model runs, and do some plotting and analysis. 
 
-### Project layout
----
+### Project layout  
+
 The repository structure is as follows: 
 
 ```
@@ -21,13 +21,13 @@ The repository structure is as follows:
 └── study
 ```
 
-### Installing `Elmer/Ice`
----
+### Installing `Elmer/Ice`  
+
 If working from a Linux machine, follow the [compilation instructions](https://elmerice.elmerfem.org/wiki/doku.php?id=compilation:compilationcmake) from the `Elmer/Ice` documentation. Compiling `Elmer/Ice` on non-Linux machines (e.g. `OSX` and Windows) is notoriously challenging. To circumvent this problem, I have written a [`Docker` container](https://hub.docker.com/r/andrewdnolan/elmerice). Instructions on how to install the `Docker` can be found in the associated `readme`. All within _this_ reposistory assuned the Elmer executables (e.g. `ElmerSolver`, `ElmerGird`) are available. 
 
 
-### Note on reproducibility
----
+### Note on reproducibility  
+
 Given the computational cost of thermomechanically coupled numerical modeling, most of the model execution has been done on high performance computing (HPC) resources (e.g. Compute Canada's `cedar` cluster). Therefore, many of the files various `expr` directories are not meant to be run one a local machine. That being said, command line scripts to run one-off simulations, which still might take < 24 hours, are available in each of the `expr` directories. 
 
 <!-- __To Do__:
