@@ -7,7 +7,7 @@
 dx=50         # horizontal mesh resolution [m]
 dt=1.0        # annual timesteps [a]
 NT=3000       # 3ka initialization
-t_f=NT        # b/c dt=1.0, NT==t_f
+t_f=$NT        # b/c dt=1.0, NT==t_f
 key="crmpt12" # glacier identifier
 T_ma=0.0      # Dummy value for the air temperature
 
