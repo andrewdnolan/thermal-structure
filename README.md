@@ -4,7 +4,7 @@ This repository contains code used to investigate how glacier surges alter glaci
 To investigate this research question we employ a thermomechanically coupled numerical ice-flow model, `Elmer/Ice` in a 2D ($x-z$) configuration.
 This repository contains code used pre-process the necessary input data, execute and post-process the model runs, and do some plotting and analysis. 
 
-### Project layout  
+### Project layout: 
 
 The repository structure is as follows: 
 
@@ -21,14 +21,31 @@ The repository structure is as follows:
 └── study
 ```
 
+### Set up
+To get started first clone the repository by running, 
+```bash
+$ git clone git@github.com:andrewdnolan/thermal-structure.git
+```
+Then, navigate into the top directory (i.e. `cd thermal-strucure`) and compile/install the code by running 
+```bash
+$ make
+```
+which will execute the global Makefile thar compiles external `FORTRAN` code from the `include` folder, compiles the `Elmer` user functions (`USF`s) from the `src/elmer_src` folder, and builds the legacy `NetCDF` post-processing `FORTRAN` program contained in the `src/elmer2nc` folder.
+
+Finally, you'll also need to run
+```
+pip install --editable src/thermal/
+```
+which will create a locally editable copy of our `python` post-processing library, built around `xarray` and `dask` to enable efficient, out of memory, and parallel postprocessing of the terabytes of data produced in the various experiments. 
+
 ### Installing `Elmer/Ice`  
 
-If working from a Linux machine, follow the [compilation instructions](https://elmerice.elmerfem.org/wiki/doku.php?id=compilation:compilationcmake) from the `Elmer/Ice` documentation. Compiling `Elmer/Ice` on non-Linux machines (e.g. `OSX` and Windows) is notoriously challenging. To circumvent this problem, I have written a [`Docker` container](https://hub.docker.com/r/andrewdnolan/elmerice). Instructions on how to install the `Docker` can be found in the associated `readme`. All within _this_ reposistory assuned the Elmer executables (e.g. `ElmerSolver`, `ElmerGird`) are available. 
+If working from a Linux machine, follow the [compilation instructions](https://elmerice.elmerfem.org/wiki/doku.php?id=compilation:compilationcmake) from the `Elmer/Ice` documentation. Compiling `Elmer/Ice` on non-Linux machines (e.g. `OSX` and Windows) is notoriously challenging. To circumvent this problem, I have written a [`Docker` container](https://hub.docker.com/r/andrewdnolan/elmerice). Instructions on how to install the `Docker` can be found in the associated `readme`. All within code/files in this repository assume the Elmer executables (e.g. `ElmerSolver`, `ElmerGird`) are available. 
 
 
 ### Note on reproducibility  
 
-Given the computational cost of thermomechanically coupled numerical modeling, most of the model execution has been done on high performance computing (HPC) resources (e.g. Compute Canada's `cedar` cluster). Therefore, many of the files various `expr` directories are not meant to be run one a local machine. That being said, command line scripts to run one-off simulations, which still might take < 24 hours, are available in each of the `expr` directories. 
+Given the computational cost of thermomechanically coupled numerical modeling, most of the model execution has been done on high performance computing (HPC) resources (e.g. Compute Canada's `cedar` cluster). Therefore, many of the files various `expr` directories are not meant to be run on a local laptop/workstation. That being said, command line scripts to run one-off simulations, which still could take < 24 hours, are available in each of the `expr` directories. 
 
 <!-- __To Do__:
   - Set up additional solvers, so that at each times step we have a record of the
