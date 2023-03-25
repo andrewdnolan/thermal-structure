@@ -4,7 +4,6 @@
 # Isothermal initialization gridsearch #
 ########################################
 
-
 dx=50         # horizontal mesh resolution [m]
 dt=1.0        # annual timesteps [a]
 NT=3000       # 3ka initialization
