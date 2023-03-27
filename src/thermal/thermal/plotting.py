@@ -3,10 +3,13 @@
 import numpy as np
 import pandas as pd
 import xarray as xr
-from .derived_fields import calc_length
+import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 from matplotlib.animation import FuncAnimation
+
+from .derived_fields import calc_length
+
 
 plt.rcParams['animation.html'] = 'jshtml'
 
@@ -175,3 +178,27 @@ def animate_enthalpy(src, i_0=0, i_f=None, i_s=10, interval=100):
     ani = FuncAnimation(fig, update, frames=np.arange(i_0, i_f, i_s), interval=interval)
 
     return ani
+
+def make_colorbar(array, cmap='plasma'):
+    #---------------------------------------------------------------------------
+    # For Seting up the colorbar:
+    #    - http://csc.ucdavis.edu/~jmahoney/matplotlib-tips.html
+    #---------------------------------------------------------------------------
+    vmin  = array.min()
+    vmax  = array.max()
+    vsize = array.size
+    vdv   = array[1] - array[0]
+    
+    cmap = getattr(cm, cmap)
+    norm = cm.colors.Normalize(vmin=vmin, vmax=vmax)
+
+    s_map = cm.ScalarMappable(norm=norm, cmap=cmap)
+    s_map.set_array(np.linspace(vmin, vmax, vsize))
+
+    # If color parameters is a linspace, we can set boundaries in this way
+    halfdist = vdv / 2.0
+    bounds   = np.linspace(vmin  - halfdist,
+                           vmax  + halfdist,
+                           vsize + 1)
+
+    return cmap, norm, s_map, bounds
