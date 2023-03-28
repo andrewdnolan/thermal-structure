@@ -1,7 +1,8 @@
 # `thermal-structure`
 
 This repository contains code used to investigate how glacier surges alter glacier thermal structure. 
-To investigate this research question we employ a thermomechanically coupled numerical ice-flow model, `Elmer/Ice` in a 2D ($x-z$) configuration.
+In pursuit of our research objectives, we've employed a thermomechanically coupled numerical ice-flow model, `Elmer/Ice` in a 2D ($x-z$) configuration.
+We conduct a suite of experiments ranging from initialization through periodic perturbations to the  basal slip coefficient, mean to mimic observed surges. 
 This repository contains code used pre-process the necessary input data, execute and post-process the model runs, and do some plotting and analysis. 
 
 
@@ -25,7 +26,7 @@ The repository structure is as follows:
 └── study
 ```
 
-### Set up
+### Getting started
 To get started first clone the repository by running, 
 ```bash
 $ git clone git@github.com:andrewdnolan/thermal-structure.git
@@ -34,13 +35,13 @@ Then, navigate into the top directory (i.e. `cd thermal-strucure`) and compile/i
 ```bash
 $ make
 ```
-which will execute the global Makefile thar compiles external `FORTRAN` code from the `include` folder, compiles the `Elmer` user functions (`USF`s) from the `src/elmer_src` folder, and builds the legacy `NetCDF` post-processing `FORTRAN` program contained in the `src/elmer2nc` folder.
+which will execute the global Makefile that compiles external `FORTRAN` code from the `include` folder, compiles the `Elmer` user functions (`USF`s) from the `src/elmer_src` folder, and builds the legacy `NetCDF` post-processing `FORTRAN` program contained in the `src/elmer2nc` folder.
 
 Finally, you'll also need to run
 ```
 pip install --editable src/thermal/
 ```
-which will create a locally editable copy of our `python` post-processing library, built around `xarray` and `dask` to enable efficient, out of memory, and parallel postprocessing of the terabytes of data produced in the various experiments. 
+which will create a locally editable copy of the `python` post-processing library `thermal`. `thermal` is built around `xarray` and `dask` to enable efficient, out of memory, and parallel postprocessing of the terabytes of data produced in the various experiments. 
 
 ### Installing `Elmer/Ice`  
 
