@@ -9,7 +9,7 @@ evenly_divisible()
 log_runtime()
 {
 
-  local OUT_fp="result/${KEY}/${KEY}.coupled_init.time_profile"
+  local OUT_fp="result/${KEY}/${KEY}.surge2steady.time_profile"
 
   if [ ! -f "$OUT_fp" ]; then
       echo "#dx dt NT offset T_ma beta runtime" |

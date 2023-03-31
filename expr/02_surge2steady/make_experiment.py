@@ -5,17 +5,13 @@ import numpy as np
 
 # glacier identifer
 key  = 'crmpt12'
-# simulation length [yr]
-TT   = 3000
-# slip coeffiecent  [???]
-beta = 0.001
 # walltime in hh:mm:ss
-WT   = '75:00:00'
+WT   = '48:00:00'
 # memory allocation
 MEM  = '4G'
 
 # base command used to execute a single simulation
-cmd = "./surge2steady.py -k \"{KEY}\" -SP 2 -QP 3000 -beta {beta}"
+cmd = "./surge2steady.py -k \"{KEY}\" -SP 2 -QP 4000 -beta {beta:1.3e}"
 
 # open the commands file used by the job array
 with open(f'./run/{key}/{key}.commands', 'w') as f:
