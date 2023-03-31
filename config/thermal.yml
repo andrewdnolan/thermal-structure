@@ -21,7 +21,6 @@ dependencies:
   - dask-jobqueue
   - zarr
   - jupyterlab
-  - rise
   - tqdm
   - memory_profiler
   - pip:
