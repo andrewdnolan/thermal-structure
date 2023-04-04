@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=dask_gridding
-#SBATCH --time=01:30:00           
+#SBATCH --time=00:40:00           
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=4000M
@@ -33,7 +33,7 @@ fi
 create_dask_cluster
 
 # post process the surge files
-for file in $(find ./result/${KEY}/nc/ -name "*pseudo.nc"); do 
+for file in $(find ./result/${KEY}/nc/ -name "*_C2*.nc"); do 
     # get the base filename ,with no path info 
     fn="${file##*/}"
     # strip the file extension, to get the runname 
@@ -44,12 +44,12 @@ for file in $(find ./result/${KEY}/nc/ -name "*pseudo.nc"); do
     post_proccess
 done 
 
-# post process the recovery files
-for file in $(find ./result/${KEY}/nc/ -name "*pseudo_NT_2000_recovery.nc"); do 
-    # get the base filename ,with no path info 
-    fn="${file##*/}"
-    # strip the file extension, to get the runname 
-    run_name="${fn%%.nc}"
-    # run the post processing commands
-    post_proccess
-done 
+# # post process the recovery files
+# for file in $(find ./result/${KEY}/nc/ -name "*pseudo_NT_2000_recovery.nc"); do 
+#     # get the base filename ,with no path info 
+#     fn="${file##*/}"
+#     # strip the file extension, to get the runname 
+#     run_name="${fn%%.nc}"
+#     # run the post processing commands
+#     post_proccess
+# done 
