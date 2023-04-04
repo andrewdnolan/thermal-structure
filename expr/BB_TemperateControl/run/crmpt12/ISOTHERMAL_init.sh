@@ -40,8 +40,8 @@ linesearch(){
     done 
 }
 
-# # run an inital coarse linesearch to find isothermal reference glacier
-# linesearch -0.5 0.01 -0.35
+# run an inital coarse linesearch to find isothermal reference glacier
+linesearch -0.5 0.01 -0.35
 
 # bisect the area between the two runs closest to V'=1, 
 # taking care not to repeat runs which have already been done
