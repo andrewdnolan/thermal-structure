@@ -80,7 +80,7 @@ Simulation
   Restart File                = "<RESTART>"
   Restart Position            = 0   ! mean it will find the last timestep saved
   Restart Time                = Real 0.0
-  Restart Before Initial Conditions = Logical True
+  Restart Before Initial Conditions = Logical False
   Initialize Dirichlet Conditions   = Logical False
   ! Convergence Monitor         = Logical True
   ! Convergence Monitor File    = "<convg_file>"
@@ -115,10 +115,9 @@ End
 ! BEGIN INITIAL CONDITIONS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Initial Condition 1
-  ! Dynamic Variables from restart file
-  Velocity 1       = Equals "Velocity 1"  ! [m a-1]
-  Velocity 2       = Equals "Velocity 2"  ! [m a-1]
-  Pressure         = Equals "Pressure"    ! [MPa]
+  Velocity 1      = Real 0.0
+  Velocity 2      = Real 0.0
+  Pressure        = Real 0.0
 End
 
 Initial Condition 2
