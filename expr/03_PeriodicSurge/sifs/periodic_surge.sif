@@ -54,8 +54,9 @@ Constants
   ! Periodic Surge Forcing:
   !~~~~~~~~~~~~~~~~~~~~~~~~
   beta                = Real <beta>    ! [???]
-  surge_period        = Real <SP>   ! [yr]
-  quiescent_period    = Real <QP>   ! [yr]
+  surge_period        = Real <SP>      ! [yr]
+  quiescent_period    = Real <QP>      ! [yr]
+  z_lim               = Real <z_lim>   ! [m a.s.l.]
 
   !Physical Constants:
   !~~~~~~~~~~~~~~~~~~~~~~~~
@@ -86,7 +87,7 @@ Simulation
   Max Output Level            = 3
 
   Restart File                = "<RESTART>"
-  Restart Position            = 0
+  Restart Position            = 0   ! find the last timestep saved
   Restart Time                = Real 0.0
   Restart Before Initial Conditions = Logical True
   Initialize Dirichlet Conditions   = Logical False
@@ -172,6 +173,7 @@ Material 1
   ! Lliboutry and Duval (1985) water content dependent enhancment factor
   Glen Enhancement Factor    = Variable "Water Content"
                                Real Procedure "../../bin/Thermodynamics" "Lliboutry_and_Duval_Enhancment"
+
 
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ! Thermodynamic Properties for Enthalpy:
@@ -270,11 +272,13 @@ Solver 5
   Source at Surface     = Logical False
 
   ! "Q_lat" is zero everywhere when "Latent Heat Source" == "Mass"
-  Exported Variable 1   = -dofs 1 "Q_lat" ! [J m-3 a-1]
-  Exported Variable 2   = -dofs 1 "Densi" ! [kg m^-3]
+  Exported Variable 1   = -dofs 1 "Q_lat"       ! [J m-3 a-1]
+  Exported Variable 2   = -dofs 1 "Densi"       ! [kg m^-3]
+  Exported Variable 3   = -dofs 1 "surf_melt"   ! [m]
+  Exported Variable 4   = -dofs 1 "runoff_frac" ! [-]
 End
 
-
+! Navier-Stokes Equation (Stokes Flow)
 Solver 6
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
   Timestep Over Intervals                  = Logical True
@@ -285,7 +289,6 @@ Solver 6
   !  Stabilization Method = [Stabilized,P2/P1,Bubbles]
   Stabilization Method                     = String "Bubbles"
 
-
   ! Linear System Solver                     = Direct
   ! Linear System Direct Method              = "UMFPACK"
   Linear System Solver                     = "Iterative"
@@ -295,8 +298,6 @@ Solver 6
   Linear System Convergence Tolerance      = 1.0E-08
   Linear System Abort Not Converged        = Logical False
   Linear System Preconditioning            = "ILU0"
-  ! Linear System Convergence Measure        = String "solution"
-  ! Linear System Residual Output            = 10
 
   Nonlinear System Convergence Tolerance   = 1.0E-06
   Nonlinear System Max Iterations          = 25
@@ -402,11 +403,11 @@ Solver 9
 
   Mesh Velocity Variable   = String "Mesh Velocity 2"
   Mesh Velocity First Zero = Logical True
-  Dot Product Tolerance    = Real 0.01
+  Dot Product Tolerance    = Real 1.0e-3
 
-  ! ! Essential to keep a minimum of 10 m flow height
-  Correct Surface          = Logical True
-  Minimum Height           = Real 10.0
+  Displacement Mode = Logical False
+  ! Correct Surface   = Logical True
+  ! Minimum Height    = Real 10.0
 End
 
 ! Deformational Heat
@@ -415,7 +416,7 @@ Solver 10
   Timestep Over Intervals                  = Logical True
 
   Equation                                 = "DeformationalHeat"
-  Variable                                 = "W"
+  Variable                                 = "W"                 ![MPa yr-1]
   Variable DOFs                            = 1
   procedure                                = File "ElmerIceSolvers" "DeformationalHeatSolver"
 
@@ -425,13 +426,15 @@ Solver 10
   Linear System Convergence Tolerance      = 1.0E-07
   Linear System Abort Not Converged        = Logical True
   Linear System Preconditioning            = "ILU0"
+  Linear System Residual Output            = 1
 
-  Steady State Convergence Tolerance       = 1.0E-03
+  Steady State Convergence Tolerance       = 1.0E-02
 
   Nonlinear System Convergence Tolerance   = 1.0E-06
-  Nonlinear System Max Iterations          = 50
+  Nonlinear System Max Iterations          = 100
+  Nonlinear System Min Iterations          = 2
   Nonlinear System Relaxation Factor       = Real 1.0
-  !
+  
   Flow Solver Name                         = String "Flow Solution"
   Flow Loads Name                          = String "Flow Solution Loads"
 End
@@ -453,6 +456,8 @@ Solver 11
   Linear System Residual Output            = 1
   Linear System Abort Not Converged        = Logical False
 
+  ! ! Linear System Direct Solver
+  ! !----------------------------------------------
   ! Linear System Solver                     = String "Direct"
   ! Linear System Direct Method              = String "Mumps"
   ! Linear System Convergence Tolerance      = Real 1.0E-08
@@ -461,13 +466,15 @@ Solver 11
   ! Linear System Residual Output            = Integer 1
   ! ! Linear System Convergence Measure        = String "solution"
 
+  ! Non-linear Solver Params
   Nonlinear System Newton After Tolerance  = 1.0E-06
-  Nonlinear System Convergence Tolerance   = 1.0E-05
+  Nonlinear System Convergence Tolerance   = 1.0E-04
   Nonlinear System Max Iterations          = 50
-  Nonlinear System Relaxation Factor       = Real 0.5
+  Nonlinear System Relaxation Factor       = Real 1.0
   Nonlinear System Reset Newton            = Logical True
   ! Nonlinear System Convergence Measure     = String "solution"
 
+  ! Steady-State Solution Tolerance
   Steady State Convergence Tolerance       = 1.0E-3
   ! Steady State Convergence Measure         = String "solution"
 
@@ -520,12 +527,15 @@ Solver 12
     ! Free Surface Solver Fields
     Scalar Field 12 = String "Mass Balance"
     ! Misc Solver Fields
-    Scalar Field 13 = String "Height"
-    Scalar Field 14 = String "Densi"
+    Scalar Field 13 = String "Depth"
+    Scalar Field 14 = String "Height"
+    Scalar Field 15 = String "Densi"
+    Scalar Field 16 = String "surf_melt"
+    Scalar Field 17 = String "runoff_frac"
    ! Strain Rate Solver Exports
-    Scalar Field 15 = String "strainrate 1" !xx
-    Scalar Field 16 = String "strainrate 2" !zz
-    Scalar Field 17 = String "strainrate 4" !xz
+    Scalar Field 18 = String "strainrate 1" !xx
+    Scalar Field 19 = String "strainrate 2" !zz
+    Scalar Field 20 = String "strainrate 4" !xz
     ! Scalar Field 18 = String "strainrate 5" !trace
 
    Compute LonLat = Logical False
@@ -630,7 +640,7 @@ Boundary Condition 1
   Velocity 1         = Real 0.0e0
   ! Velocity 2         = Real 0.0e0
 
-  Slip Coefficient 2 = Variable "water content"
+  Slip Coefficient 2 = Variable "water content", "Coordinate 2"
                        Real Procedure  "../../bin/SlipCoefficent" "periodic_surge"
 
   Bottom Surface    = Variable Coordinate 1
@@ -657,22 +667,25 @@ Boundary Condition 2
   Target Boundaries    = 2
   Top Surface          = Equals "Zs"
   Depth                = Real 0.0
+
+  ! Dirichlet Condition
   Enthalpy_h           = Equals "Surface_Enthalpy"
 End
 
-! Front of the glacier
+! Upper limit of the glacier
 Boundary Condition 3
   Name                       = "Head Wall"
   Target Boundaries          = 3
+  Velocity 1                 = Real 0.0e0
+
   ! Apply Dirichlet Condition at upper margin
   ! See: http://elmerfem.org/elmerice/wiki/doku.php?id=tips:freesurface
   Zs                         = Equals "Zbed"
 End
 
-! Upper limit of the glacier
+! Lower limit of the glacier
 Boundary Condition 4
   Target Boundaries = 4
-  ! Velocity 1        = real 0.0
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END BOUNDARY CONDITIONs

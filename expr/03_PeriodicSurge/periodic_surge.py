@@ -33,8 +33,10 @@ def main(argv):
                  ("QT_dt",          "QT_dt"            ),
                  ("QD_dt",          "QD_dt"            ),
                  ("beta",           "slip_coef"        ),
+                 ("z_lim",          "z_limit"          ),
                  ("offset",         "offset"           ),
                  ("T_ma",           "Temp_mean_annual" ),
+                 ("RESTART",        "RESTART"          ),
                  ("SS_itters",      "SS_iterations"    )]
 
     # create a dictionary of dictionaries, to store passed values
@@ -72,6 +74,11 @@ def main(argv):
     parser.add_argument('-QP',f'--{vars["QP"]["flag_var"]}', type=str,
                         help = "Scalar offset to the mass balance curve. [m a-1] \n")
 
+    parser.add_argument('-z_lim',f'--{vars["z_lim"]["flag_var"]}', type=str,
+                        help = "Vertical limit of where sliding can occur [m a.s.l.] \n"\
+                               "Needed to prevent the accumulation zone from"\
+                               " 'sliding away', when headwall is fully temperate")
+
     parser.add_argument('-beta',f'--{vars["beta"]["flag_var"]}', type=str,
                         help = "Scalar offset to the mass balance curve. [m a-1] \n")
 
@@ -94,6 +101,10 @@ def main(argv):
                         help = "Mean annual air temp [C] at 'z_ref' found in the"\
                                " `params/ref_params.sif` file. \nReference value for"\
                                " 'z_ref' = 2193 [m a.s.l.] (mean elev. of Kaskawulsh)")
+
+    parser.add_argument('-RESTART',f'--{vars["RESTART"]["flag_var"]}', type=str,
+                        help = "Name of the restart (.result) file to use for the simulation"\
+                               " should be in the results/$KEY/mesh_dx$dx folder")
 
     parser.add_argument('-itters',f'--{vars["SS_itters"]["flag_var"]}', type=int,
                         help = "Number of (S)teady (S)tate itterations",
@@ -145,7 +156,7 @@ def main(argv):
     # load the functions from the initialization script,
     # then w/ the environmental variables set,
     # run a single initialization simulation
-    cmd   = "source periodic_surging.sh; periodic_simulation"
+    cmd   = "source periodic_surge.sh; periodic_simulation"
 
     # Actually run Elmer/Ice!
     result = subprocess.run([cmd],

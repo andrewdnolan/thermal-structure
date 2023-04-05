@@ -268,6 +268,7 @@ periodic_run()
        s#<QP>#"$QP"#g;
        s#<KEY>#"$KEY"#g;
        s#<beta>#"$beta"#g;
+       s#<z_lim>#"$z_lim"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<dt_arr>#""${dt_arr[*]}""#g;
@@ -282,14 +283,14 @@ periodic_run()
 
   ElmerSolver ./sifs/${run_name}.sif
 
-  # add the params as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
-                                        -a "params"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
-  # add the sif as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
-                                        -a "sif"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
+  # # add the params as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
+  #                                       -a "params"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
+  # # add the sif as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
+  #                                       -a "sif"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
 
   # Remove the sif file
   rm "./sifs/${run_name}.sif"
