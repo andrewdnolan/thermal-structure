@@ -1,5 +1,5 @@
 !==============================================================================
-function periodic_surge(Model, Node, omega) result(beta)
+function periodic_surge(Model, Node, InputArray) result(beta)
 !==============================================================================
   ! This function returns the time dependent slip coefficent for periodic
   ! surge simulations.
@@ -14,11 +14,15 @@ function periodic_surge(Model, Node, omega) result(beta)
   CHARACTER(*), PARAMETER :: Caller = 'periodic_surge'
 
   type(Model_t) :: Model
+  integer       :: Node          ! current node number
+  REAL(KIND=dp) :: InputArray(2) ! Contains the argument passed to the function
+
   logical       :: GotIt
-  integer       :: Node            ! current node number
-  real(kind=dp) :: omega,        & ! water content fraction [--]
+  real(kind=dp) :: z,            & ! nodal (basal) elevation [m a.s.l.]
+                   omega,        & ! water content fraction [--]
                    omega_thresh, & ! w.c. threshold to be considered temperate [--]
                    beta,         & ! nodal slip coefficent value returned [???]
+                   z_lim,        & ! maximum elevation where sliding occurs [m a.s.l.]
                    slip_coef,    & ! slip coefficent for temperate beds [???]
                    S_period,     & ! duration of the active phase    [a]
                    Q_period,     & ! duration of the quiescent phase [a]
@@ -47,6 +51,18 @@ function periodic_surge(Model, Node, omega) result(beta)
     call fatal(Caller, ' ---> Could not find \"beta\" in Constants Section')
   end if
 
+  z_lim = GetConstReal(Model % Constants, trim('z_lim'), GotIt)
+  if (.not. GotIt) then
+    call fatal(Caller, ' ---> Could not find \"z_lim\" in Constants Section')
+  end if
+
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+  ! Unpack the arguments passed to the function
+  !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+
+  omega = InputArray(1)    ! nodal water content [-]
+  z     = InputArray(2)    ! nodal (basal) elevation [m a.s.l.]
+
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Do the simple calculation
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -62,8 +78,13 @@ function periodic_surge(Model, Node, omega) result(beta)
   ! Get current time [a]
   Time    =   TimeVar % Values(1)
 
-  ! Check if within surge period and that the bed is temperate
-  if (( MOD(Time, C_period) .lt. S_period ) .and. (omega .ge. omega_thresh)) then
+  ! Make sure all are true for sliding to occcur: 
+  !   within surge period
+  !   bed is temperate
+  !   below the maximum basal elevation where sliding can occur
+  if ((z .le. z_lim)            .and. &
+      (omega .ge. omega_thresh) .and. & 
+      ( MOD(Time, C_period) .lt. S_period ) ) then
     beta = slip_coef
   else
     beta = 1.0_dp
