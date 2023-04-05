@@ -279,6 +279,7 @@ Solver 5
 End
 
 Solver 6
+  Exec Solver              = "before timestep"
   Equation                 = "MapCoordinate"
   Procedure                = "StructuredMeshMapper" "StructuredMeshMapper"
   Active Coordinate        = Integer 2
