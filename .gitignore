@@ -20,6 +20,7 @@ dask-worker-space/
 # Elmer files
 *.result
 *.nc
+*.zarr
 *.dat
 *.vtu
 *.VTU
@@ -44,6 +45,9 @@ dask-worker-space/
 !input_data/mass_balance/*.dat
 # include the files for testing fitpack interface
 !include/fitpack/test/data/*.dat
+# include the restarts for the surging experiments
+!expr/02_surge2steady/result/crmpt12/mesh_dx50/crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.37_OFF_Tma_-8.5_prog.result
+!expr/03_PeriodicSurge/result/crmpt12/mesh_dx50/crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_3.162e-04_pseudo_C2_NT_2000_recovery.result
 # can ignore my notes
 misc/
 
