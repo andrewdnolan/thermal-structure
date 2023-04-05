@@ -9,10 +9,6 @@ key="crmpt12" # glacier identifier
 T_ma=0.0      # Dummy value for the air temperature
 offset=-0.444    # mass balance anomoly [m a-1]
 
-./surge2steady.py -k $key -dx $dx -SP $SP -QP 100 -beta 1e-4 -SD_dt $S_dt -ST_dt $S_dt \
-                    -QT_dt $Q_dt -QD_dt $Q_dt -z_lim 2400 -off $offset -T_ma $T_ma \
-                    -RESTART "crmpt12_dx_50_NT_3000_dt_1.0_MB_-0.444_OFF_Tma_0.0_prog.result"
-
 #corresponds to np.logspace(-3,-4, 9)
 betas=(1.000e-03 7.499e-04 5.623e-04 4.217e-04 3.162e-04 
        2.371e-04 1.778e-04 1.334e-04 1.000e-04)
