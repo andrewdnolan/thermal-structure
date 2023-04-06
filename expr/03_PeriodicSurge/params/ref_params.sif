@@ -33,7 +33,7 @@ Enthalpy Heat Capacity B = real 152.5 !                                 [J kg-1 
 ! Surface density realted params
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 rho_f  = real 830.0     ! pore close off density       [kg m^{-3}]
-C_firn = real 0.05      ! surf dens profile constant   [-]
+C_firn = real 0.15      ! surf dens profile constant   [-]
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 !@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -63,9 +63,11 @@ std_c2 = real  6.31076200e+00
 ! Surface heating (latent heat) params
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 T_melt = real 0.0         ! Melting temp. threshold      [C]
+f_dd   = real 0.006       ! degree day factor            [m K-1 d-1]
+
+! this parameter is not used. Kept in for comparison to Wilson and Flowers (2013)
+! approach, and to prevent an error message.
 h_aq   = real 3.00        ! frin aquifer thickness       [m]
-f_dd   = real 0.0041      ! degree day factor            [m K-1 d-1]
-r_frac = real 0.3         ! melt fraction that runs off  [-]
 !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 
