@@ -7,8 +7,8 @@ from itertools import product
 key  = 'crmpt12'
 # simulation length [yr]
 TT   = 3000
-# walltime in dd:hh:mm:ss
-WT   = '12:00:00:00'
+# walltime in dd-hh:mm:ss
+WT   = '12-00:00:00'
 # memory allocation
 MEM  = '4000M'
 # fixed 2-year surge period [a]
