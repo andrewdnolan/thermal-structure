@@ -8,9 +8,9 @@ key  = 'crmpt12'
 # simulation length [yr]
 TT   = 3000
 # walltime in dd:hh:mm:ss
-WT   = '10:00:00:00'
+WT   = '12:00:00:00'
 # memory allocation
-MEM  = '4G'
+MEM  = '4000M'
 # fixed 2-year surge period [a]
 SP = 2
 # slip coefficients to test (3 order of magnitude)
