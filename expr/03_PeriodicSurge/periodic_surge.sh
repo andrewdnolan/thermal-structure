@@ -344,3 +344,39 @@ periodic_simulation()
   # record the runtimes for future reference
   log_runtime $KEY $dx $T_ma $offset $ST_dt $SD_dt $QT_dt $QD_dt $SP $QP $TT $beta $runtime
 }
+
+create_dask_cluster()
+{
+  export SCHEDULER_FILE="${SLURM_JOB_ID}-scheduler.json"
+  dask scheduler --host 127.0.0.1 --no-dashboard --scheduler-file $SCHEDULER_FILE &
+  sleep 15
+
+  for worker in $(seq $NUM_WORKERS); do
+  dask worker --scheduler-file $SCHEDULER_FILE \
+              --no-dashboard \
+              --no-nanny \
+              --nworkers 1 \
+              --nthreads 1 &
+  done
+  sleep 15
+
+}
+
+post_proccess()
+{
+  # copy the source file from scratch to local (compute node's) SSD
+  time rsync -ah "result/${KEY}/nc/${run_name}.nc" "${SLURM_TMPDIR}"
+
+  # grid the NetCDF file written by the NetcdfUGRIDOutputSolver, 
+  # convert from NetCDF to Zarr file format
+  time grid_data.py -i "${SLURM_TMPDIR}/${run_name}.nc" \
+                    -o "${SLURM_TMPDIR}/${run_name}.zarr"  #\
+                    # -p "${param_dict}"
+
+  # tar the full zarr file, and write the tar to scratch
+  time tar -cf "result/${KEY}/gridded/${run_name}.zarr.tar" -C "${SLURM_TMPDIR}" "${run_name}.zarr"
+
+  # delete files from SSD to make room for next files
+  rm "${SLURM_TMPDIR}/${run_name}.nc"
+  rm -r "${SLURM_TMPDIR}/${run_name}.zarr"
+}
