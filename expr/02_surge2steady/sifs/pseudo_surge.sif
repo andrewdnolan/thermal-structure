@@ -127,7 +127,6 @@ Initial Condition 1
   Densi            = Equals "Densi"         ! [kg m-3]
   surf_melt        = Equals "surf_melt"     ! [m]
   runoff_frac      = Equals "runoff_frac"   ! [-]
-  Mass Balance     = Wquals "Mass Balance"
   Enthalpy_h       = Equals "Enthalpy_h"    ! [J kg-1]
   Temperature      = Equals "Temperature"   ! [C]
   Water Content    = Equals "Water Content" ! [-]
