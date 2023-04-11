@@ -130,9 +130,11 @@ Initial Condition 1
   Pressure         = Equals "Pressure"    ! [MPa]
   Mesh Velocity 1  = Real 0.0
   Mesh Velocity 2  = Real 0.0
-  ! Thermodynamic Variables from restart file
   W                = Equals "W"             ! [J kg-1]
+  Q_lat            = Equals "Q_lat"         ! [J m-3 a-1]
   Densi            = Equals "Densi"         ! [kg m-3]
+  surf_melt        = Equals "surf_melt"     ! [m]
+  runoff_frac      = Equals "runoff_frac"   ! [-]
   Enthalpy_h       = Equals "Enthalpy_h"    ! [J kg-1]
   Temperature      = Equals "Temperature"   ! [C]
   Water Content    = Equals "Water Content" ! [-]
@@ -145,6 +147,10 @@ Initial Condition 2
           Real
            include  "../../input_data/topography/<KEY>_surf.dat"
           End
+  
+  Zs Accumulation Flux 1     = Real 0.0e0
+  Zs Accumulation Flux 2     = Variable Coordinate 2
+                                Real Procedure "../../bin/mass_balance" "spline"
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END INITIAL CONDITIONS
