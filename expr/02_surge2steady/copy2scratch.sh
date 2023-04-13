@@ -8,7 +8,7 @@ rsync -upE surge2steady.* "${dest}/"
 
 # Whole directories to copy to scratch
 for dir in "run/" "sifs/" "params/"; do
-	rsync -rupE --delete $dir $dest/$dir
+	rsync -rpE --delete $dir $dest/$dir
 done
 
 # folder structures to copy to scratch
