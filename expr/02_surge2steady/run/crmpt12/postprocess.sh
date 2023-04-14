@@ -33,23 +33,13 @@ fi
 create_dask_cluster
 
 # post process the surge files
-for file in $(find ./result/${KEY}/nc/ -name "*_C2*.nc"); do 
+for file in $(find ./result/${KEY}/nc/ -name "*.nc" -ctime -1); do 
     # get the base filename ,with no path info 
     fn="${file##*/}"
     # strip the file extension, to get the runname 
     run_name="${fn%%.nc}"
 
-    echo $run_name
     # run the post processing commands
     post_proccess
 done 
 
-# # post process the recovery files
-# for file in $(find ./result/${KEY}/nc/ -name "*pseudo_NT_2000_recovery.nc"); do 
-#     # get the base filename ,with no path info 
-#     fn="${file##*/}"
-#     # strip the file extension, to get the runname 
-#     run_name="${fn%%.nc}"
-#     # run the post processing commands
-#     post_proccess
-# done 
