@@ -4,20 +4,20 @@
 dest="/home/anolan/scratch/thermal-structure/expr/01_UQ/"
 
 # copy the source files
-rsync -upE sensitivity.* "${dest}/"
+rsync -uE  sensitivity.* "${dest}/"
 
 # Whole directories to copy to scratch
 for dir in "run/" "sifs/" "params/"; do
-	rsync -rupE --delete $dir $dest/$dir
+	rsync -ruE --delete $dir $dest/$dir
 done
 
 # folder structures to copy to scratch
 for dir in "logs/" "result/"; do
-	rsync -ar --filter="-! */" $dir $dest/$dir
+	rsync -ar --no-g --no-p --filter="-! */" $dir $dest/$dir
 done
 
 # copy the mesh files
-rsync -upaR result/*/*/mesh.* $dest
+rsync -uaR --no-g --no-p result/*/*/mesh.* $dest
 
 # make symbolic links to the time profile files
 for f in $(find ./ -name "*.sensitivity.time_profile"); do

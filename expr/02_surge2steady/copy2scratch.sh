@@ -4,22 +4,22 @@
 dest="/home/anolan/scratch/thermal-structure/expr/02_surge2steady/"
 
 # copy the source files
-rsync -upE surge2steady.* "${dest}/"
+rsync -uE surge2steady.* "${dest}/"
 
 # Whole directories to copy to scratch
 for dir in "run/" "sifs/" "params/"; do
-	rsync -rpE --delete $dir $dest/$dir
+	rsync -rE --delete $dir $dest/$dir
 done
 
 # folder structures to copy to scratch
 for dir in "logs/" "result/"; do
-	rsync -ar --filter="-! */" $dir $dest/$dir
+	rsync -ar --no-g --no-p --filter="-! */" $dir $dest/$dir
 done
 
 # copy the mesh files
-rsync -upaR result/*/*/mesh.* $dest
+rsync -uaR --no-g --no-p result/*/*/mesh.* $dest
 # copy whatever restrat files are included in the git repo
-rsync -upaR result/*/*/*.result $dest
+rsync -uaR --no-g --no-p result/*/*/*.result $dest
 
 
 # make symbolic links to the time profile files

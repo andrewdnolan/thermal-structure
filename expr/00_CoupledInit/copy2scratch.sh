@@ -4,20 +4,20 @@
 dest="/home/anolan/scratch/thermal-structure/expr/00_CoupledInit"
 
 # copy the source files
-rsync -upE initialize.* "${dest}/"
+rsync -uE initialize.* "${dest}/"
 
 # Whole directories to copy to scratch
 for dir in "run/" "sifs/" "params/"; do
-	rsync -rupE --delete $dir $dest/$dir
+	rsync -ruE  --delete $dir $dest/$dir
 done
 
 # folder structures to copy to scratch
 for dir in "logs/" "result/"; do
-	rsync -ar --filter="-! */" --delete $dir $dest/$dir
+	rsync -ar --no-g --no-p --filter="-! */" --delete $dir $dest/$dir
 done
 
 # copy the mesh files
-rsync -upaR result/*/*/mesh.* $dest
+rsync -uaR --no-g --no-p result/*/*/mesh.* $dest
 
 # make symbolic links to the time profile files
 for f in $(find ./ -name "*.coupled_init.time_profile"); do
