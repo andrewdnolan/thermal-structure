@@ -486,8 +486,18 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ElSE
         ! b/c we don't model melt below the ELA, there can be no runoff
         RunOff % values ( RunOff % perm(n)) = 0.0_dp
+
         ! below the ELA so no latent heat source available
-        Q_lat_vol % values ( Q_lat_vol % perm(n)) = 0.0_dp
+        ! iterate over vertically aligned nodes
+        do i=1,N_v
+
+          ! index of ith vertically aligned node
+          ! only works with vertically structured mesh
+          cont=n-(i-1)*N_s
+
+          ! set all nodes below the ELA to have zero latent heat
+          Q_lat_vol % values ( Q_lat_vol % perm(cont)) = 0.0_dp
+        enddo
       ENDIF
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
