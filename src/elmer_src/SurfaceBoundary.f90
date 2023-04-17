@@ -380,104 +380,115 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Pseudo percolation scheme for latent heat release
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-      ! surface melt available for refreezing [kg m-2]
-      pump = Melt * rho_w
-      ! start at the bottom of the first layer
-      i = 2
-
-      ! if no melt within timestep, then no runoff has occured either [-]
-      if (pump .eq. 0.0_dp) RunOff % values ( RunOff % perm(n)) = 0.0_dp
-
-      ! loop over vertical nodes as long as theres still meltwater to refreeze
-      do while (pump .ne. 0.0_dp)
-        ! index of kth vertical node, only works with vertically structured mesh
-        k   = n-(i-1)*N_s
-        ! kth layer thicnkess [m]
-        dz  = Depth % values (Depth % perm(k-N_s)) - Depth % values (Depth % perm(k))
-        ! denisty of current node, as set above
-        rho = Dens % values ( Dens % perm(k) )
-
-        ! check if percolation can still occur
-        select case (trim(omega_maximum))
-          case ("depth")
-            ! check if within the firn aquifer
-            if (Depth % values (Depth % perm(k)) .le. h_aq) then
-              percolate = .true.
-            else
-              percolate = .false.
-            end if
-
-          case ("denisty")
-
-            ! check if nodal density is less than pore close off
-            if (rho .le. rho_f) then
-              percolate = .true.
-            else
-              percolate = .false.
-            end if
-        end select
-
-        if (percolate) then
-          ! current water content [-]
-          water = (Enth % values (Enth % perm(k)) - H_f % values (H_f % perm(k))) / L_heat
-
-          ! residual water content [kg m-3], i.e. water content left to be filled:
-          ! based on:
-          !     1. density i.e. porosity
-          !     2. difference b/w current and maximum water content
-          w_res = (w_max_aq-water) * (1.0_dp - rho/rho_i) * rho_w
-
-          ! residual water content [kg m-3] is bounded by zero, enforce that bound
-          w_res = max(w_res, 0.0_dp)
-
-          ! Upper limit for heat source [J m-3 yr-1] based on residual water content
-          Q_max = w_res * L_heat * (1.0_dp/dt)
-          ! assume all available meltwater refreezes [J m-3 yr-1]
-          Q_lat = (pump / (dz * dt)) * L_heat
-
-          ! if (n .eq. N_n-40) write(*,*) i, w_max_aq, water, Q_lat/1e3, Q_max/1e3, w_res
-
-          if ( Q_lat .gt. Q_max ) then
-            ! more meltwater was refrozen than the gridcell can accomodate
-
-            ! amount of excess surface melt still available [kg m-2]
-            pump = (Q_lat - Q_max) * dz * dt * (1.0_dp/L_heat)
-
-            ! set the volumetric heat source variable [J m-3 yr-1]
-            Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_max
-            ! Note: if the gridcell is fully staurated (i.e. omega == Sr) then
-            !       both w_res and Q_max are zero, i.e. no heat is added, but the
-            !       melt can still percolate to the next cell
-          else
-            if (n .eq. N_n-40) write(*,*) "All melts been consumed at node", i
-            ! remaining meltwater has been refrozen within the current timestep
-            pump = 0.0_dp
-            ! set the volumetric heat source variable [J m-3 yr-1]
-            Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_lat
-            ! All melt has been consumed, so no-runoff occurs [-]
-            RunOff % values ( RunOff % perm(n)) = 0.0_dp
-          end if
-
-        else
-
-          if (n .eq. N_n-40) write(*,*) "reached pore close off at node", i
-          ! refreezing can no longer occur. either have reached the bottom of the
-          ! firn aquifer or the pore close off density
-
-          ! whatever melt is left is instaneously runoff.
-          ! runoff value is specified at the free surface (n) for convinence
-          RunOff % values ( RunOff % perm(n)) = pump / (Melt * rho_w)
-
-          ! Set the pump to zero, to stop while loop
-          pump = 0.0_dp
+      ! only run percolation scheme if above the ELA
+      IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
+        ! surface melt available for refreezing [kg m-2]
+        pump = Melt * rho_w
+        ! start at the bottom of the first layer
+        i = 2
+  
+        ! if no melt within timestep, then no runoff or refreezing has occured either [-]
+        if (pump .eq. 0.0_dp) then
+          RunOff % values ( RunOff % perm(n)) = 0.0_dp
+          Q_lat_vol % values ( Q_lat_vol % perm(n)) = 0.0_dp
         endif
-
-        ! procede to the next vertical layer
-        i = i + 1
-
-        ! We've reached the bottom of the vertical column, cut the itteration
-        if (i==N_v) pump=0.0_dp
-      end do !percolation while loop
+  
+        ! loop over vertical nodes as long as theres still meltwater to refreeze
+        do while (pump .ne. 0.0_dp)
+          ! index of kth vertical node, only works with vertically structured mesh
+          k   = n-(i-1)*N_s
+          ! kth layer thicnkess [m]
+          dz  = Depth % values (Depth % perm(k-N_s)) - Depth % values (Depth % perm(k))
+          ! denisty of current node, as set above
+          rho = Dens % values ( Dens % perm(k) )
+  
+          ! check if percolation can still occur
+          select case (trim(omega_maximum))
+            case ("depth")
+              ! check if within the firn aquifer
+              if (Depth % values (Depth % perm(k)) .le. h_aq) then
+                percolate = .true.
+              else
+                percolate = .false.
+              end if
+  
+            case ("denisty")
+  
+              ! check if nodal density is less than pore close off
+              if (rho .le. rho_f) then
+                percolate = .true.
+              else
+                percolate = .false.
+              end if
+          end select
+  
+          if (percolate) then
+            ! current water content [-]
+            water = (Enth % values (Enth % perm(k)) - H_f % values (H_f % perm(k))) / L_heat
+  
+            ! residual water content [kg m-3], i.e. water content left to be filled:
+            ! based on:
+            !     1. density i.e. porosity
+            !     2. difference b/w current and maximum water content
+            w_res = (w_max_aq-water) * (1.0_dp - rho/rho_i) * rho_w
+  
+            ! residual water content [kg m-3] is bounded by zero, enforce that bound
+            w_res = max(w_res, 0.0_dp)
+  
+            ! Upper limit for heat source [J m-3 yr-1] based on residual water content
+            Q_max = w_res * L_heat * (1.0_dp/dt)
+            ! assume all available meltwater refreezes [J m-3 yr-1]
+            Q_lat = (pump / (dz * dt)) * L_heat
+  
+            ! if (n .eq. N_n-40) write(*,*) i, w_max_aq, water, Q_lat/1e3, Q_max/1e3, w_res
+  
+            if ( Q_lat .gt. Q_max ) then
+              ! more meltwater was refrozen than the gridcell can accomodate
+  
+              ! amount of excess surface melt still available [kg m-2]
+              pump = (Q_lat - Q_max) * dz * dt * (1.0_dp/L_heat)
+  
+              ! set the volumetric heat source variable [J m-3 yr-1]
+              Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_max
+              ! Note: if the gridcell is fully staurated (i.e. omega == Sr) then
+              !       both w_res and Q_max are zero, i.e. no heat is added, but the
+              !       melt can still percolate to the next cell
+            else
+              if (n .eq. N_n-40) write(*,*) "All melts been consumed at node", i
+              ! remaining meltwater has been refrozen within the current timestep
+              pump = 0.0_dp
+              ! set the volumetric heat source variable [J m-3 yr-1]
+              Q_lat_vol % values ( Q_lat_vol % perm(k)) = Q_lat
+              ! All melt has been consumed, so no-runoff occurs [-]
+              RunOff % values ( RunOff % perm(n)) = 0.0_dp
+            end if
+  
+          else
+  
+            if (n .eq. N_n-40) write(*,*) "reached pore close off at node", i
+            ! refreezing can no longer occur. either have reached the bottom of the
+            ! firn aquifer or the pore close off density
+  
+            ! whatever melt is left is instaneously runoff.
+            ! runoff value is specified at the free surface (n) for convinence
+            RunOff % values ( RunOff % perm(n)) = pump / (Melt * rho_w)
+  
+            ! Set the pump to zero, to stop while loop
+            pump = 0.0_dp
+          endif
+  
+          ! procede to the next vertical layer
+          i = i + 1
+  
+          ! We've reached the bottom of the vertical column, cut the itteration
+          if (i==N_v) pump=0.0_dp
+        end do !percolation while loop
+      ElSE
+        ! b/c we don't model melt below the ELA, there can be no runoff
+        RunOff % values ( RunOff % perm(n)) = 0.0_dp
+        ! below the ELA so no latent heat source available
+        Q_lat_vol % values ( Q_lat_vol % perm(n)) = 0.0_dp
+      ENDIF
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Set a seasonal snow layer, a crude approximation
