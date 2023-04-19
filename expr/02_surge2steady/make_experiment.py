@@ -12,7 +12,7 @@ MEM  = '4000M'
 
 # base command used to execute a single simulation
 cmd = "./surge2steady.py -k \"{KEY}\" -SP 2 -QP 4000 -beta {beta:1.3e}"\
-      "-cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_{beta:1.3e}_pseudo_NT_2000_recovery.result"
+      "  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_{beta:1.3e}_pseudo_NT_2000_recovery.result"
 
 # open the commands file used by the job array
 with open(f'./run/{key}/{key}.commands', 'w') as f:
