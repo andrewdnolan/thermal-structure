@@ -33,7 +33,7 @@ fi
 create_dask_cluster
 
 # post process the surge files
-for file in $(find ./result/${KEY}/nc/ -name "*.nc" -ctime -2); do 
+for file in $(find ./result/${KEY}/nc/ -name "*.nc" -ctime -1); do 
     # get the base filename ,with no path info 
     fn="${file##*/}"
     # strip the file extension, to get the runname 
