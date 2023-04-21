@@ -130,6 +130,7 @@ Initial Condition 1
   Pressure         = Equals "Pressure"    ! [MPa]
   Mesh Velocity 1  = Real 0.0
   Mesh Velocity 2  = Real 0.0
+  ! Thermodynamic Variables from restart file
   W                = Equals "W"             ! [J kg-1]
   Q_lat            = Equals "Q_lat"         ! [J m-3 a-1]
   Densi            = Equals "Densi"         ! [kg m-3]
@@ -139,6 +140,7 @@ Initial Condition 1
   Temperature      = Equals "Temperature"   ! [C]
   Water Content    = Equals "Water Content" ! [-]
   Surface Enthalpy = Equals "Surface Enthalpy"
+  
 End
 
 Initial Condition 2
