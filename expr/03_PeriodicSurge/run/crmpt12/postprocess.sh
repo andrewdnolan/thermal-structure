@@ -21,21 +21,20 @@ source ./periodic_surge.sh
 
 KEY='crmpt12'
 
-# hard code betas, b/c I only want to process a subset of the files
-betas=(1.000e-03 7.499e-04 5.623e-04 4.217e-04
-       3.162e-04 2.371e-04 1.778e-04)
+# # hard code betas, b/c I only want to process a subset of the files
+# betas=(1.000e-03 7.499e-04 5.623e-04 4.217e-04
+#        3.162e-04 2.371e-04 1.778e-04)
 
 # set up the dask cluter for the instance of the job array
 create_dask_cluster
 
-for beta in ${betas[@]}; do
-  # post process the surge files
-  for file in $(find ./result/${KEY}/nc/ -name "*B_${beta}*.nc"); do 
-      # get the base filename ,with no path info 
-      fn="${file##*/}"
-      # strip the file extension, to get the runname 
-      run_name="${fn%%.nc}"
-      # run the post processing commands
-      post_proccess
-  done 
-done
+# post process the surge files
+for file in $(find ./result/${KEY}/nc/ -name "*B_*.nc"); do 
+    # get the base filename ,with no path info 
+    fn="${file##*/}"
+    # strip the file extension, to get the runname 
+    run_name="${fn%%.nc}"
+    # run the post processing commands
+    post_proccess
+done 
+
