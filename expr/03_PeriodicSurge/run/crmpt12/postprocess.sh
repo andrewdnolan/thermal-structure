@@ -29,7 +29,7 @@ KEY='crmpt12'
 create_dask_cluster
 
 # post process the surge files
-for file in $(find ./result/${KEY}/nc/ -name "*B_*.nc"); do 
+for file in $(find ./result/${KEY}/nc/ -name "crmpt12_dx_50_TT_6000.0*B_*.nc"); do 
     # get the base filename ,with no path info 
     fn="${file##*/}"
     # strip the file extension, to get the runname 
