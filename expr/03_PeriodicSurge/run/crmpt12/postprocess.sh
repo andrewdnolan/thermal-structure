@@ -2,15 +2,15 @@
 #SBATCH --job-name=dask_gridding
 #SBATCH --time=03:00:00           
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=24
-#SBATCH --mem-per-cpu=8000M
+#SBATCH --cpus-per-task=32
+#SBATCH --mem-per-cpu=4000M
 #SBATCH --mail-type=ALL                      # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu # email to spend updates too
 #SBATCH --output=dask_%A_%a.out              # standard output
 #SBATCH --error=dask_%A_%a.err               # standard error
 
 # numbers of cores each job in the array will have
-export NUM_WORKERS=16
+export NUM_WORKERS=32
 # use a single thread per cpu core
 export THREADS_PER_WORKER=1
 
