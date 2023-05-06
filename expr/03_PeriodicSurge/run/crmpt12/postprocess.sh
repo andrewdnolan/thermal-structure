@@ -2,7 +2,7 @@
 #SBATCH --job-name=dask_gridding
 #SBATCH --time=03:00:00           
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=16
+#SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=4000M
 #SBATCH --mail-type=ALL                      # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu # email to spend updates too
