@@ -13,11 +13,22 @@ WT   = '10-00:00:00'
 MEM  = '4000M'
 # fixed 2-year surge period [a]
 SP = 2
-# slip coefficients to test (3 order of magnitude)
-betas  = np.logspace(-6, -8, 9)**0.5
-# length of the surge cycle [a]
-cycles = [15, 30, 60]
 
+# ##################################################
+# # Reference Experiment:
+# ##################################################
+# # slip coefficients to test (3 order of magnitude)
+# betas  = np.logspace(-6, -8, 9)**0.5
+# # length of the surge cycle [a]
+# cycles = [15, 30, 60]
+
+##################################################
+# Bisect to see periodicity emerge Experiment:
+##################################################
+# slip coefficients to test (3 order of magnitude)
+betas  = np.geomspace(0.0004217,0.00031623, 7)[1:-1]
+# length of the surge cycle [a]
+cycles = [30]
 
 # base command used to execute a single simulation
 cmd = "./periodic_surge.py -k \"{KEY}\" -SP {SP} -QP {QP} -beta {beta:1.3e} -TT {TT}"
@@ -35,14 +46,12 @@ with open(f'./run/{key}/{key}.commands', 'w') as f:
         f.write(cmd.format(KEY=key, SP=SP, QP=QP, TT=TT, beta=beta))
         f.write('\n')
 
-
 # account for pythons zero indexing
 i += 1
 
 # read the submission template
 with open(f'./run/submission.template', 'r') as f:
     template = f.read()
-
 
 # fill the submission template with the set parameters and write to disk
 with open(f'./run/{key}/{key}_submit.sh', 'w') as f:
