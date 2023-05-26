@@ -107,7 +107,7 @@ def main():
     out_fp  = '/'.join(src_fp.split('/')[:-2])
     # timeseries variables
     vars = ['initial_volume', 'relative_volume', 'percent_temperate', 
-            # 'mean_surge_vel_m', 'mean_quies_vel_m',
+            'mean_surge_vel_m', 'mean_quies_vel_m',
             'mean_enthalpy']
 
     # empty list to store the timeseries datasets
@@ -118,9 +118,9 @@ def main():
         src = amalgamate(src_fp, beta=beta)
 
         # average surface velocity in quiescence 
-        src['mean_quies_vel_m'] = mean_velocity(src, slice(4000.1, 4001.0), compute=True)
+        src['mean_quies_vel_m'] = mean_velocity(src, slice(4000.1, 4001.0))
         # average surface velocity during the surge 
-        src['mean_surge_vel_m'] = mean_velocity(src, slice(4002.1, 4004.0), compute=True)
+        src['mean_surge_vel_m'] = mean_velocity(src, slice(4002.1, 4004.0))
 
         # expand the dimension for the ith beta value
         src = parse_beta(src)
@@ -135,10 +135,17 @@ def main():
     # concatenate timeseries along the beta dimension 
     surge2steady = xr.concat(timeseries, dim='beta')
 
+
     # make the output filename 
-    out_fn = path.join(out_fp, 'surge2steady_timeseries.zarr')
+    out_fn  = 'surge2steady_timeseries.zarr'
+    full_fn = path.join(out_fp, out_fn)
     # write the timeseries to disk
-    surge2steady.to_zarr(out_fn, mode='a')
+    surge2steady.to_zarr(full_fn, mode='a')
+
+    print('\n\n' + '*'*100)
+    print(f'Output filename: {out_fn}')
+    print(f'File written to: {out_fp}')
+    print('*'*100 + '\n\n')
 
 if __name__ == '__main__': 
     main()
