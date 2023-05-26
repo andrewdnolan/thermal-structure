@@ -224,8 +224,11 @@ full_initialization()
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # Number of time interval based on dt
   NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
+  
+  # NOTE: this overwites anything passed over the command line, which is no good
+  #-----------------------------------------------------------------------------
   # Execute interval for dynamics solvers,
-  Dynamic_int=$(awk -v dt=$dt 'BEGIN {OFMT = "%.0f"; print (1.0/dt)}')
+  # Dynamic_int=$(awk -v dt=$dt 'BEGIN {OFMT = "%.0f"; print (1.0/dt)}')
 
   # limit to 10 S.S. itters for transient runs
   SS_itters=$prog_SS_itters
