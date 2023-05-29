@@ -20,6 +20,19 @@ for beta in ${betas[@]}; do
                         -RESTART "crmpt12_dx_50_NT_3000_dt_1.0_MB_-0.444_OFF_Tma_0.0_prog.result"
 done
 
+# Post process to zarr
+for beta in ${betas[@]}; do 
+    for file in $(find result/${key}/nc/ -name *_B_${beta}_pseudo*); do 
+        # get the base filename ,with no path info 
+        fn="${file##*/}"
+        # strip the file extension, to get the runname 
+        run_name="${fn%%.nc}"
+
+        # grid and write the data as zarr
+        grid_data.py -i "result/crmpt12/nc/${run_name}.nc" \
+                     -o "result/crmpt12/gridded/${run_name}.zarr" 
+    done
+done 
 # # second surge cycle
 # for beta in ${betas[@]}; do
 #     ./surge2steady.py -k $key -dx $dx -SP $SP -QP $QP -beta $beta -SD_dt $S_dt -ST_dt $S_dt \
