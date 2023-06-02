@@ -216,6 +216,16 @@ function Lliboutry_and_Duval_Enhancment(Model, Node, omega) result(E)
   ! Lliboutry and Duval (1985):
   ! A = A(H)*Upsilon*(1.18125*omega*100)
 
+  ! In light of: 
+  !       Adams, C. J. C.; Iverson, N. R.; Helanow, C.; Zoet, L. K. & Bate, C. E.
+  !       Softening of Temperate Ice by Interstitial Water 
+  !       Frontiers in Earth Science, 2021, 9, 590 
+  !       https://doi.org/10.3389/feart.2021.702761
+  !
+  ! Enchancment should really be limited to ~0.006. Lliboutry and Duval (1985) 
+  ! range of values testes really only go up to 0.01, so at the very least 
+  ! limting to that in the furure
+
   use DefUtils
   implicit none
 
