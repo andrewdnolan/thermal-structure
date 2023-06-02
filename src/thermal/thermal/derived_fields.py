@@ -138,5 +138,48 @@ def calc_length(src, H_min=10.):
 
     return Length
 
+def _get_ELA_indexes(src): 
+    # function to find the indexes of the ELA, as a function of time 
+    # Generalized enough to support multiple horizontal indexes being at the ELA
+        
+    # create a two dimensional 'coord_1' array for boolean masking
+    _, coord_1 = xr.broadcast(src.t, src.coord_1)
+    
+    # the difference of the sign will tell us where the mass balance crosses zero
+    mask = xr.apply_ufunc(np.diff, 
+                          np.sign(src['mass balance']), 
+                          kwargs={"axis": -1, "prepend" : -1},
+                          dask="allowed")
+
+    # the difference should be 2 at the ELA, 0 all other places
+    ELA_idxs = coord_1.where(mask == 2, drop=False)
+    
+    # returns nan values everywhere except the horizontal coordinates that 
+    # coincide w/ the ELA
+    return ELA_idxs
+
+def Variable_at_ELA(src, variable:str): 
+    """Extract the specified `variable`'s value along at the ELA as function of time
+
+    Inputs:
+        src (xr.Dataset) --> Dataset with 'height' variables. Supports dask
+                             delayed objects
+
+        variable  (str) --> Valid variable within `src` dataset to extract
+
+    Outputs:
+        (xr.DataArray)   --> 
+    """
+     
+    # get the ELA mask
+    ELA_mask = _get_ELA_indexes(src)
+    # get the desired variable at the non-nan horizontal coordinates (i.e. ELA)
+    # in the case where there are multiple horizontal nodes that correspond to 
+    # the ELA, take the average. Otherwise will return the value associated with
+    # the single coordinate. 
+    var_at_ELA = src[variable].where(~ELA_mask.isnull(),drop=True).mean('coord_1')
+
+    return var_at_ELA
+
 def calc_Peclet(src, dim="X"):
     np.diff(np.sign(src['mass balance'].isel(t=0, coord_2=-1)), prepend=-1) == 2
