@@ -189,16 +189,16 @@ def make_colorbar(array, cmap='plasma'):
     vsize = array.size
     vdv   = array[1] - array[0]
     
+    # If color parameters is a linspace, we can set boundaries in this way
+    halfdist = vdv / 2.0
+
     cmap = getattr(cm, cmap)
     norm = cm.colors.Normalize(vmin=vmin, vmax=vmax)
+    bounds = np.linspace(vmin  - halfdist,
+                         vmax  + halfdist,
+                         vsize + 1)
 
     s_map = cm.ScalarMappable(norm=norm, cmap=cmap)
     s_map.set_array(np.linspace(vmin, vmax, vsize))
-
-    # If color parameters is a linspace, we can set boundaries in this way
-    halfdist = vdv / 2.0
-    bounds   = np.linspace(vmin  - halfdist,
-                           vmax  + halfdist,
-                           vsize + 1)
 
     return cmap, norm, s_map, bounds
