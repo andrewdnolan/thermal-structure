@@ -38,6 +38,44 @@ def calc_Temp(H, P):
     # temperature only defineed where H is less than H of fusion
     return np.where(T > T_prime, T_prime, T )
 
+
+def calc_conductivity(T, rho):
+
+    def calc_cond_rho(rho): 
+        """Conductivity of snow/firn using Oster and Albert 2022. [W K-1 m-1]
+        """
+        return 0.144 * np.exp( 3.08e-3 * rho )
+    
+    def calc_cond_temp(T): 
+        """Conductivity of pure ice, Eqn. 9.2 Cuffey and Paterson.  [W K-1 m-1]
+        """
+        return 9.828 * np.exp( -5.e-3 * T )
+    
+    K_rho   = calc_cond_rho(rho)    #[W K^-1 m^-1]  
+    K_rho_i = calc_cond_rho(rho_i)  #[W K^-1 m^-1]  
+    K_ice   = calc_cond_temp(T)     #[W K^-1 m^-1]  
+
+    # Following Zwinger et al (2007) [W K^-1 m^-1]  
+    return (K_rho / K_rho_i) * K_ice      
+
+
+def calc_diffusivity(T, rho):
+    """
+    """
+
+    # calculate the temperature and density dependent 
+    # conductivities [W K^-1 m^-1]  
+    HeatConductivity = calc_conductivity(T, rho)
+    # Convert conductivities from [W K^-1 m^-1]  to [J a-1 K^-1 m^-1]
+    HeatConductivity *= spy
+
+    # calculate the heat capacity of ice [J kg-1 K-2]
+    Heat_Capacity = CapA*T + CapB 
+    
+    # Calculate diffusivity [kg m^-1 a^-1]
+    return HeatConductivity / Heat_Capacity
+
+
 class surface_AirTemp:
 
     def __init__(self, α = 10.8, dTdz = 6.5E-3, z_ref = 2193.0, T_mean = -9.02,
