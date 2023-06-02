@@ -35,7 +35,7 @@ def calc_element_mean(src, var):
     return ((l_s + r_s) / 4).stack(element=('coord_2', 'coord_1'))
 
 
-def calc_element_area(src, var='height'):
+def calc_element_area(src, var='Z'):
     """Calculate element area of a structured mesh
 
     Note: We use the approximate area of the quadrilateral by taking the avergae
