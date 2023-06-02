@@ -46,16 +46,29 @@ def calc_volume(ds):
 @check_filtered
 def calc_percent_temperate(src, dz_var='height'):
     """ Calculate the percentage temperate using element areas
+
+    Note: we now use the water content to find temperate ice
+          instead of "phase change enthalpy" because enthalpy was 
+          within floating point roundoff of "phase change enthalpy" 
+          and caused spurious oscillations in the percent temperate
     """
     # Calculate the element area using structured grid
-    elm_area = calc_element_area(src, dz_var)
-    # Calculate mean elemental enthalpy
-    elm_enth = calc_element_mean(src, 'enthalpy_h')
-    # Calculate mean elemental phase change enthalpy (pce)
-    elm_PCE  = calc_element_mean(src, 'phase change enthalpy')
+    elm_area  = calc_element_area(src, dz_var)
+    ##################################################################
+    # # Calculate mean elemental enthalpy 
+    # elm_enth = calc_element_mean(src, 'enthalpy_h')
+    # # Calculate mean elemental phase change enthalpy (pce)
+    # elm_PCE  = calc_element_mean(src, 'phase change enthalpy')
+    # Old way of calculating temperate mask: 
+    # mask = elm_enth >= elm_PCE
+    #################################################################
 
-    # mask to determine temperate nodes
-    mask = elm_enth >= elm_PCE
+    # Calculate mean elemental water content 
+    elm_omega = calc_element_mean(src, 'water content')
+
+    # new way of calculating temperate mask: 
+    # i.e. must have some water content 
+    mask = elm_omega >= 1e-4
 
     # find total glacier area [m2]
     A_totl = elm_area.sum('element')
@@ -77,8 +90,11 @@ def calc_mean_enthalpy(src):
     # Calculate the total glacier area [m2]
     tot_area = elm_area.sum('element')
 
-    # return the weighted mean [J kg-1]
-    return (elm_enth * elm_area/tot_area).sum('element')
+    # calculate the weighted mean [J kg-1]
+    enth_bar = (elm_enth * elm_area/tot_area).sum('element')
+
+    # weighting will return 0 if results are "nan", so check and fix
+    return xr.where(enth_bar==0, np.nan, enth_bar)
 
 def calc_length(src, H_min=10.):
     """Calculate the glacier length [km]
