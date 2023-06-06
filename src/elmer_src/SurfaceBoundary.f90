@@ -58,20 +58,19 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    N_n,         &  ! number of model    nodes
                    N_s,         &  ! number of surface  nodes
                    N_v,         &  ! number of vertical nodes
-                   N_years,     &  ! number of years in timsetep      [a]
-                   doy_i,       &  ! day of year of current timestep  [doy]
-                   doy_ip1         ! day of year of next timesteps    [doy]
+                   N_years         ! number of years in timsetep      [a]
+
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! air temp related
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-  INTEGER       :: T_peak,      & ! DOY of annual temp peak      [DOY]
-                   seed=123456789 ! seed for random num. generator
+  INTEGER       :: seed=123456789 ! seed for random num. generator
   REAL(KIND=dp) :: z_ref,       & ! reference surface elevation  [m a.s.l.]
                    alpha,       & ! Anual air temp. amp          [K]
                    dTdz,        & ! air temp lapse rate          [K m-1]
                    T_mean,      & ! mean annual surf. air. temp  [C]
-                   T(365),      & ! surface air temperature      [K]
-                   std(365),    & ! std. of surf air temp        [K]
+                   T_peak,      & ! DOY of annual temp peak      [DOY]
+                   T(100) = 0,  & ! surface air temperature      [K]
+                   std(100),    & ! std. of surf air temp        [K]
                    T_surf,      & ! intermediate result          [K]
                    H_surf,      & ! intermediate result          [J kg-1]
                    std_c0,      &
@@ -82,6 +81,9 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   REAL(KIND=dp) :: z,           &  ! nodal surface elev.   [m a.s.l.]
                    Time,        &  ! Simulation time       [a]
+                   time_i,      &  ! time at beginging of the current timestep [a]
+                   time_ip1,    &  ! time at    end    of the current timestep [a]
+                   dd,          &  ! lenght of timestep in days of year [a]
                    T_melt,      &  ! Melting threshold     [K]
                    L_heat,      &  ! Latent heat of fusion [J kg-1]
                    f_dd,        &  ! Degree-day factor     [m K^-1 a^-1]
@@ -100,7 +102,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    Q_lat,       &  ! latent heat source.   [J m-3 yr-1]
                    Q_max,       &  ! Max. possible Q_lat   [J m-3 yr-1]
                    pump,        &  !
-                   PDD(365) = 0    ! + degrees. for DOY    [K]
+                   PDD(100) = 0    ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Enthalpy related params
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
@@ -119,7 +121,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   ! how to set the maximum englacial water content
   CHARACTER(*), PARAMETER :: omega_maximum = 'denisty'
 
-  LOGICAL :: GotIt, Seasonality, Source_at_Surface, first_time=.true., percolate
+  LOGICAL :: GotIt, first_time=.true., percolate
 
   ! Variables to keep track of between calls to the solver
   save first_time,N_v,N_s,N_n
@@ -182,20 +184,11 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   alpha       = GetParam(Model, "alpha")                    ! [K]
   dTdz        = GetParam(Model, "dTdz" )                    ! [K m^{-1}]
   T_mean      = GetParam(Model, "T_mean")                   ! [K]
-  T_peak      = INT(ANINT(GetParam(Model, "T_peak" )))      ! [DOY]
+  T_peak      = GetParam(Model, "T_peak")                   ! [DOY]
   z_ref       = GetParam(Model, "z_ref" )                   ! [m a.s.l.]
   std_c0      = GetParam(Model, "std_c0")                   ! [K?]
   std_c1      = GetParam(Model, "std_c1")                   ! [K?]
   std_c2      = GetParam(Model, "std_c2")                   ! [K?]
-
-  ! Determine if there should be seasonality in airtemp forcing
-  Seasonality = ListGetLogical(Model % Constants, "Seasonality", GotIt )
-  IF ( .NOT.GotIt ) then
-    ! default to true
-    Seasonality = .true.
-    CALL INFO(Caller,"No entry for >Seasonality<. in Constant Section", Level=6)
-    CALL INFO(Caller,"Setting to .true. ",     Level=6)
-  end if
 
   ! Determine how to treat the latent heat from meltwater refreezing
   Heat_Source = GetString( Params, 'Latent Heat Source', GotIt )
@@ -214,21 +207,20 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     CALL INFO(Caller, "Setting to 'volumetric'",     Level=6)
   END IF
 
-  ! Determine where to add the volumetric heat source, keyword really only
-  ! matters when Heat_Source = "volumetric"
-  Source_at_Surface = GetLogical( Params, 'Source at Surface', GotIt )
-  IF ( .NOT.GotIt ) then
-    ! default to one below the free surface
-    Source_at_Surface = .false.
-    CALL INFO(Caller,"No entry for >Source at Surface<. in Solver Section", Level=6)
-    CALL INFO(Caller,"Setting to .false. ",     Level=6)
-  end if
-
   if (TransientSimulation) then
     ! if transient get current timestep, which is really time at end of timestep
-    TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-    ! Get current time
-    Time    =   TimeVar % Values(1)
+    TimeVar  => VariableGet( Solver % Mesh % Variables, "Time" )
+    ! Get current time [a], which corresponds to end of the timestep 
+    time_ip1 = TimeVar % Values(1)
+    ! time [a] at the start of the current timestep 
+    time_i   = time_ip1 - dt
+
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ! MOST Promosing Solution, but no ideal. Good Enough to move forward though....
+    ! Time = TimeVar % Values(1)
+    ! time_i   = Time - dt/2
+    ! time_ip1 = Time + dt/2
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! Check that a valid timestep is passed
     if ((dt .ge. 1.0) .and. (MOD(dt, 1.0) /= 0.0)) then
@@ -241,41 +233,19 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
     else
       N_years = 1.0
     end if
-
-    ! find DOY at begining of timestep [d]
-    doy_i = NINT(MOD(time-dt, 1.0) * 365.0)
-
-    ! B/C round off error ith doy is sometimes 365 or 0 instead of 1. Check and fix
-    if ((doy_i==365) .or. (doy_i==0)) then
-      doy_i = 1
-    end if
-
-    ! Find DOY at end of timestep [d]
-    doy_ip1   = NINT(MOD(time, 1.0) * 365.0)
-
-    ! B/C round off error ith+1 doy is sometimes 0 instead of 365. Check and fix
-    if (doy_ip1==0) then
-      doy_ip1 = 365
-    end if
-
-    ! yearly timesteps give inf mean annual air temp due to division by zero
-    ! also don't prodcuce any melt by default
-    if ((doy_ip1-doy_i .eq. 0) .and. (MOD(dt, 1.0) .eq. 0.0)) then
-      doy_i   = 1
-      doy_ip1 = 365
-    end if
+    
   else
     ! set the "timestep" as one year
     dt = 1.0_dp
     ! single year "timestep" for diagnostic solution
     N_years = 1.0_dp
     ! if steady state get yearly amount of melt
-    doy_i   = 1
-    doy_ip1 = 365
+    time_i   = 0.0_dp
+    time_ip1 = 1.0_dp
   endif
 
   ! Create std(doy) array (only needs to be done once)
-  call temp_std(std, (/ std_c0, std_c1, std_c2 /))
+  call temp_std(std, time_i, time_ip1, (/ std_c0, std_c1, std_c2 /))
 
   ! Outter Most Loop: Itterate over model nodes
   DO n=1,N_n
@@ -285,27 +255,25 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
       ! Get nodal surface elevation [m]
       z = model%nodes%y(n)
-
+      
       ! Calculate nodal air temperature curve as function of day of year
-      call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
+      call SurfTemp(T, z, time_i, time_ip1, alpha, dTdz, z_ref, T_mean, T_peak)
 
-      ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005
-      PDD = Cavlo_Greve_PDDs(T,std) * N_years    ! [K d]
+      ! lenght of timestep in days of year [doy] <-- d/y * y
+      dd = 365.0_dp * (time_ip1-time_i) / real(SIZE(T) - 1, dp)
+
+      ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005, 
+      ! function return units of [K, i.e. degree], convert to degree-day by
+      ! multiplying by the timestep lenght in days of year
+      PDD = Cavlo_Greve_PDDs(T,std) * dd * N_years    ! [K d] <--- [K] * [d] * [-]
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate surface heating term
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
-        if ( Seasonality ) then
-          ! Calculate surace melt in meters of snow equivalent
-          Melt = f_dd * SUM(PDD(doy_i:doy_ip1)) * 1.0 ![m] <= [m K-1 d-1] * [K d]
-        else
-          ! since no seasonality sum up all the melt for the year
-          Melt = f_dd * SUM(PDD)    ![m] <= [m K-1 d-1] * [K d]
-          ! then partition the melt equally (via fraction of year)
-          Melt = Melt * (dt/1.0)    ![m] <= [m] * [a] / [a]
-        end if
+        ! Calculate surace melt in meters of snow equivalent
+        Melt = f_dd * SUM(PDD) ![m] <= [m K-1 d-1] * [K d]
       ElSE
         ! below the ELA so no latent heat source available
         Q_lat = 0.0
@@ -317,21 +285,14 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       surf_melt % Values (surf_melt % perm(n)) = Melt
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
-
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Convert surface air temperature to enthalpy
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate mean annual airtemp over timestep and convert from [C] to [K]
-      if (Seasonality) then
-        ! average airtemp over timestep
-        T_surf = SUM(T(doy_i:doy_ip1))/(doy_ip1-doy_i) + 273.15
-      else
-        ! b/c no seasonality just return mean annual air temp
-        T_surf = SUM(T)/365.0 + 273.15
-      end if
+      T_surf = SUM(T)/REAL(SIZE(T),dp) + 273.15_dp
 
       ! print info for the headwall, just as a debugging measure
-      if (n .eq. N_n) write(*,*) doy_i, doy_ip1, doy_ip1-doy_i, T_surf-273.15, N_v
+      if (n .eq. N_n) write(*,'(f10.3,f10.3,f10.3,i4)') time_i, time_ip1, T_surf-273.15, N_v
 
       ! Temperature can't exced the melting point at the surface
       if (T_surf > 273.15_dp) then
@@ -514,21 +475,43 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   contains
 
-  subroutine temp_std(std, coefs)
+  subroutine temp_std(std, time_i, time_ip1, coefs)
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     ! Time dependent standard deviation in air temperature, which facilitates
     ! greater varaince in winter than summer, but is also neccisary for
     ! recreating melt curve
+    !
+    ! returns the std(t) for 100 linearly spaced points in time b/w `time_i` and `time_ip1`
+    ! 
+    ! NOTE: `time_i` and `time_ip1` are in units of "years", but the coefficents
+    !        passed in `coefs` are a function of day of year [0,365]. 
+    !
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     implicit none
 
-    real(dp), intent(in)                  :: coefs(3) ! Coefs for T_std(doy)
-    real(dp), intent(out), dimension(365) :: std      ! std(doy) array
+    integer, parameter                  :: n=100       ! fixed length of the time vector
+    real(dp), intent(in)                :: coefs(3), & ! Coefs for T_std(doy)
+                                           time_i,   & ! time at beginging of the current timestep [a]
+                                           time_ip1    ! time at    end    of the current timestep [a]
+    real(dp), intent(out), dimension(n) :: std         ! std(doy) array
     ! internal parameters
-    real(dp), dimension(365)              :: d        ! Day of year array  [DOY]
-    integer                               :: i
-    ! populate day of year array
-    d = [ (real(i, dp), i = 1, 365) ]
+    real(dp), dimension(n)              :: d, &        ! Day of year array b/w `time_i` and `time_ip1` [DOY]
+                                           t           ! time in years array b/w `time_i` and `time_ip1` [a]
+    real(dp) :: h
+    integer                             :: i
+
+    ! mimicing `np.linspace` over the current timestep range 
+    ! ref: https://math.unm.edu/~motamed/Teaching/OLD/Fall20/HPSC/fortran.html#more-on-arrays
+    ! get the increment [a] betweent the two timesteps
+    h = (time_ip1 - time_i)/real(n-1, dp)
+    ! populate time array, in years
+    ! NOTE: Need to itterate b/w `0` and `n-1` for linspace like calc to work properly. 
+    t = time_i + h * (/(real(i, dp), i = 0, n-1)/)
+
+    ! find the fractional year, by subtracting float on the left side of the decimal
+    ! and convert to day of year [DOY]
+    d = (t - floor(t)) * 365.00_dp
+
     ! evaluate the quadaratic function for the daily std
     std = coefs(1) * d**2  + coefs(2) * d + coefs(3)
   end subroutine temp_std
@@ -598,11 +581,11 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
                    rho_s         ! snow/surface density         [kg m-3]
 
   ! air temp related
-  INTEGER       :: T_peak        ! DOY of annual temp peak      [DOY]
   REAL(KIND=dp) :: alpha,      & ! Anual air temp. amp          [K]
                    dTdz,       & ! air temp lapse rate          [K m-1]
                    T_mean,     & ! mean annual surf. air. temp  [K]
-                   T(365),     & ! surface air temperature      [K]
+                   T_peak,     & ! DOY of annual temp peak      [DOY]
+                   T(100),     & ! surface air temperature      [K]
                    std_c0,     &
                    std_c1,     &
                    std_c2
@@ -663,7 +646,7 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
   rho_s  = GetConstReal(Model % Constants, "rho_s")    ![kg m-3]
   alpha  = GetConstReal(Model % Constants, "alpha")    ![K]
   T_mean = GetConstReal(Model % Constants, "T_mean" )  ![K]
-  T_peak = INT(ANINT(GetConstReal(  Model % Constants, "T_peak" )))  ![DOY]
+  T_peak = GetConstReal(Model % Constants, "T_peak" )  ![DOY]
   A_mean = GetConstReal(Model % Constants, "A_mean" )  !TBD
   z_ref  = GetConstReal(Model % Constants, "z_ref"  )  ![m a.s.l.]
   d_firn = GetConstReal(Model % Constants, "d_firn" )  ![kg m-2 y-1]
@@ -686,22 +669,22 @@ SUBROUTINE SurfaceMassBalance( Model,Solver,dt,TransientSimulation )
       ! Get Surface Elevation
       z = model % nodes % y(n)
 
-      accu_days = 0.0 ! Days where snow accumulation occured
+      accu_days = 0.0 ! fraction of Days where snow accumulation occured
       PDDs      = 0.0 ! Positive Degree per Day (PDD) at node n
 
-      ! Calculate air temperature curve
-      call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
+      ! Calculate air temperature curve, for a full year (for t=0 too t=1)
+      call SurfTemp(T, z, 0.0_dp, 1.0_dp, alpha, dTdz, z_ref, T_mean, T_peak)
 
       ! Itterate over the julian calendar days
-      DO i=1,365
+      DO i=1,100
           ! If temp. above then calculate the positive degrees for that day
           if ( T(i) > T_melt ) then
             ! Equations (7) and (8) from Gilbert et al. 2016
             PDDs = PDDs + ( T(i) - T_melt )
           endif
-          ! If temp. below the add one to the day tally
+          ! If temp. below the add one to the day tally, and convert to fraction
           if ( T(i) < T_r2s ) then
-            accu_days=accu_days + 1.0_dp / 365.0_dp
+            accu_days=accu_days + 1.0_dp / 100.0_dp
           endif
       ENDDO
 
@@ -781,12 +764,14 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   INTEGER       :: Node          ! the current Node number
   REAL(KIND=dp) :: InputArray(1) ! Contains the argument passed to the function
   REAL(KIND=dp) :: Enthalpy      ! the final result
-  TYPE(Variable_t), POINTER :: TimeVar
+  TYPE(Variable_t), POINTER :: TimeVar, TimeStep
   !----------------------------------------------------------------------------
   ! internal variables
   !----------------------------------------------------------------------------
   REAL(KIND=dp) :: Time,        & ! simulation time                    [a]
-                   Timestep(1), & ! vector of timestep size            [a]
+                   dt,          & ! timestep size                      [a]
+                   time_i,      & ! time at beginging of the current timestep [a]
+                   time_ip1,    & ! time at    end    of the current timestep [a]
                    z              ! surface elevation of current node  [m a.s.l.]
   integer       :: DOY            ! number of timesteps in a year
   logical       :: GotIt,       &
@@ -794,12 +779,12 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
                    Transient
 
   ! air temp related
-  INTEGER       :: T_peak        ! DOY of annual temp peak      [DOY]
   REAL(KIND=dp) :: z_ref,      & ! reference surface elevation  [m a.s.l.]
                    alpha,      & ! Anual air temp. amp          [K]
                    dTdz,       & ! air temp lapse rate          [K m-1]
                    T_mean,     & ! mean annual surf. air. temp  [K]
-                   T(365),     & ! surface air temperature      [K]
+                   T_peak,     & ! DOY of annual temp peak      [DOY]
+                   T(100),     & ! surface air temperature      [K]
                    T_surf,     & ! intermediate result
                    std_c0,     &
                    std_c1,     &
@@ -818,7 +803,7 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   alpha  = GetConstReal(Model % Constants, "alpha")                 ! [K]
   dTdz   = GetConstReal(Model % Constants, "dTdz" )                 ! [K m^{-1}]
   T_mean = GetConstReal(Model % Constants, "T_mean")                ! [K]
-  T_peak = INT(ANINT(GetConstReal( Model % Constants, "T_peak" )))  ! [DOY]
+  T_peak = GetConstReal(Model % Constants, "T_peak")                ! [DOY]
   z_ref  = GetConstReal(Model % Constants, "z_ref" )                ! [m a.s.l.]
   std_c0 = GetConstReal(Model % Constants, "std_c0")                ! [K?]
   std_c1 = GetConstReal(Model % Constants, "std_c1")                ! [K?]
@@ -829,21 +814,29 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
   ! unpack surface elevation of current surface node [m]
   z = InputArray(1)
 
-  ! Calculate air temperature curve
-  call SurfTemp(z, T, alpha, dTdz, z_ref, T_mean, T_peak)
-
   if (Transient) then
-    ! if transient get air temp for doy of timestep
+    ! if transient get current timestep, which is really time at end of timestep
     TimeVar  => VariableGet( Model % Mesh % Variables, "Time" )
-    Time     =  TimeVar % Values(1)
-    ! Convert real time into approximate DOY
-    DOY    = NINT((Time - floor(Time))*365.0)
-    ! Get surface temp for DOY
-    T_surf = T(DOY) + 273.15 ! K <-- C
+    TimeStep => VariableGet( Model % Mesh % Variables, "Timestep Size" )
+    ! get the dt from the pointer
+    dt = TimeStep % Values(1)
+    ! Get current time [a], which corresponds to end of the timestep 
+    time_ip1 = TimeVar % Values(1)
+    ! time [a] at the start of the current timestep 
+    time_i  = time_ip1 - dt
   else
-    ! if steady state return mean annual air temp
-    T_surf = SUM(T)/365 + 273.15 ! K <-- C
+    ! set the "timestep" as one year
+    dt = 1.0_dp
+    ! if steady state get yearly amount of melt
+    time_i   = 0.0_dp
+    time_ip1 = 1.0_dp
   endif
+
+  ! Calculate air temperature curve
+  call SurfTemp(T, z, time_i, time_ip1, alpha, dTdz, z_ref, T_mean, T_peak)
+
+  ! Calculate mean annual airtemp over timestep and convert from [C] to [K]
+  T_surf = SUM(T)/REAL(SIZE(T)) + 273.15
 
   ! Temperature can't exced the melting point at the surface
   if (T_surf > 273.15) then

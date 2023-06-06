@@ -4,58 +4,60 @@ module SurfaceTemperature
 
 contains
 
-  subroutine SurfTemp(z, T, alpha, grad_T, ref_z, T_mean, T_peak)
+  subroutine SurfTemp(T, z, time_i, time_ip1, alpha, grad_T, ref_z, T_mean, T_peak)
     !
-    ! calculate surface temp with random (but consistent) variability
+    ! calculate surface temp. 
     !
+    ! returns an array containing the surface air temperature for 100 linearly spaced 
+    ! points in time between `time_i` and `time_ip1`
 
     use DefUtils
 
     implicit none
 
     ! input params
-    Integer, intent(in)       :: T_peak     ! DOY of annual temp peak [DOY]
-    real(kind=dp), intent(in) :: z,       & ! nodal surface elevation [m]
-                                 alpha,   & ! Anual air temp. amp.    [C]
-                                 grad_T,  & ! Air temp lapse rate     [K m^-1]
-                                 ref_z,   & ! Reference surface elev. [m a.s.l.]
-                                 T_mean     ! Mean annual T @ ref_z   [C]
+    integer, parameter        :: n=100       ! fixed length of the time vector
+    real(kind=dp), intent(in) :: z,        & ! nodal surface elevation [m]
+                                 time_i,   & ! time at beginging of the current timestep [a]
+                                 time_ip1, & ! time at    end    of the current timestep [a]
+                                 alpha,    & ! Anual air temp. amp.    [C]
+                                 grad_T,   & ! Air temp lapse rate     [K m^-1]
+                                 ref_z,    & ! Reference surface elev. [m a.s.l.]
+                                 T_mean,   & ! Mean annual T @ ref_z   [C]
+                                 T_peak      ! DOY of annual temp peak [DOY]
                                  ! coefs(3)   ! Coefs for T_std(doy)    [?]
+  
     ! resulting vector
-    real(kind=dp), intent(out) :: T(365)    ! T(DOY) @ nodal z          [m]
+    real(kind=dp), intent(inout) :: T(n)    ! T(DOY) @ nodal z          [m]
 
     ! internal params
-    integer :: i                            ! index counter for DOY
+    integer :: i                ! index counter 
+    real(kind=dp) :: time(n), & ! time array [a]
+                     h          ! step between `time_i` and `time_ip1`
 
-    ! Itterate over the julian calendar days
-    DO i=1,365
+    ! mimicing `np.linspace` over the current timestep range 
+    ! ref: https://math.unm.edu/~motamed/Teaching/OLD/Fall20/HPSC/fortran.html#more-on-arrays
+    ! get the increment [a] betweent the two timesteps
+    h = (time_ip1 - time_i)/real(n-1, dp)
+    ! populate time array, in years
+    ! NOTE: Need to itterate b/w `0` and `n-1` for linspace like calc to work properly. 
+    time = time_i + h * (/(real(i, dp), i = 0, n-1)/)
 
-        ! Find surface temp for DOY(i)
-        T(i) = T_mean                                          & ! mean signal
-             + alpha*cos(2.0_dp*PI*real(i - T_peak, dp)/365.0) & ! seasonal cycle
-             + grad_T*(ref_z-z)                                  ! elevation dependence
-           ! + norm_rand(0.0_dp, std)                             ! random variability
-
+    DO i=1,n
+        ! Find surface temp for DOY(i+1), index is `i+1` (instead of just `i`) to 
+        ! componsate for the zero indexing in the `DO` loop
+        T(i) = T_mean                                               & ! mean signal
+               + alpha*cos(2.0_dp*PI*(time(i) - T_peak/365.0_dp))   & ! seasonal cycle
+               + grad_T*(ref_z-z)                                     ! elevation dependence
+               ! + norm_rand(0.0_dp, std)                             ! random variability
     ENDDO
 
+    ! if (abs(z - 2768.384) < 0.01) then
+    !   write(*,'(a, f10.3, a,f10.3, a, es10.3, a, f10.3,a, f10.3, a, f10.3)') & 
+    !     'z=',z, ', alpha=',alpha, ', dTdz=',grad_T, ', ref_z=', ref_z, ', T_mean=',T_mean, ', T_peak=', T_peak
+    ! endif 
+
   contains
-
-    subroutine temp_std(std, d, coefs)
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      ! Time dependent standard deviation in air temperature, which facilitates
-      ! greater varaince in winter than summer, but is also neccisary for
-      ! recreating melt curve
-      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      implicit none
-
-      integer,       intent(in)  :: d            ! Day of year            [DOY]
-      real(kind=dp), intent(in)  :: coefs(3)     ! Coefs for T_std(doy)   [?]
-      real(kind=dp), intent(out) :: std          ! standard deviation for DOY
-
-      ! evaluate the quadaratic function for the daily std
-      std = coefs(1) * d**2 + coefs(2) * d + coefs(3)
-    end subroutine temp_std
-
     subroutine set_seed(seed)
       !https://masuday.github.io/fortran_tutorial/random.html
       implicit none
