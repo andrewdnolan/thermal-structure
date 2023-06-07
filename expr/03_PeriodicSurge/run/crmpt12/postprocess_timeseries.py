@@ -30,11 +30,12 @@ def calc_mean_velocity(ds, loc='surface'):
         idx = locations[loc]
 
     # compute the glacier length, in order to mask passive nodes
-    L = calc_length(ds)
+    # returned in km but convert to m to match `coord_1`
+    L = calc_length(ds) * 1e3
     # flip the x-coord so the glacier flows left to right
     X = ds.X.sortby('coord_1', ascending=False).compute()
     # compute spatial average of velocity along the specified surface, at the active nodes
-    vel_mu = ds.vel_m.where(X >= L).isel(coord_2=idx).mean('coord_1')
+    vel_mu = ds.vel_m.where(X <= L).isel(coord_2=idx).mean('coord_1')
     
     return vel_mu
 
