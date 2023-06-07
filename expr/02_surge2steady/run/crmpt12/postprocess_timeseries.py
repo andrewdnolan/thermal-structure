@@ -22,11 +22,11 @@ def mean_velocity(ds, slice, compute=False):
         ds = ds.sel(t=slice)
 
     # compute the glacier length, in order to mask passive nodes
-    L = calc_length(ds)
+    L = calc_length(ds) * 1e3
     # flip the x-coord so the glacier flows left to right
     X = ds.X.sortby('coord_1', ascending=False).compute()
     # compute the mean velocity, both space and time, at the active nodes
-    vel_mu = ds.vel_m.where(X >= L).mean()
+    vel_mu = ds.vel_m.where(X <= L).mean()
     
     return vel_mu
 
