@@ -139,7 +139,7 @@ Initial Condition 1
   Enthalpy_h       = Equals "Enthalpy_h"    ! [J kg-1]
   Temperature      = Equals "Temperature"   ! [C]
   Water Content    = Equals "Water Content" ! [-]
-  Surface Enthalpy = Equals "Surface_Enthalpy"
+  Surface_Enthalpy = Equals "Surface_Enthalpy"
   
 End
 
