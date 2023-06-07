@@ -32,6 +32,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   TYPE(Solver_t)             :: Solver
   TYPE(Element_t),   POINTER :: Element
   TYPE(ValueList_t), POINTER :: Params
+  ! REAL(KIND=dp),     POINTER :: TimestepSizes(:,:) 
+  ! INTEGER,           POINTER :: TimestepIntervals(:) 
 
   TYPE(Variable_t), POINTER  :: Surf_Enthalpy, &  ! Surface  Enthalpy     [J kg-1]
                                 Enth,          &  ! Enthalpy              [J kg-1]
@@ -123,6 +125,8 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
 
   LOGICAL :: GotIt, first_time=.true., percolate
 
+  ! INTEGER ::  timestep, timei, Execi
+
   ! Variables to keep track of between calls to the solver
   save first_time,N_v,N_s,N_n
 
@@ -210,17 +214,47 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   if (TransientSimulation) then
     ! if transient get current timestep, which is really time at end of timestep
     TimeVar  => VariableGet( Solver % Mesh % Variables, "Time" )
-    ! Get current time [a], which corresponds to end of the timestep 
-    time_ip1 = TimeVar % Values(1)
-    ! time [a] at the start of the current timestep 
-    time_i   = time_ip1 - dt
+
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! Calculate the avergae AT the timestep (c.f. average over timestep)
+    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    Time = TimeVar % Values(1)
+    time_i   = Time - dt/2
+    time_ip1 = Time + dt/2
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ! Average over timestep, which causes problems with variable timestep sizes 
+    ! ! see: https://github.com/andrewdnolan/thermal-structure/issues/13
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ! Get current time [a], which corresponds to end of the timestep 
+    ! time_ip1 = TimeVar % Values(1)
+    ! ! time [a] at the start of the current timestep 
+    ! time_i   = time_ip1 - dt
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    ! ! MOST Promosing Solution, but no ideal. Good Enough to move forward though....
-    ! Time = TimeVar % Values(1)
-    ! time_i   = Time - dt/2
-    ! time_ip1 = Time + dt/2
+    ! ! Variable timesteps: 
+    ! !   In the case of variabel timesteps set through `Timestep Intervals` in the
+    ! !   simulation section, this is technically the most accurate way to caluclate 
+    ! !   the average at the timestep and deal with variabl timestep. Difference from 
+    ! !   naibve solution is small enough that this isn't worth it. 
     ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    ! ! index in the "Timstep Sizes" array we are at 
+    ! TimeVar => VariableGet( Model % Variables, 'Timestep Interval' )
+    ! timei = NINT(Timevar % Values(1))
+    ! ! index of the current Timestep 
+    ! TimeVar => VariableGet( Model % Variables, 'Timestep' )
+    ! timestep = NINT(TimeVar % Values(1))
+    ! ! Params => ListGetSolverParams(Solver)
+    ! TimestepIntervals =>  ListGetIntegerArray( Model % Simulation,'Timestep Intervals', GotIt )
+    ! ! interger points when the timestep rolls onto the next value
+    ! execi = sum(TimestepIntervals(1:timei))
+    ! ! this is the condition for procedding to the next timestep size in the "Timstep Sizes" array
+    ! if (MOD(timestep, execi) == 0) then
+    !   TimestepSizes =>  ListGetConstRealArray( Model % Simulation,'Timestep Sizes', GotIt )
+    !   ! explain this for future reference
+    !   time_ip1 = Time + TimestepSizes(timei+1,1) / 2
+    ! endif
+    ! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
     ! Check that a valid timestep is passed
     if ((dt .ge. 1.0) .and. (MOD(dt, 1.0) /= 0.0)) then
@@ -292,7 +326,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       T_surf = SUM(T)/REAL(SIZE(T),dp) + 273.15_dp
 
       ! print info for the headwall, just as a debugging measure
-      if (n .eq. N_n) write(*,'(f10.3,f10.3,f10.3,i4)') time_i, time_ip1, T_surf-273.15, N_v
+      if (n .eq. N_n) write(*,'(f10.3,f10.3,i4)') time_i - dt/2, T_surf-273.15, N_v
 
       ! Temperature can't exced the melting point at the surface
       if (T_surf > 273.15_dp) then
@@ -820,10 +854,12 @@ FUNCTION getSurfaceEnthalpy(Model, Node, InputArray) RESULT(Enthalpy)
     TimeStep => VariableGet( Model % Mesh % Variables, "Timestep Size" )
     ! get the dt from the pointer
     dt = TimeStep % Values(1)
-    ! Get current time [a], which corresponds to end of the timestep 
-    time_ip1 = TimeVar % Values(1)
-    ! time [a] at the start of the current timestep 
-    time_i  = time_ip1 - dt
+
+    ! Calculate the avergae AT the timestep (c.f. average over timestep)
+    Time = TimeVar % Values(1)
+    time_i   = Time - dt/2
+    time_ip1 = Time + dt/2
+    
   else
     ! set the "timestep" as one year
     dt = 1.0_dp
