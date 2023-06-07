@@ -6,7 +6,7 @@ from itertools import product
 # glacier identifer
 key  = 'crmpt12'
 # simulation length [yr]
-TT   = 6000
+TT   = 3000
 # walltime in dd-hh:mm:ss
 WT   = '10-00:00:00'
 # memory allocation
@@ -17,18 +17,18 @@ SP = 2
 # ##################################################
 # # Reference Experiment:
 # ##################################################
-# # slip coefficients to test (3 order of magnitude)
-# betas  = np.logspace(-6, -8, 9)**0.5
-# # length of the surge cycle [a]
-# cycles = [15, 30, 60]
-
-##################################################
-# Bisect to see periodicity emerge Experiment:
-##################################################
 # slip coefficients to test (3 order of magnitude)
-betas  = np.geomspace(0.0004217,0.00031623, 7)[1:-1]
+betas  = np.logspace(-3, -4, 9)
 # length of the surge cycle [a]
-cycles = [30]
+cycles = [15, 30, 60]
+
+# ##################################################
+# # Bisect to see periodicity emerge Experiment:
+# ##################################################
+# # slip coefficients to test (3 order of magnitude)
+# betas  = np.geomspace(0.0004217,0.00031623, 7)[1:-1]
+# # length of the surge cycle [a]
+# cycles = [30]
 
 # base command used to execute a single simulation
 cmd = "./periodic_surge.py -k \"{KEY}\" -SP {SP} -QP {QP} -beta {beta:1.3e} -TT {TT}"
