@@ -15,7 +15,8 @@ NC_OBJS     := $(BIN_DIR)/NetcdfUGRIDOutputSolver
 LINKED_OBJS := $(BIN_DIR)/SurfaceBoundary \
 							 $(BIN_DIR)/mass_balance \
 							 $(BIN_DIR)/Thermodynamics \
-							 $(BIN_DIR)/SlipCoefficent
+							 $(BIN_DIR)/SlipCoefficent \
+							 $(BIN_DIR)/DummySolver
 
 # Modules to be built, and linked to elmer source
 MOD_SRCS := $(SRC_DIR)/surfacetemperature_mod.f90 \

@@ -504,7 +504,25 @@ Solver 11
 End
 
 
+!creates output
 Solver 12
+  Equation  = "DummyRoutine"
+  Procedure = File "../../bin/DummySolver" "DummySolver"
+  Variable  =  -dofs 1 "Friction Load"
+End
+
+!creates output
+Solver 13
+    Equation                    = "ForceToStress"
+    Procedure                   = File "ElmerIceSolvers" "ForceToStress"
+    Variable                    = String "Friction Heating"
+    Variable DOFs               = 1
+    Force Variable Name         = String "Friction Load"
+    Linear System Solver        = Direct
+    Linear System Direct Method = umfpack
+End
+
+Solver 14
    Exec Solver    = String  "after timestep"
    ! Exec Condition = Variable "Time"
    !                  Real lua "netcdf_cond(tx[0], 10)"
@@ -544,12 +562,13 @@ Solver 12
     Scalar Field 18 = String "strainrate 1" !xx
     Scalar Field 19 = String "strainrate 2" !zz
     Scalar Field 20 = String "strainrate 4" !xz
-    ! Scalar Field 18 = String "strainrate 5" !trace
-
+    ! Enthalpy loads (i.e. frictional heating)
+    Scalar Field 21 = String "Friction Heating" 
+    
    Compute LonLat = Logical False
 End
 
-Solver 13
+Solver 15
   Equation           = "NormalVector"
   Exec Solver        = Before Simulation
   Procedure          = "ElmerIceSolvers" "ComputeNormalSolver"
@@ -577,7 +596,7 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(12) = 1 2 3 4 5 6 7 9 10 11 12 13
+  Active Solvers(14) = 1 2 3 4 5 6 7 9 10 11 12 13 14 15
 End
 
 Equation 2
@@ -664,9 +683,12 @@ Boundary Condition 1
   Enthalpy Heat Flux BC = Logical True
   Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
 
-  ! Frictional Heating Term
+  ! Frictional Heating Term, as applied to enthalpy equation
   Enthalpy_h Load       = Variable Velocity 1
                           Real Procedure  "ElmerIceUSF" "getFrictionLoads"
+  ! Frictional Heating Term, for export to netcdf file
+  Friction Load         = Variable Velocity 1            
+                          Real Procedure  "ElmerIceUSF" "getFrictionLoads"                       
 End
 
 Boundary Condition 2
