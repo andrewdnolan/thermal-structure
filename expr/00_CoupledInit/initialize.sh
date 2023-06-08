@@ -99,15 +99,15 @@ diagnostic_run()
   # TO DO: if log, else
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
-  # add the params as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
-                                        -a "params"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
+  # # add the params as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
+  #                                       -a "params"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
 
-  # add the sif as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
-                                        -a "sif"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
+  # # add the sif as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
+  #                                       -a "sif"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
@@ -154,14 +154,14 @@ prognostic_run()
   # Run the model
   ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
 
-  # add the params as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
-                                        -a "params"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
-  # add the sif as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
-                                        -a "sif"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
+  # # add the params as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
+  #                                       -a "params"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
+  # # add the sif as a global attribute to the netcdf file
+  # python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
+  #                                       -a "sif"                \
+  #                                          "result/${KEY}/nc/${run_name}.nc"
 
   # # Remove the sif file
   rm "./sifs/${run_name}.sif"
