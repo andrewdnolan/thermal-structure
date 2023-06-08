@@ -11,7 +11,10 @@ from .derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
 # dictionary of 1D variables and vertical index they are define along
 vars_1D = { "mass balance" : -1,
-            "surface_enthalpy" : -1}
+            "surface_enthalpy" : -1, 
+            "surf_melt":  -1, 
+            "runoff_frac": -1,
+            "friction heating": 0}
 
 # mapping of variables which we seek to rename.
 rename_dict = {'velocity 1'   : 'vel_x',
