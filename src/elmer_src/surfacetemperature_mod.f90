@@ -52,11 +52,6 @@ contains
                ! + norm_rand(0.0_dp, std)                             ! random variability
     ENDDO
 
-    ! if (abs(z - 2768.384) < 0.01) then
-    !   write(*,'(a, f10.3, a,f10.3, a, es10.3, a, f10.3,a, f10.3, a, f10.3)') & 
-    !     'z=',z, ', alpha=',alpha, ', dTdz=',grad_T, ', ref_z=', ref_z, ', T_mean=',T_mean, ', T_peak=', T_peak
-    ! endif 
-
   contains
     subroutine set_seed(seed)
       !https://masuday.github.io/fortran_tutorial/random.html
