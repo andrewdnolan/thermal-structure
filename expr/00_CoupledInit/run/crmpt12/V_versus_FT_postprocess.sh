@@ -15,6 +15,23 @@ export NUM_WORKERS=16
 # use a single thread per cpu core
 export THREADS_PER_WORKER=1
 
+create_dask_cluster()
+{
+  export SCHEDULER_FILE="${SLURM_JOB_ID}-scheduler.json"
+  dask scheduler --host 127.0.0.1 --no-dashboard --scheduler-file $SCHEDULER_FILE &
+  sleep 15
+
+  for worker in $(seq $NUM_WORKERS); do
+  dask worker --scheduler-file $SCHEDULER_FILE \
+              --no-dashboard \
+              --no-nanny \
+              --nworkers 1 \
+              --nthreads 1 &
+  done
+  sleep 15
+
+}
+
 post_proccess()
 {
   T_ma=-8.5
@@ -56,6 +73,9 @@ post_proccess()
 
 # make the thinned dir for each task in the job array
 mkdir "${SLURM_TMPDIR}/thinned"
+
+# set up the dask cluter 
+create_dask_cluster
 
 for off in $(seq -w -0.65 0.01 -0.51) -0.31 -0.36 -0.27; do 
     # run the post processing commands
