@@ -23,3 +23,9 @@ Will build the `python` virtual env needed for post processing on `cedar`. Unfor
 ```bash
 bash ./build_py4elmer.sh
 ```
+
+### `link2scratch
+Will create the symbolic links and build out the repo structure on the `scratch` filesystem. This is a workaround to have the same repo structure on `scratch` and `project` or any other location, without needing to maintain the `.git` repo on `scratch`. 
+```
+make -f config/link2scratch
+```
