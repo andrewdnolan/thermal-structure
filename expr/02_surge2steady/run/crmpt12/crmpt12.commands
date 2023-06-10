@@ -1,9 +1,9 @@
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.000e-03  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_1.000e-03_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 7.499e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_7.499e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 5.623e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_5.623e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 4.217e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_4.217e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 3.162e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_3.162e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 2.371e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_2.371e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.778e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_1.778e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.334e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_1.334e-04_pseudo_NT_2000_recovery.result
-./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.000e-04  -cycle2 -RESTART crmpt12_dx_50_NT_40_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_1.000e-04_pseudo_NT_2000_recovery.result
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.000e-03
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 7.499e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 5.623e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 4.217e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 3.162e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 2.371e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.778e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.334e-04
+./surge2steady.py -k "crmpt12" -SP 2 -QP 4000 -beta 1.000e-04
