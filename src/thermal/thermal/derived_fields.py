@@ -10,13 +10,13 @@ def check_filtered(func):
     """ Decorator to check if the ice thickness has been filtered.
         If not, a warning is raised.
     """
-    def inner(src):
+    def inner(src, **kwargs):
         # check if "h" greater than zero in all gricells, suggesting "h" was not
         # filtered correctly, OR the glacier has reached the end of the domain
         # NOTE: bottom most gridcell (coord_2=0) is excluded, since h always = 0
         if (src.height.isel(coord_2=slice(1,None)) < 0).all():
             warnings.warn('Make sure fictitious ice thickness has been removed.')
-        return func(src)
+        return func(src,**kwargs)
     return inner
 
 def calc_magnitude(a, b):
@@ -44,7 +44,7 @@ def calc_volume(ds):
                           dask="parallelized")
 
 @check_filtered
-def calc_percent_temperate(src, dz_var='height'):
+def calc_percent_temperate(src, dz_var='Z'):
     """ Calculate the percentage temperate using element areas
 
     Note: we now use the water content to find temperate ice
@@ -53,22 +53,22 @@ def calc_percent_temperate(src, dz_var='height'):
           and caused spurious oscillations in the percent temperate
     """
     # Calculate the element area using structured grid
-    elm_area  = calc_element_area(src, dz_var)
-    ##################################################################
-    # # Calculate mean elemental enthalpy 
-    # elm_enth = calc_element_mean(src, 'enthalpy_h')
-    # # Calculate mean elemental phase change enthalpy (pce)
-    # elm_PCE  = calc_element_mean(src, 'phase change enthalpy')
-    # Old way of calculating temperate mask: 
-    # mask = elm_enth >= elm_PCE
+    elm_area  = calc_element_area(src, var=dz_var)
     #################################################################
+    # Calculate mean elemental enthalpy 
+    elm_enth = calc_element_mean(src, 'enthalpy_h')
+    # Calculate mean elemental phase change enthalpy (pce)
+    elm_PCE  = calc_element_mean(src, 'phase change enthalpy')
+    # Old way of calculating temperate mask: 
+    mask = elm_enth >= elm_PCE
+    ################################################################
 
-    # Calculate mean elemental water content 
-    elm_omega = calc_element_mean(src, 'water content')
+    # # Calculate mean elemental water content 
+    # elm_omega = calc_element_mean(src, 'water content')
 
-    # new way of calculating temperate mask: 
-    # i.e. must have some water content 
-    mask = elm_omega >= 1e-4
+    # # new way of calculating temperate mask: 
+    # # i.e. must have some water content 
+    # mask = elm_omega >= 1e-4
 
     # find total glacier area [m2]
     A_totl = elm_area.sum('element')
@@ -79,12 +79,12 @@ def calc_percent_temperate(src, dz_var='height'):
     return (A_temp / A_totl) * 100
 
 @check_filtered
-def calc_mean_enthalpy(src):
+def calc_mean_enthalpy(src, dz_var='Z'):
     """ Calculate the weighted (by element area) mean enthalpy [J kg-1]
     """
 
     # Calculate the elemental area [m2]
-    elm_area = calc_element_area(src)
+    elm_area = calc_element_area(src, var=dz_var)
     # Calculate mean elemental enthalpy [J kg-1]
     elm_enth = calc_element_mean(src, 'enthalpy_h')
     # Calculate the total glacier area [m2]
