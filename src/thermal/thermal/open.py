@@ -88,16 +88,18 @@ def __preprocess(ds, h_min=10.0):
     """
     if 'nMesh_node' in ds.dims:
         ds = __preprocess_UGRID(ds)
-    else:
-        print('no other support implemented yet. To be Done')
+    # else:
+    #     print('no other support implemented yet. To be Done')
 
     # loop over the 1D variables, and only store the pertinent info
     for key in vars_1D:
         # double check the variable is in the source file
         if key in ds:
-            # get the vertical index the variables is defined a
-            index = vars_1D[key]
-            ds[key] = ds[key].isel(coord_2=index)
+            # check that coord_2 is still in ds, (i.e. hasn't already been filtered)
+            if 'coord_2' in ds[key].dims:
+                # get the vertical index the variables is defined a
+                index = vars_1D[key]
+                ds[key] = ds[key].isel(coord_2=index)
 
     # rename variables to be more commpact
     for var in rename_dict:
