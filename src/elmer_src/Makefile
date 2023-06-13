@@ -10,14 +10,14 @@ SRC_DIR = .
 FFLAGS=-fcheck=all
 
 # List of elmer code to be built
-# SIMPLE_OBJS := $(BIN_DIR)/Thermodynamics
+SIMPLE_OBJS := $(BIN_DIR)/SlipCoefficent \
+			   $(BIN_DIR)/DummySolver \
+			   $(BIN_DIR)/FrictionLoads 
 NC_OBJS     := $(BIN_DIR)/NetcdfUGRIDOutputSolver
 LINKED_OBJS := $(BIN_DIR)/SurfaceBoundary \
-							 $(BIN_DIR)/mass_balance \
-							 $(BIN_DIR)/Thermodynamics \
-							 $(BIN_DIR)/SlipCoefficent \
-							 $(BIN_DIR)/DummySolver
-
+			   $(BIN_DIR)/mass_balance \
+			   $(BIN_DIR)/Thermodynamics 
+			   
 # Modules to be built, and linked to elmer source
 MOD_SRCS := $(SRC_DIR)/surfacetemperature_mod.f90 \
 						$(SRC_DIR)/PositiveDegreeDays.f90 \

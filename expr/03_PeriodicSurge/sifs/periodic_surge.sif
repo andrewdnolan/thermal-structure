@@ -683,12 +683,21 @@ Boundary Condition 1
   Enthalpy Heat Flux BC = Logical True
   Enthalpy Heat Flux    = real #0.055*spy    ! [J m^-2 a^-1] <---- [W m-2] == [J m^-2 s^-1]
 
-  ! Frictional Heating Term, as applied to enthalpy equation
+  ! Frictional Heating Term, as applied to Enthalpy Equation in units of (J m-2 yr-1).
+  ! `Friction Load Scaling Factor` keyword is used to scale the energy flux from the 
+  ! flow solution, which is in units of (MJ m-2 yr-1), to the units of flux corresponding  
+  ! to the Enthalpy solution (J m-2 yr-1) 
   Enthalpy_h Load       = Variable Velocity 1
-                          Real Procedure  "ElmerIceUSF" "getFrictionLoads"
-  ! Frictional Heating Term, for export to netcdf file
+                          Real Procedure  "../../bin/FrictionLoads" "getFrictionLoads"     
+  ! Frictional Heating Term again, but now for exporing to netcdf file
   Friction Load         = Variable Velocity 1            
-                          Real Procedure  "ElmerIceUSF" "getFrictionLoads"                       
+                          Real Procedure  "../../bin/FrictionLoads" "getFrictionLoads"   
+  ! Scaling factor, to convert from (MJ m-2 yr-1) too (J m-2 yr-1). 
+  ! NOTE: despite the `getFrictionLoads` being called twice on this boundary, only need 
+  !       to specify keyword once. Both invocation of the fucntion will use the value
+  !       specified below. 
+  Friction Load Scaling Factor = Real 1.0e6
+
 End
 
 Boundary Condition 2
