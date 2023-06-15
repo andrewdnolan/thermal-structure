@@ -11,7 +11,7 @@ from matplotlib.animation import FuncAnimation
 from .derived_fields import calc_length
 
 
-plt.rcParams['animation.html'] = 'jshtml'
+# plt.rcParams['animation.html'] = 'jshtml'
 
 class EnthalpyNormalizer(colors.Normalize):
     # https://matplotlib.org/stable/tutorials/colors/colormapnorms.html#twoslopenorm-different-mapping-on-either-side-of-a-center
@@ -132,52 +132,6 @@ def enthalpy_pcolormesh(src, i, axes=None, T_min=-8.0, W_max=0.5, contour_CTS=Fa
         return fig, ax, cb
     else:
         return im
-
-
-def animate_enthalpy(src, i_0=0, i_f=None, i_s=10, interval=100):
-
-    # create the initial frame
-    fig, ax, cb = enthalpy_pcolormesh(src, 0)
-
-    # Add time and volume annotation
-    label = ax.text(0.9, 0.9, r"$t=0$",  transform=ax.transAxes,
-                       ha='center', va='center')
-    vol   = ax.text(0.9, 0.8, r"$V'=1.0$",  transform=ax.transAxes,
-                       ha='center', va='center')
-
-    xlim, ylim = get_axis_limits(src)
-
-
-    def update(i):
-        # wipe the axis
-        ax.clear()
-        # update the axis with the current timestep
-        enthalpy_pcolormesh(src, i, axes=ax)
-        # update time and volume annotation
-        label = ax.text(0.9, 0.9, "t={:.2f}".format(src.t[i].values),
-                           transform=ax.transAxes,
-                           ha='center', va='center')
-        vol   = ax.text(0.9, 0.8, r"$V'={:.2f}$".format(float(src.relative_volume[i])),
-                           transform=ax.transAxes,
-                           ha='center', va='center')
-
-        # plot the initial condition
-        ax.plot(src.X.isel(coord_2=-1)[::-1]/1e3,
-                src.Z.isel(coord_2=-1, t=0), ls=':', lw=1.0, c='k',
-                label = '$z_{\rm s}(t=0.0)$')
-
-        # fix the axis limits
-        ax.set_xlim(*xlim)
-        ax.set_ylim(*ylim)
-
-
-    # if final index is passed, plot the entire time acis
-    if i_f is None:
-        i_f = src.t.size
-
-    ani = FuncAnimation(fig, update, frames=np.arange(i_0, i_f, i_s), interval=interval)
-
-    return ani
 
 def make_colorbar(array, cmap='plasma'):
     #---------------------------------------------------------------------------
