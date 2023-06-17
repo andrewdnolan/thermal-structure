@@ -88,7 +88,7 @@ Simulation
 
   Restart File                = "<RESTART>"
   Restart Position            = 0   ! find the last timestep saved
-  Restart Time                = Real 0.0
+  Restart Time                = Real <T0>
   Restart Before Initial Conditions = Logical True
   Initialize Dirichlet Conditions   = Logical False
   ! Convergence Monitor         = Logical True

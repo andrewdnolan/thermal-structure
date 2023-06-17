@@ -26,6 +26,7 @@ def main(argv):
     varibales = [("KEY",            "key"              ),
                  ("dx",             "horzontal_spacing"),
                  ("TT",             "time_final"       ),
+                 ("T0",             "restart_time"     ),
                  ("SP",             "surge_period"     ),
                  ("QP",             "quies_period"     ),
                  ("ST_dt",          "ST_dt"            ),
@@ -105,7 +106,10 @@ def main(argv):
     parser.add_argument('-RESTART',f'--{vars["RESTART"]["flag_var"]}', type=str,
                         help = "Name of the restart (.result) file to use for the simulation"\
                                " should be in the results/$KEY/mesh_dx$dx folder")
-
+    
+    parser.add_argument('-T0',f'--{vars["T0"]["flag_var"]}', type=str,
+                        help = "Restart time [a] from the previous simulation")
+    
     parser.add_argument('-itters',f'--{vars["SS_itters"]["flag_var"]}', type=int,
                         help = "Number of (S)teady (S)tate itterations",
                         default = 10)

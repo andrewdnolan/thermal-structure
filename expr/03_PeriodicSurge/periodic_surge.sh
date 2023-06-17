@@ -266,6 +266,7 @@ periodic_run()
        s#<DX>#"$dx"#g;
        s#<SP>#"$SP"#g;
        s#<QP>#"$QP"#g;
+       s#<T0>#"$T0"#g;
        s#<KEY>#"$KEY"#g;
        s#<beta>#"$beta"#g;
        s#<z_lim>#"$z_lim"#g;
