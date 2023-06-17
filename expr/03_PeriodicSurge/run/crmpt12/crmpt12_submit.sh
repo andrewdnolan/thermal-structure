@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --array=1-27%27
+#SBATCH --array=1-25%25
 #SBATCH --job-name=crmpt12_%A                      # base job name for the array
 #SBATCH --mem-per-cpu=4000M                        # maximum 200M per job
 #SBATCH --time=4-4:00:00                                # maximum walltime per job
