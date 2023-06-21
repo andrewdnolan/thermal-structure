@@ -20,4 +20,4 @@ source ../../config/modulefile.cc.cedar
 STATUS=$?
 
 # save the job statuses to file with unique filename per submission
-echo $SLURM_ARRAY_TASK_ID $STATUS >> ./run/crmpt12/crmpt12_$SLURM_ARRAY_JOB_ID.status
+# echo $SLURM_ARRAY_TASK_ID $STATUS >> ./run/crmpt12/crmpt12_$SLURM_ARRAY_JOB_ID.status
