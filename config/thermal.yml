@@ -12,6 +12,7 @@ dependencies:
   - seaborn
   - pip
   - xarray
+  - flox
   - netCDF4
   - h5netcdf
   - matplotlib
