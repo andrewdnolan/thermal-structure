@@ -45,7 +45,7 @@ while IFS="" read -r line || [ -n "$line" ]; do
     parse_params $line
     # get the run name based on parsed parameters for the i-th run
     # NOTE: default value which aren't varied are hard coded
-    run_name="${KEY}_dx_50_TT_${NT}_MB_-0.37_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
+    run_name="${KEY}_dx_50_TT_${NT}.0_MB_-0.37_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
 
     # based on the start time (T_0) and time intergration length (NT)
     # caluculate the final time in kiloyears
