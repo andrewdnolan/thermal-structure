@@ -78,7 +78,7 @@ def main(gridded_dir):
     out_fp  = '/'.join(gridded_dir.split('/')[:-2])
 
     # timeseries variables
-    vars = ['initial_volume', 'relative_volume', 'percent_temperate', 
+    vars = ['initial_volume', 'relative_volume', 'percent_temperate', 'h_ELA',
             'mean_enthalpy',  'flux_across_ELA', 'u_bar_surface', 'u_bar_bed']
 
     # empty list to store the timeseries datasets
@@ -97,6 +97,8 @@ def main(gridded_dir):
         src['mean_enthalpy'] = calc_mean_enthalpy(src) / 1e3
         # calculate the flux [m2 a-1] at the ELA as a function of time
         src['flux_across_ELA'] = calc_flux_at_ELA(src)
+        # calculate the ice thickness at the ELA [m]
+        src['h_ELA'] = Variable_at_ELA(src, 'height').isel(coord_2=-1)
         # extract spatial average of the surface velocity [m a-1]
         src['u_bar_surface'] = calc_mean_velocity(src, loc='surface')
         # extract spatial average of the basal velocity [m a-1]
