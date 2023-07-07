@@ -37,7 +37,7 @@
             "stop"      : 0.150, 
             "samples"   : 8, 
             "spacing"   : "linspace", 
-            "reference" : 0.05
+            "reference" : 0.10
             }, 
         "IC": {
             "start"     : 0.000, 
