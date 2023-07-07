@@ -1,6 +1,9 @@
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 4.217e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_4.217e-04_SP_2_QP_28.result
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 13 -beta 3.162e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_3.162e-04_SP_2_QP_13.result
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.162e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_3.162e-04_SP_2_QP_28.result
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 58 -beta 1.778e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_1.778e-04_SP_2_QP_58.result
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 1.334e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_1.334e-04_SP_2_QP_28.result
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 13 -beta 1.000e-04 -TT 3000 -T0 6000.0  -RESTART crmpt12_dx_50_TT_3--6ka_MB_-0.37_OFF_Tma_-8.5_B_1.000e-04_SP_2_QP_13.result
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 4.097e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.981e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.868e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.758e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.652e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.548e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.447e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.350e-04 -TT 9000 -T0 0 
+./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 3.255e-04 -TT 9000 -T0 0 
