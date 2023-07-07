@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=dask_gridding
-#SBATCH --time=06:00:00           
+#SBATCH --time=02:00:00           
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=4000M
@@ -35,7 +35,7 @@ fi
 # set up the dask cluter for the instance of the job array
 create_dask_cluster
 
-for file in $(find ./result/crmpt12/nc/ -name "*.nc"); do 
+for file in $(find ./result/crmpt12/nc/ -name "*.nc" -ctime -5); do 
 
     # get the base filename ,with no path info 
     fn="${file##*/}"
