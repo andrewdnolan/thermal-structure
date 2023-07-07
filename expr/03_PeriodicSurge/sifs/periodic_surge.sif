@@ -182,7 +182,7 @@ Material 1
   Glen Enhancement Factor    = Variable "Water Content"
                                Real Procedure "../../bin/Thermodynamics" "Lliboutry_and_Duval_Enhancment"
 
-
+  Cauchy = Logical True
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ! Thermodynamic Properties for Enthalpy:
   !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -364,6 +364,32 @@ Solver 8
   Exec Interval(<M>)                      = Integer <dyn_exec_int>
   Timestep Over Intervals                 = Logical True
 
+  Equation = String "StressSolver"
+  Procedure =  File "ElmerIceSolvers" "ComputeDevStress"
+  ! this is just a dummy, hence no output is needed
+  !-----------------------------------------------------------------------
+  Variable = -nooutput "Sij"
+  Variable DOFs = 1
+  ! the name of the variable containing the flow solution (U,V,W,Pressure)
+  !-----------------------------------------------------------------------
+  Exported Variable 1       = "Stress"
+  Exported Variable 1 DOFs  = 4 !in 2D
+  ! the name of the variable containing the flow solution (U,V,W,Pressure)
+  Flow Solver Name     = String "Flow Solution"
+  ! the name of the Stress solution (default is 'StrainRate')
+  Stress Variable Name = String "Stress"
+
+  !-----------------------------------------------------------------------
+  ! Stress tensor has: 4 DOF in 2D[Sxx, Syy, Szz, Sxy], 6 FOD in 3D
+
+  Linear System Solver = Direct         
+  Linear System Direct Method = umfpack
+End
+
+Solver 9
+  Exec Interval(<M>)                      = Integer <dyn_exec_int>
+  Timestep Over Intervals                 = Logical True
+
   Equation                                = "Free Surface Evolution"
   Variable                                = String "Zs"
   Variable DOFs                           =  1
@@ -400,7 +426,7 @@ Solver 8
   Exported Variable 3                     = -dofs 1 "Zs Accumulation Flux 2"
 End
 
-Solver 9
+Solver 10
   Exec Interval(<M>)       = Integer <dyn_exec_int>
   Timestep Over Intervals  = Logical True
 
@@ -419,7 +445,7 @@ Solver 9
 End
 
 ! Deformational Heat
-Solver 10
+Solver 11
   Exec Interval(<M>)                       = Integer <dyn_exec_int>
   Timestep Over Intervals                  = Logical True
 
@@ -449,7 +475,7 @@ End
 
 
 ! Enthalpy Solver
-Solver 11
+Solver 12
   Equation                                 = String "Enthalpy Equation"
   Procedure                                = File "ElmerIceSolvers" "EnthalpySolver"
   Variable                                 = String "Enthalpy_h"
@@ -505,14 +531,14 @@ End
 
 
 !creates output
-Solver 12
+Solver 13
   Equation  = "DummyRoutine"
   Procedure = File "../../bin/DummySolver" "DummySolver"
   Variable  =  -dofs 1 "Friction Load"
 End
 
 !creates output
-Solver 13
+Solver 14
     Equation                    = "ForceToStress"
     Procedure                   = File "ElmerIceSolvers" "ForceToStress"
     Variable                    = String "Friction Heating"
@@ -522,7 +548,7 @@ Solver 13
     Linear System Direct Method = umfpack
 End
 
-Solver 14
+Solver 15
    Exec Solver    = String  "after timestep"
    ! Exec Condition = Variable "Time"
    !                  Real lua "netcdf_cond(tx[0], 10)"
@@ -565,10 +591,16 @@ Solver 14
     ! Enthalpy loads (i.e. frictional heating)
     Scalar Field 21 = String "Friction Heating" 
     
+    ! Stress fields
+    Scalar Field 22 = String "Stress 1" !Sxx
+    Scalar Field 23 = String "Stress 2" !Syy
+    Scalar Field 24 = String "Stress 3" !Szz
+    Scalar Field 25 = String "Stress 4" !Sxy
+
    Compute LonLat = Logical False
 End
 
-Solver 15
+Solver 16
   Equation           = "NormalVector"
   Exec Solver        = Before Simulation
   Procedure          = "ElmerIceSolvers" "ComputeNormalSolver"
@@ -596,14 +628,14 @@ Equation 1
   Name               = "Equation1"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(14) = 1 2 3 4 5 6 7 9 10 11 12 13 14 15
+  Active Solvers(15) = 1 2 3 4 5 6 7 8 10 11 12 13 14 15 16 
 End
 
 Equation 2
   Name               = "Equation2"
   Convection         = "Computed"
   Flow Solution Name = String "Flow Solution"
-  Active Solvers(1)  = 8
+  Active Solvers(1)  = 9
 End
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! END EQUATION
