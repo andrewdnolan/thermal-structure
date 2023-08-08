@@ -29,6 +29,7 @@ def main(argv):
                  ("T_ma",           "Temp_mean_annual"        ),
                  ("dt",             "time_step"               ),
                  ("t_f",            "time_final"              ),
+                 ("beta",           "slip_coef"               ),
                  ("Dynamic_int",    "Dynamic_exec_interval"   ),
                  ("prog_SS_itters", "prognostic_SS_iterations")]
 
@@ -75,6 +76,11 @@ def main(argv):
                                "The number of time steps ($NT) is calculated as \n"\
                                "        `NT = t_f // dt`")
 
+    parser.add_argument('-beta',f'--{vars["beta"]["flag_var"]}', type=str,
+                        help = "Basal Slip Coefficient [MPa (m a-1)-1 ]. \n"\
+                               "Default is no sliding (i.e. beta=1.0)", 
+                        default = '1.0')
+    
     parser.add_argument('-Dynamic_int','--Dynamic_exec_interval', type=int,
                         help = "Interval to execute the dynamic solver, relative"\
                                "to the thermodynamic solver",

@@ -44,11 +44,13 @@ End
 Constants
   include "./params/ref_params.sif"
 
-  Seasonality         = Logical True
-
+  !Surface Forcing: 
   Mass Balance Offset = Real <offset>  ! m y^{-1}
   T_mean              = real <T_mean>  ! Mean annual air temp @ z_ref [C]
 
+  !Basal Sliding: 
+  beta                = Real <beta>    ! Slip coeficent [MPa (m a^{-1})^{-1}]
+  
   !Physical Constants:
   Gas Constant        = real #R        ! [J mol^{-1} K^{-1}]
   Pressure Variable   = String "Pressure"
@@ -583,13 +585,17 @@ End
 
 ! Bedrock
 Boundary Condition 1
-  Name              = "bedrock"
-  Target Boundaries = 1
-  Compute Normals   = Logical True
+  Name                       = "bedrock"
+  Target Boundaries          = 1
+  ComputeNormal              = Logical True
+  Normal-Tangential Velocity = Logical True
+  Mass Consistent Normals    = Logical True
 
-  ! No sliding
-  Velocity 1        = Real 0.0e0
-  Velocity 2        = Real 0.0e0
+  ! sliding
+  Velocity 1         = Real 0.0e0
+  Slip Coefficient 2 = Variable "water content"
+          real MATC "if (tx>0.001) (<beta>); else (1.0)"
+
   Bottom Surface    = Variable Coordinate 1
                       Real cubic
                          include "../../input_data/topography/<KEY>_bed.dat"

@@ -141,6 +141,7 @@ prognostic_run()
        s#<dt>#"$dt"#g;
        s#<NT>#"$NT"#g;
        s#<KEY>#"$KEY"#g;
+       s#<beta>#"$beta"#g;
        s#<T_mean>#"$T_ma"#g;
        s#<offset>#"$offset"#g;
        s#<run_name>#"$run_name"#g;
@@ -233,13 +234,13 @@ full_initialization()
   # limit to 10 S.S. itters for transient runs
   SS_itters=$prog_SS_itters
   # prognostic run name
-  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
+  run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_prog"
 
   # Start the timer
   start=$(date +%s.%N)
 
   # run the transient model with diagnostic solution as restart fiedl
-  prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $NT $dt
+  prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $NT $dt $beta
 
   # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
   # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
@@ -316,7 +317,7 @@ find_incomplete()
       # Number of time interval based on dt
       NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
       # get the transient runname
-      run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_prog"
+      run_name="${KEY}_dx_${dx}_NT_${NT}_dt_${dt}_MB_${offset}_OFF_Tma_${T_ma}_B_${beta}_prog"
 
       # gridded transient results don't exist
       if [[ ! -f "result/${KEY}/gridded/${run_name}.nc" ]]; then
