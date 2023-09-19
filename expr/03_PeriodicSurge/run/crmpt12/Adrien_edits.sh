@@ -19,6 +19,7 @@ source ../../config/modulefile.cc.cedar
 # load the source functions
 source ./periodic_surge.sh
 
+KEY='crmpt12'
 # set up the dask cluter for the instance of the job array
 create_dask_cluster
 
