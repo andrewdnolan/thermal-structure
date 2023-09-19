@@ -1,16 +1,44 @@
 #!/bin/bash
-#SBATCH --job-name=Adrien_Edits                      # base job name for the array
-#SBATCH --mem-per-cpu=4000M                        # maximum 200M per job
-#SBATCH --time=15-4:00:00                          # maximum walltime per job
-#SBATCH --nodes=1                                  # Only one node is needed
-#SBATCH --ntasks=1                                 # These are serial jobs
-#SBATCH --mail-type=ALL                            # send all mail (way to much)
-#SBATCH --mail-user=andrew.d.nolan@maine.edu       # email to spend updates too
-#SBATCH --output=logs/crmpt12/Adrien_Edits.out   # standard output
-#SBATCH --error=logs/crmpt12/Adrien_Edits.err    # standard error
-# in the previous two lines %A" is replaced by jobID and "%a" with the array index
+#SBATCH --job-name=dask_gridding
+#SBATCH --time=02:00:00           
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=32
+#SBATCH --mem-per-cpu=8000M
+#SBATCH --mail-type=ALL                      # send all mail (way to much)
+#SBATCH --mail-user=andrew.d.nolan@maine.edu # email to spend updates too
+#SBATCH --output=dask_%A_%a.out              # standard output
+#SBATCH --error=dask_%A_%a.err               # standard error
 
-# load the neccessary packages
+# numbers of cores each job in the array will have
+export NUM_WORKERS=32
+# use a single thread per cpu core
+export THREADS_PER_WORKER=1
+
 source ../../config/modulefile.cc.cedar
 
-./periodic_surge.py -k "crmpt12" -SP 2 -QP 28 -beta 1.000e-04 -TT 9000 -T0 0 
+# load the source functions
+source ./periodic_surge.sh
+
+# set up the dask cluter for the instance of the job array
+create_dask_cluster
+
+run_name="crmpt12_dx_50_TT_9000.0_MB_-0.37_OFF_Tma_-8.5_B_1.000e-04_SP_2_QP_28"
+
+# rename the file based on the restart point and integration length
+new_name="crmpt12_dx_50_TT_0--9ka_MB_-0.37_OFF_Tma_-8.5_B_1.000e-04_SP_2_QP_28"
+
+# rename restart files
+mv "result/${KEY}/mesh_dx50/${run_name}.result"\
+    "result/${KEY}/mesh_dx50/${new_name}.result"
+
+# rename the "raw" netcdf files
+mv "result/${KEY}/nc/${run_name}.nc"\
+    "result/${KEY}/nc/${new_name}.nc"
+
+# overwrite the runname with the updated name,
+# we postprocess after renaming so the files packed into the zarr archieves have 
+# the correct filenames when unpacked
+run_name="${new_name}"
+
+# run the post processing commands
+post_proccess
