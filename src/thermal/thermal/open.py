@@ -23,6 +23,10 @@ rename_dict = {'velocity 1'   : 'vel_x',
                'strainrate 2' : 'SR_zz',
                'strainrate 4' : 'SR_xz',
                'strainrate 5' : 'SR_ii',
+               'stress 1'     : 'S_xx',
+               'stress 2'     : 'S_zz',
+               'stress 3'     : 'S_yy',
+               'stress 4'     : 'S_xz',
                'enthalpy heat diffusivity' : 'kappa_cold'}
 
 def __quads_to_tris(quads):
