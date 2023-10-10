@@ -2,6 +2,7 @@
 
 import os
 import sys
+from thermal import meshing 
 # sys.path.append('../../src')
 # import thermal.mesh as meshing
 
@@ -11,6 +12,7 @@ glacier = 'crmpt12'
 # instead of glaciers, we have a dictionary of different sensitivty test
 experiments = {
                 'crmpt12' : [50,  15], # Δx, Nz [m]
+                'klun-a'  : [200, [15, 20, 25, 30, 35, 40]]
               }
 
 # filepath relative to top of git repo
@@ -19,7 +21,7 @@ rel_fp = "./expr/01_UQ/result"
 #
 for exp in experiments:
     Δx, Nz = experiments[exp]
-    out_fp = os.path.join(rel_fp, exp, "mesh_dx{}".format(Δx, Nz))
+    out_fp = os.path.join(rel_fp, exp, "mesh_dx{}".format(Δx))
     nc_fp  = f'result/{exp}/nc/'
     gridded_fp = f'result/{exp}/gridded/'
 
@@ -29,10 +31,9 @@ for exp in experiments:
     if type(Nz) is list:
         for nz  in Nz:
             # append to the mesh name
-            out_fp += f"_nz{nz}"
+            nz_fp = out_fp + f"_nz{nz}"
             # make the mesh
-            stat = meshing.make_mesh(glacier , Δx, out_fp, Nz=nz)
-
+            stat = meshing.make_mesh(glacier , Δx, nz_fp, Nz=nz)
     else:
         stat = meshing.make_mesh(glacier , Δx, out_fp, Nz=Nz)
 
