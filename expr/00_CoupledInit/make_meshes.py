@@ -2,7 +2,7 @@
 
 import os
 import sys
-from thermal import meshing 
+from thermal import meshing
 
 # input glaciers and desired mesh resolutions for coarse grid searches
 glaciers = { # small
@@ -21,11 +21,10 @@ for key in glaciers.keys():
     nc_fp  = f'result/{key}/nc/'
     gridded_fp = f'result/{key}/gridded/'
 
-    #-----
+    # -----
     # Mesh
-    #-----
-    # Make the mesh
-    stat = meshing.make_mesh(key , Δx, out_fp, Nz=Nz)
+    # -----
+    stat = meshing.make_mesh(key, Δx, out_fp, Nz=Nz)
 
     #-------
     # NetCDF
