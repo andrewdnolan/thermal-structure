@@ -67,7 +67,8 @@ def get_axis_limits(src, H_min=10):
     return (0, xmax), (ymin, ymax)
 
 
-def enthalpy_pcolormesh(src, i, axes=None, T_min=-8.0, W_max=0.5, contour_CTS=False):
+def enthalpy_pcolormesh(src, i, axes=None, T_min=-8.0, W_max=0.5, 
+                        contour_CTS=False, rasterized=False):
     """
     i is time index (ith timestep)
     """
@@ -88,10 +89,10 @@ def enthalpy_pcolormesh(src, i, axes=None, T_min=-8.0, W_max=0.5, contour_CTS=Fa
     # plot the temperature/water content field
     if 't' in src.dims:
         im = ax.pcolormesh(src.X[:,::-1]/1e3, src.Z.isel(t=i), T_and_w.isel(t=i),
-                           shading='gouraud', norm=norm, cmap=cmap)
+                           shading='gouraud', norm=norm, cmap=cmap, rasterized=rasterized)
     else:
         im = ax.pcolormesh(src.X[:,::-1]/1e3, src.Z, T_and_w,
-                           shading='gouraud', norm=norm, cmap=cmap)
+                           shading='gouraud', norm=norm, cmap=cmap, rasterized=rasterized)
 
     # contour the CTS if the flag is passed
     if contour_CTS:
