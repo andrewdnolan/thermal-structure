@@ -418,15 +418,22 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
           end select
   
           if (percolate) then
+            ! Cold content. (amount of metlwater needed to freeze to warm the firn column to 0C)
+            heat = (H_f % values (H_f % perm(k) - Enth % values (Enth % perm(k)))) / L_heat
+            ! If firn is already temperate there is no cold content, so bound variable at 0
+            heat = max(heat, 0.0_dp)
+
             ! current water content [-]
             water = (Enth % values (Enth % perm(k)) - H_f % values (H_f % perm(k))) / L_heat
-  
+            ! water content is bounded by zero, so enforce 
+            water = min(water, 0.0_dp)
+
             ! residual water content [kg m-3], i.e. water content left to be filled:
             ! based on:
-            !     1. density i.e. porosity
-            !     2. difference b/w current and maximum water content
-            w_res = (w_max_aq-water) * (1.0_dp - rho/rho_i) * rho_w
-  
+            !     1. cold content of firn
+            !     2. density i.e. porosity
+            !     3. difference b/w current and maximum water content
+            w_res = (heat + (w_max_aq-water)) * (1.0_dp - rho/rho_i) * rho_w
             ! residual water content [kg m-3] is bounded by zero, enforce that bound
             w_res = max(w_res, 0.0_dp)
   
