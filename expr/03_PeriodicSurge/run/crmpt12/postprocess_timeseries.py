@@ -104,9 +104,15 @@ def main(gridded_dir):
         # quiescent period is surge period minus two year active phase
         QP = SP-2
 
+        # check that the beta/QP combination exists
+        # specifally, bisected beta values were not run for the 15 & 60 year sugres. 
+        found = glob(src_fp.format(beta=f'{beta:.3e}', QP=int(QP)))
+        # So, skip the bisected beta values for those surge periods
+        if not found: 
+            continue
+
         # open the ith file
-        src = xr.open_mfdataset(src_fp.format(beta=f'{beta:.3e}', QP=int(QP)), 
-                                engine='zarr', data_vars='different')
+        src = xr.open_mfdataset(found, engine='zarr', data_vars='different')
 
         ##############################################################
         # Calculate diagnostic variables for analysis 
