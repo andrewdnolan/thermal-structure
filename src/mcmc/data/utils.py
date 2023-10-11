@@ -11,7 +11,7 @@ def load_KMR_DETIM():
     """Load KMR (D)istributed (E)nhanced (T)emperature (I)ndex (M)odel results
     """
     # file paths to the NetCDF files
-    nc_fp = "../../input_data/mass_balance/Kaskawulsh_NetBalance.nc"
+    nc_fp = "/Users/andrewnolan/Thesis/thermal-structure/input_data/mass_balance/Kaskawulsh_NetBalance.nc"
 
     with xr.open_dataset(nc_fp) as MB_obs:
         # stack along elevation
