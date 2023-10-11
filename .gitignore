@@ -30,6 +30,8 @@ dask-worker-space/
 *.log
 *.err
 
+# Study directory
+study/
 # Presenations
 *.html
 # figures
