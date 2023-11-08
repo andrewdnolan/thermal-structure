@@ -624,7 +624,7 @@ Body Force 1
   ! Given that Pa = (J/m3), we first convert from MPa to Pa, then convert the
   ! volumetric heat source to a mass heat source (enthalpy solver only supports mass heat source)
   Heat Source = Variable "W", "Q_lat", "Densi"
-                Real LUA "IfThenElse((tx[0]<0.0), 0.0, (tx[0] * 1e6 + tx[1]) / tx[2])"
+                Real LUA "IfThenElse((tx[0]<0.0), (tx[1]/tx[2]), (tx[0] * 1e6 + tx[1]) / tx[2])"
 
   ! Enthalpy (soft) Limiters
   Enthalpy_h Upper Limit = Variable Densi, Phase Change Enthalpy
