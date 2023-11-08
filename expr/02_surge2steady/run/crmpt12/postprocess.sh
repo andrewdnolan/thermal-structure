@@ -4,7 +4,7 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem-per-cpu=4000M
-#SBATCH --mail-type=ALL                      # send all mail (way to much)
+#SBATCH --mail-type=END                      # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu # email to spend updates too
 #SBATCH --output=dask_%A_%a.out              # standard output
 #SBATCH --error=dask_%A_%a.err               # standard error
