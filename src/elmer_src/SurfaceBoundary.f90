@@ -104,6 +104,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    Q_lat,       &  ! latent heat source.   [J m-3 yr-1]
                    Q_max,       &  ! Max. possible Q_lat   [J m-3 yr-1]
                    pump,        &  !
+                   heat,        &  ! Cold content of firn  [-]
                    PDD(100) = 0    ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Enthalpy related params
@@ -419,7 +420,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
   
           if (percolate) then
             ! Cold content. (amount of metlwater needed to freeze to warm the firn column to 0C)
-            heat = (H_f % values (H_f % perm(k) - Enth % values (Enth % perm(k)))) / L_heat
+            heat = (H_f % values (H_f % perm(k)) - Enth % values (Enth % perm(k))) / L_heat
             ! If firn is already temperate there is no cold content, so bound variable at 0
             heat = max(heat, 0.0_dp)
 
