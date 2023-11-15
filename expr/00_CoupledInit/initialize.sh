@@ -148,24 +148,24 @@ prognostic_run()
        s#<SS_itters>#"$SS_itters"#g;" "./sifs/prognostic.sif" > "./sifs/${run_name}.sif"
        #s#<RESTART>#"$RESTART"#g
 
-  # filepath to log file
-  log_file="logs/${KEY}/${run_name}.log"
-
-  # Run the model
-  ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
-
-  # add the params as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
-                                        -a "params"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
-  # add the sif as a global attribute to the netcdf file
-  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
-                                        -a "sif"                \
-                                           "result/${KEY}/nc/${run_name}.nc"
-
-  # # Remove the sif file
-  rm "./sifs/${run_name}.sif"
-
+#  # filepath to log file
+#  log_file="logs/${KEY}/${run_name}.log"
+#
+#  # Run the model
+#  ElmerSolver "./sifs/${run_name}.sif" #| tee $log_file
+#
+#  # add the params as a global attribute to the netcdf file
+#  python3 ../../src/thermal/add_attr.py -f "params/ref_params.sif" \
+#                                        -a "params"                \
+#                                           "result/${KEY}/nc/${run_name}.nc"
+#  # add the sif as a global attribute to the netcdf file
+#  python3 ../../src/thermal/add_attr.py -f "./sifs/${run_name}.sif" \
+#                                        -a "sif"                \
+#                                           "result/${KEY}/nc/${run_name}.nc"
+#
+#  # # Remove the sif file
+#  rm "./sifs/${run_name}.sif"
+#
 }
 
 log_runtime()
@@ -224,7 +224,7 @@ full_initialization()
   #@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   # Number of time interval based on dt
   NT=$(awk -v dt=$dt -v t_f=$t_f 'BEGIN {OFMT = "%.0f"; print (t_f/dt)}')
-  
+
   # NOTE: this overwites anything passed over the command line, which is no good
   #-----------------------------------------------------------------------------
   # Execute interval for dynamics solvers,
@@ -240,19 +240,19 @@ full_initialization()
 
   # run the transient model with diagnostic solution as restart fiedl
   prognostic_run $dx $FIT $KEY $offset $run_name $SS_itters $NT $dt
-
-  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
-  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
-  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
-  #                                -params "${param_dict}"
-  # End the timer
-  end=$(date +%s.%N)
-
-  # Execution time of the solver
-  runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
-
-  # record the prognostic runtimes for future info
-  log_runtime $dx $dt $NT $offset $T_ma $runtime
+#
+#  # # grid the NetCDF file written by the NetcdfUGRIDOutputSolver
+#  # python3 ../../src/thermal/grid_data.py "result/${KEY}/nc/${run_name}.nc"      \
+#  #                                -out_fn "result/${KEY}/gridded/${run_name}.nc" \
+#  #                                -params "${param_dict}"
+#  # End the timer
+#  end=$(date +%s.%N)
+#
+#  # Execution time of the solver
+#  runtime=$(awk -v start=$start -v end=$end 'BEGIN {print end - start}')
+#
+#  # record the prognostic runtimes for future info
+#  log_runtime $dx $dt $NT $offset $T_ma $runtime
 }
 
 find_final_timestep()
