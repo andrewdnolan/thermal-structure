@@ -297,10 +297,18 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! lenght of timestep in days of year [doy] <-- d/y * y
       dd = 365.0_dp * (time_ip1-time_i) / real(SIZE(T) - 1, dp)
 
-      ! Calculte PDDs from semi-analytical solution from Calvo and Greve 2005, 
-      ! function return units of [K, i.e. degree], convert to degree-day by
-      ! multiplying by the timestep lenght in days of year
-      PDD = Cavlo_Greve_PDDs(T,std) * dd * N_years    ! [K d] <--- [K] * [d] * [-]
+      ! Calculte PDDs [K d] from semi-analytical solution from Calvo and Greve 2005
+      ! 
+      ! The Cavlo_Greve_PDDs function only returns an evaluation of the function 
+      ! to be integrated, not the value of integrand. The units of the  function 
+      ! to integrated are [K]. We use a somewhat curde approximation of the integral 
+      ! but which is still accurate enough (error <= 1e-4) since we have a constant 
+      ! gridcell (i.e. timestep) spacing. 
+      ! 
+      ! Once we evaluate  the integral (with tempertaure a periodic function of time 
+      ! with units of [y]) the resulting value has units of [K y], which is why we 
+      ! scale by days per year (365 [d/y]) to end up with units of [K d]. 
+      PDD = 365.0_dp * SUM(Cavlo_Greve_PDDs(T,std)) * (time_ip1-time_i) / real(SIZE(T) - 1, dp)
 
       !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
       ! Calculate surface heating term
@@ -308,7 +316,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
       ! Test if mass balance is positive (i.e. above the ELA)
       IF (MB % values (MB % perm(n)) .ge. 0.0) THEN
         ! Calculate surace melt in meters of snow equivalent
-        Melt = f_dd * SUM(PDD) ![m] <= [m K-1 d-1] * [K d]
+        Melt = f_dd * PDD ![m] <= [m K-1 d-1] * [K d]
       ElSE
         ! below the ELA so no latent heat source available
         Q_lat = 0.0
