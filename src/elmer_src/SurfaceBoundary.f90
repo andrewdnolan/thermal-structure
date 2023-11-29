@@ -105,7 +105,7 @@ SUBROUTINE Surface_Processes( Model, Solver, dt, TransientSimulation)
                    Q_max,       &  ! Max. possible Q_lat   [J m-3 yr-1]
                    pump,        &  !
                    heat,        &  ! Cold content of firn  [-]
-                   PDD(100) = 0    ! + degrees. for DOY    [K]
+                   PDD             ! + degrees. for DOY    [K]
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
   ! Enthalpy related params
   !@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
