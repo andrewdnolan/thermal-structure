@@ -5,7 +5,7 @@
 #SBATCH --time=48:00:00                                # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
-#SBATCH --mail-type=ALL                            # send all mail (way to much)
+#SBATCH --mail-type=END                            # send all mail (way to much)
 #SBATCH --mail-user=andrew.d.nolan@maine.edu       # email to spend updates too
 #SBATCH --output=logs/crmpt12/crmpt12_%A_%a.out   # standard output
 #SBATCH --error=logs/crmpt12/crmpt12_%A_%a.err    # standard error

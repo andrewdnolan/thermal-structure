@@ -1,8 +1,8 @@
 {
-  "offset": -0.37,
+  "offset": -0.36,
   "T_ma"  : -8.5,
   "dx"    : 50,
-  "RESTART" : "crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.37_OFF_Tma_-8.5_prog.result",
+  "RESTART" : "crmpt12_dx_50_NT_30000_dt_0.1_MB_-0.36_OFF_Tma_-8.5_prog.result",
   "z_lim": 2400, 
   "SD_dt": 0.05,  
   "ST_dt": 0.05,

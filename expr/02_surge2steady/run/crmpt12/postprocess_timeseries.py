@@ -33,7 +33,7 @@ def mean_velocity(ds, slice, compute=False):
 def amalgamate(base_fp, beta, surge_NT=40):
 
     # pseudo surge netcdf file
-    surge_nc = f'crmpt12_dx_50_NT_{surge_NT}_dt_0.05_MB_-0.37_OFF_Tma_-8.5_B_{beta:1.3e}_pseudo.zarr'
+    surge_nc = f'crmpt12_dx_50_NT_{surge_NT}_dt_0.05_MB_-0.36_OFF_Tma_-8.5_B_{beta:1.3e}_pseudo.zarr'
     surge_fp = path.join(base_fp, surge_nc)
     # second pseudo surge from recovered state
     surge2_fp = surge_fp.split('.zarr')[0] + '_C2.zarr'
