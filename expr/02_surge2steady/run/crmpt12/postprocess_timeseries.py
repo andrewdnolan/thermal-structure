@@ -4,7 +4,7 @@ from os import path
 from tqdm.contrib import tenumerate
 from thermal.derived_fields import calc_mean_enthalpy, calc_length
 
-def mean_velocity(ds, slice, compute=False): 
+def mean_velocity(ds, slice, compute=False):
     """Compute the average surface velocity [m a-1], in space and time, over a given time slice
 
     Inputs:
@@ -16,9 +16,9 @@ def mean_velocity(ds, slice, compute=False):
     vel_mu (xr.DataArray) --> Avg., in x and t, surf. vel. over the given time slice
     """
 
-    if compute: 
+    if compute:
         ds = ds.sel(t=slice).compute()
-    else: 
+    else:
         ds = ds.sel(t=slice)
 
     # compute the glacier length, in order to mask passive nodes
@@ -27,7 +27,7 @@ def mean_velocity(ds, slice, compute=False):
     X = ds.X.sortby('coord_1', ascending=False).compute()
     # compute the mean velocity, both space and time, at the active nodes
     vel_mu = ds.vel_m.where(X <= L).mean()
-    
+
     return vel_mu
 
 def amalgamate(base_fp, beta, surge_NT=40):
@@ -47,7 +47,7 @@ def amalgamate(base_fp, beta, surge_NT=40):
 
     # empty list to store datasets in
     xarrays = []
-    # loop over the four files written as part of the experiment 
+    # loop over the four files written as part of the experiment
     for i, fp in enumerate([surge_fp, recovery_fp, surge2_fp, recovery2_fp]):
 
         src = xr.open_zarr(fp)
@@ -57,7 +57,7 @@ def amalgamate(base_fp, beta, surge_NT=40):
         if i == 0:
             initial_volume = src.initial_volume.copy(deep=True)
         # drop the initial volume now that it's redimensionalize
-        src = src.drop_vars('initial_volume')  
+        src = src.drop_vars('initial_volume')
         # if first file, just add to the list
         if i == 0:
             # add to the list
@@ -84,7 +84,7 @@ def amalgamate(base_fp, beta, surge_NT=40):
 
     return ds
 
-def parse_beta(src): 
+def parse_beta(src):
     """ Extract beta value from filepath and add as new dimension
     """
     # strip the file extension
@@ -93,20 +93,20 @@ def parse_beta(src):
     beta = float(run_name.split('B')[-1].split('_')[1])
     # add new dimension to dataset, which we can concat along
     src = src.expand_dims('beta').assign_coords({'beta': ('beta', [beta])})
-    
+
     return src
 
 def main():
     # filepath to external drive
-    base_fp = '/Volumes/thermal/Thesis/thermal-structure/'
-    # filepath to within repo structure 
+    base_fp = '/Volumes/thermal/thermal-structure/'
+    # filepath to within repo structure
     expr_fp = 'expr/02_surge2steady/result/crmpt12/gridded/'
     # joined filepath to data directory
     src_fp  = path.join(base_fp, expr_fp)
-    # write file up one directory 
+    # write file up one directory
     out_fp  = '/'.join(src_fp.split('/')[:-2])
     # timeseries variables
-    vars = ['initial_volume', 'relative_volume', 'percent_temperate', 
+    vars = ['initial_volume', 'relative_volume', 'percent_temperate',
             'mean_surge_vel_m', 'mean_quies_vel_m',
             'mean_enthalpy']
 
@@ -117,9 +117,9 @@ def main():
         # concatenate all the individual files for one beta value
         src = amalgamate(src_fp, beta=beta)
 
-        # average surface velocity in quiescence 
+        # average surface velocity in quiescence
         src['mean_quies_vel_m'] = mean_velocity(src, slice(4000.1, 4001.0))
-        # average surface velocity during the surge 
+        # average surface velocity during the surge
         src['mean_surge_vel_m'] = mean_velocity(src, slice(4002.1, 4004.0))
 
         # expand the dimension for the ith beta value
@@ -132,11 +132,11 @@ def main():
         # append the preprocessed, filtered, and resampled timeseries to the list
         timeseries.append(src)
 
-    # concatenate timeseries along the beta dimension 
+    # concatenate timeseries along the beta dimension
     surge2steady = xr.concat(timeseries, dim='beta')
 
 
-    # make the output filename 
+    # make the output filename
     out_fn  = 'surge2steady_timeseries.zarr'
     full_fn = path.join(out_fp, out_fn)
     # write the timeseries to disk
@@ -147,5 +147,5 @@ def main():
     print(f'File written to: {out_fp}')
     print('*'*100 + '\n\n')
 
-if __name__ == '__main__': 
+if __name__ == '__main__':
     main()
