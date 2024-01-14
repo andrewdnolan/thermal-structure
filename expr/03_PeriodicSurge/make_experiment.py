@@ -13,24 +13,24 @@ WT   = '15-4:00:00'
 MEM  = '4000M'
 # fixed 2-year surge period [a]
 SP = 2
-# restart from the end of the last simulation 
+# restart from the end of the last simulation
 T0 = 0
 
-# # ##################################################
-# # # Reference Experiment:
-# # ##################################################
-# # slip coefficients to test (3 order of magnitude)
-# betas  = np.logspace(-3, -4, 9)
-# # length of the surge cycle [a]
-# cycles = [15, 30, 60]
-
-##################################################
-# Bisect to see periodicity emerge Experiment:
-##################################################
+# ##################################################
+# # Reference Experiment:
+# ##################################################
 # slip coefficients to test (3 order of magnitude)
-betas  = np.geomspace(0.0004217,0.00031623, 11)[1:-1]
+betas  = np.logspace(-3, -4, 31)
 # length of the surge cycle [a]
-cycles = [30]
+cycles = [15, 30, 60]
+
+###################################################
+## Bisect to see periodicity emerge Experiment:
+###################################################
+## slip coefficients to test (3 order of magnitude)
+#betas  = np.geomspace(0.0004217,0.00031623, 11)[1:-1]
+## length of the surge cycle [a]
+#cycles = [30]
 
 # base command used to execute a single simulation
 cmd = "./periodic_surge.py -k \"{KEY}\" -SP {SP} -QP {QP} -beta {beta:1.3e} -TT {TT} -T0 {T0} "
