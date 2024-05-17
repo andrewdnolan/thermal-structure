@@ -45,20 +45,6 @@
             "samples"   : 11, 
             "spacing"   : "linspace", 
             "reference" : 0.0
-            },
-        "f_dd_refined": {
-            "start"     : 0.0022, 
-            "stop"      : 0.0028, 
-            "samples"   : 4, 
-            "spacing"   : "linspace", 
-            "reference" : 0.006
-            },
-        "w_en_refined": {
-            "start"     : 0.001, 
-            "stop"      : 0.004, 
-            "samples"   : 4, 
-            "spacing"   : "linspace", 
-            "reference" : 0.01
             }
     }
 }
