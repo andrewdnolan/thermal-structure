@@ -28,3 +28,25 @@ On a SLURM cluster (e.g. `cedar`):
 ```bash
 sbatch ./run/crmpt12/parametric_sensitivity_submit.sh
 ```
+
+### Bug in making `runname` for reference parameter runs 
+
+A bug in the name `make_runname` function in `sensitivity.sh` script results
+in all reference parameter runs having the runname
+`crmpt12_dx_50_NT_30000_dt_0.1_1aTST__`. So as a stopgap solution run the following
+```bash
+source sensitivity.sh
+
+for var in C_firn f_dd w_en w_aq IC; do 
+
+  # get the reference value for current parameter
+  parse_reference $var
+  runname="crmpt12_dx_50_NT_30000_dt_0.1_1aTST_${var}_${reference}"
+    
+  for dir in "gridded" "thinned"; do
+    pushd result/crmpt12/${dir}
+    echo cp crmpt12_dx_50_NT_30000_dt_0.1_1aTST__.zarr.tar ${runname}.zarr.tar
+    popd
+  done
+done
+```
