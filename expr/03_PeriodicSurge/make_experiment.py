@@ -6,9 +6,9 @@ from itertools import product
 # glacier identifer
 key  = 'crmpt12'
 # simulation length [yr]
-TT   = 9000
+TT   = 3000
 # walltime in dd-hh:mm:ss
-WT   = '15-4:00:00'
+WT   = '4-4:00:00'
 # memory allocation
 MEM  = '4000M'
 # fixed 2-year surge period [a]
@@ -25,6 +25,12 @@ betas  = np.logspace(-3, -4, 31)
 cycles = [15, 30, 60]
 
 ###################################################
+# Load the incomplete runs inorder to resubmit
+###################################################
+incomplete = np.loadtxt("incomplete_runs.dat")
+
+
+###################################################
 ## Bisect to see periodicity emerge Experiment:
 ###################################################
 ## slip coefficients to test (3 order of magnitude)
@@ -38,11 +44,13 @@ cmd = "./periodic_surge.py -k \"{KEY}\" -SP {SP} -QP {QP} -beta {beta:1.3e} -TT 
 # open the commands file used by the job array
 with open(f'./run/{key}/{key}.commands', 'w') as f:
 
-    # itterate over betas and surge-cycle periods [yr]
-    for i, (beta, CP) in enumerate(product(betas, cycles)):
-
+    # itterate over betas and surge-cycle periods [yr] of incomplete runs
+    for i, exp_params in enumerate(incomplete):
+    #for i, (beta, CP) in enumerate(product(betas, cycles)):
+        CP, beta = exp_params
+        
         # calculate quiescent period [yr]
-        QP = CP-SP
+        QP = int(CP)-SP
 
         # dump the command in the text file
         f.write(cmd.format(KEY=key, SP=SP, QP=QP, TT=TT, beta=beta, T0=T0))

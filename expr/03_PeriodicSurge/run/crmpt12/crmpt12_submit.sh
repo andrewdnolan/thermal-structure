@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --array=1-93%93
+#SBATCH --array=1-34%34
 #SBATCH --job-name=crmpt12_%A                      # base job name for the array
 #SBATCH --mem-per-cpu=4000M                        # maximum 200M per job
-#SBATCH --time=15-4:00:00                                # maximum walltime per job
+#SBATCH --time=4-4:00:00                                # maximum walltime per job
 #SBATCH --nodes=1                                  # Only one node is needed
 #SBATCH --ntasks=1                                 # These are serial jobs
 #SBATCH --mail-type=END                            # send all mail (way to much)
