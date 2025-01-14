@@ -83,17 +83,12 @@ def main(argv):
     parser.add_argument('-Dynamic_int','--Dynamic_exec_interval', type=int,
                         help = "Interval to execute the dynamic solver, relative"\
                                "to the thermodynamic solver",
-                        default = 1)
-
-    parser.add_argument('-it_diag','--diagnostic_SS_iterations', type=int,
-                        help = "Number of (S)teady (S)tate itterations for the\n"\
-                               "diagnostic simulation",
-                        default = 25)
+                        default = 10)
 
     parser.add_argument('-it_prog','--prognostic_SS_iterations', type=int,
                         help = "Number of (S)teady (S)tate itterations for the \n"\
                                "prognostic simulation",
-                        default = 10)
+                        default = 1)
 
     parser.add_argument('-C_firn', type=float,
                         help = "firn densification constant",
