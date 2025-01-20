@@ -75,7 +75,7 @@ def expand_dims(src, SP, beta):
               type=click.Path(exists=True), required=True)
 def main(gridded_dir):
     # runname template to search, most params are hard coded but could be pass over cli 
-    run_name = "crmpt12_dx_50_TT_*--*ka_MB_-0.37_OFF_Tma_-8.5_B_{beta}_SP_2_QP_{QP}.zarr"
+    run_name = "crmpt12_dx_50_TT_*--*ka_MB_-0.35_OFF_Tma_-8.5_B_{beta}_SP_2_QP_{QP}.zarr"
 
     # source filepath  
     src_fp  =  path.join(gridded_dir, run_name)
