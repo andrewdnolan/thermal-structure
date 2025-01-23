@@ -23,7 +23,7 @@ rsync -uaR --no-g --no-p result/*/*/*.result $dest
 
 
 # make symbolic links to the time profile files
-for f in $(find ./ -name "*.surge2steady.time_profile"); do
+for f in $(find ./ -name "*.periodic_surge.time_profile"); do
 	# remove local path (./) from filename
 	file=${f/.\//}
 
