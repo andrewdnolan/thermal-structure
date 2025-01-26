@@ -1,30 +1,63 @@
 #!/usr/bin/env python3
 
+import click
+import dask
+import json
 import os
 import sys
-import json
-import click
-from dask.distributed import Client
 
-# functions from local src code
+from dask.distributed import Client, LocalCluster
+
 from thermal.open import dataset as open_dataset
+
+# custom dask config needed for scipt to execute on compute canada systems
+cedar_configs = {
+    "distributed.worker.memory.pause": False,
+    "distributed.worker.memory.spill": False,
+    "distributed.worker.memory.target": False,
+    "distributed.worker.memory.terminate": False, 
+    "distributed.nanny.pre-spawn-environ.MALLOC_TRIM_THRESHOLD_": 0,
+}
 
 def start_cluster():
     """
-    Start the dask cluster for parallel support.  
-    
-    Built in felxibilty to support both local and HPC side proccessing. 
-    https://github.com/ualberta-rcg/python-dask/blob/master/cluster-examples/
+    Start a LocalCuster for parallel support processing
+
+    LocalCluster will work for both a laptop and SLURM job, assuming it's a 
+    a shared memory job (i.e. single node).
     """
-    # check if scheduler file set, i.e. on slurm cluster
-    if 'SCHEDULER_FILE' in os.environ:
-        # get the scheduler file
-        scheduler_file = os.environ['SCHEDULER_FILE']
-        # start the client
-        client = Client(scheduler_file=scheduler_file)
-    # otherwise on local workstation: just make use of resources avail.
+    
+    timeout = 600
+
+    if "SLURM_JOB_ID" in os.environ:
+        tmpdir = os.environ["SLURM_TMPDIR"]
+        n_cpus = int(os.environ["SLURM_CPUS_PER_TASK"])
+
+        if "THREADS_PER_WORKER" in os.environ:
+            threads_per_worker = int(os.environ["THREADS_PER_WORKER"])
+        else:
+            threads_per_worker = 4
+
+        n_workers = n_cpus // threads_per_worker
+
+        with dask.config.set(cedar_configs):
+            cluster = LocalCluster(n_workers=n_workers,
+                                   threads_per_worker=threads_per_worker,
+                                   #processes=False,
+                                   host="localhost", dashboard_address=":8787",
+                                   # worker kwargs
+                                   local_directory=tmpdir)
+
+            client = Client(cluster, timeout=timeout)
+
     else:
-        client = Client()
+        cluster = LocalCluster()
+        client = Client(cluster, timeout=timeout)
+
+    # print the cluster info
+    print('\n', client, '\n')
+    # prevent buffered output
+    sys.stdout.flush()
 
     return client
 
@@ -60,19 +93,18 @@ def grid_data(in_fp, out_fp, params):
     """
     # Check is parameter dictionary was passed
     if params:
-        # should probably add some better error handling here
-        param_dict = json.loads(params)
+        try:
+            param_dict = json.loads(params)
+        except json.JSONDecodeError:
+            print('Parameter dictionary incorrectly formatted, resulting in JSONDecodeError')
+            print(f'\n {params} \n')
+            raise
     else:
         # set to empty dict, loop below will not itterate
         param_dict = dict()
 
     # start the dask distributed cluster
     client = start_cluster()
-
-    # print the cluster info 
-    print('\n', client, '\n')
-    # prevent buffered output
-    sys.stdout.flush()
 
     # open and preprocess (i.e grid) the dataset, out of memory
     ds = open_dataset(in_fp, chunks={'time':'auto', 'nMesh_node':-1})
