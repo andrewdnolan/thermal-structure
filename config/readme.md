@@ -31,9 +31,9 @@ All the automatically generated submission scripts, in the `expr/` folder, will 
 
 ### `build_py4elmer.sh`
 Will build the `python` virtual env needed for post processing on `cedar`. 
-Unfortunately, `conda` env aren't available on `cedar` but using build script
+Unfortunately, `conda` env aren't available on `cedar` but this build script
 uses the same `dev-environment.txt` file so we can guarantee consistent packages
-(but not necessarily versions) between `cedar` and a local laptop,. To install, run:
+(but not necessarily versions) between `cedar` and our `conda` env. To install, run:
 ```bash
 bash ./build_py4elmer.sh
 ```
