@@ -16,8 +16,5 @@ module load netcdf/4.7.4
 module load perl
 
 # Load python 3
-module load python/3.10.2
-
-# Lazy way
-module load scipy-stack
+module load python/3.12.4
 source $HOME/python_envs/py4elmer/bin/activate
