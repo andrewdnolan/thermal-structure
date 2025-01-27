@@ -12,10 +12,8 @@
 
 # how many files to itterate over in a the for loop  
 CHUNK_SIZE=48
-# numbers of cores each job in the array will have
-export NUM_WORKERS=16
 # use a single thread per cpu core
-export THREADS_PER_WORKER=1
+export THREADS_PER_WORKER=8
 
 source ../../config/modulefile.cc.cedar
 

@@ -6,23 +6,6 @@ evenly_divisible()
   echo $(awk -v a=$1 -v b=$2 'BEGIN{print((a / b % 1) == 0)}')
 }
 
-create_dask_cluster()
-{
-  export SCHEDULER_FILE="${SLURM_JOB_ID}-scheduler.json"
-  dask scheduler --host 127.0.0.1 --no-dashboard --scheduler-file $SCHEDULER_FILE &
-  sleep 15
-
-  for worker in $(seq $NUM_WORKERS); do
-  dask worker --scheduler-file $SCHEDULER_FILE \
-              --no-dashboard \
-              --no-nanny \
-              --nworkers 1 \
-              --nthreads 1 &
-  done
-  sleep 15
-
-}
-
 post_proccess()
 {
   # copy the source file from scratch to local (compute node's) SSD

@@ -3,12 +3,6 @@ import xarray as xr
 from glob import glob
 from .derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
-
-"""
-# open multiple zarr
-    https://discourse.pangeo.io/t/how-to-read-multiple-zarr-archives-at-once-from-s3/2564
-"""
-
 # dictionary of 1D variables and vertical index they are define along
 vars_1D = { "mass balance" : -1,
             "surface_enthalpy" : -1, 
@@ -28,26 +22,6 @@ rename_dict = {'velocity 1'   : 'vel_x',
                'stress 3'     : 'S_yy',
                'stress 4'     : 'S_xz',
                'enthalpy heat diffusivity' : 'kappa_cold'}
-
-def __quads_to_tris(quads):
-    """converts quad elements into tri elements
-    from: https://stackoverflow.com/a/59971611/10221482
-    """
-
-    tris = [[None for j in range(3)] for i in range(2*len(quads))]
-    for i in range(len(quads)):
-        j = 2*i
-        n0 = quads[i][0]
-        n1 = quads[i][1]
-        n2 = quads[i][2]
-        n3 = quads[i][3]
-        tris[j][0] = n0
-        tris[j][1] = n1
-        tris[j][2] = n2
-        tris[j + 1][0] = n2
-        tris[j + 1][1] = n3
-        tris[j + 1][2] = n0
-    return tris
 
 def __preprocess_UGRID(ds, out_fn=None):
     """Reshape the NetCDF from Elmer onto a structured grid.
