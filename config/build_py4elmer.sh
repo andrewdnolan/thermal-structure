@@ -3,7 +3,8 @@
 # script for building python environment on cedar
 
 # Load python 3
-module load python/3.12.4
+module load python/3.11.5
+module load scipy-stack/2023b
 
 if [[ -d "$HOME/python_envs/py4elmer" ]]; then
   rm -r "$HOME/python_envs/py4elmer"
@@ -15,8 +16,11 @@ virtualenv --no-download $HOME/python_envs/py4elmer
 source $HOME/python_envs/py4elmer/bin/activate
 # update pip
 pip install --no-index --upgrade pip
+
 # install the various packages needed ontop of scipy stack
-pip install --no-index -r dev-environment.txt
+pip install --no-index dask distributed xarray jupyterlab bokeh seaborn
+# needs it's own line, to deal with numcodecs conflicts
+pip install zarr
 
 # install the local pyton module (thermal)
 pip install --editable $HOME/project/thermal-structure/src/thermal/ --no-deps

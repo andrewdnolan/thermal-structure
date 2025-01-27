@@ -12,8 +12,8 @@ To install, assuming you have `miniforge` installed, run:
 ```bash
 conda config --add channels conda-forge
 conda config --set channel_priority strict
-conda create -y -n thermal python=3.12.4
-conda install -n thermal --file dev-environment.txt
+conda create -y -n thermal python=3.11.5
+conda install -y -n thermal --file dev-environment.txt
 
 conda activate thermal
 
