@@ -106,7 +106,7 @@ def main(argv):
      
     parser.add_argument('-itters',f'--{vars["SS_itters"]["flag_var"]}', type=int,
                         help = "Number of (S)teady (S)tate itterations",
-                        default = 10)
+                        default = 1)
 
 
     args, _ = parser.parse_known_args(argv)

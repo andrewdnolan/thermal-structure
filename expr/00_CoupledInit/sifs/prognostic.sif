@@ -299,36 +299,43 @@ Solver 6
   Exported Variable 4   = -dofs 1 "runoff_frac" ! [-]
 End
 
-! Navier-Stokes Equation (Stokes Flow)
+! Navier-Stokes Equation (vectorized & threaded)
 Solver 7
   Exec Interval                            = <Dynamic_int>
   Timestep Scale                           = <Dynamic_int>
 
-  Equation                                 = "Navier-Stokes"
-  Flow model                               = String "Stokes"
+  Equation                                 = "Stokes-Vec"
+  Procedure                                = "IncompressibleNSVec" "IncompressibleNSSolver"
+  Div-Curl Discretization                  = Logical False
   Optimize Bandwidth                       = Logical True
-  !  Stabilization Method = [Stabilized,P2/P1,Bubbles]
-  Stabilization Method                     = String "Bubbles"
 
-  ! Linear System Solver                     = Direct
-  ! Linear System Direct Method              = "UMFPACK"
-  Linear System Solver                     = "Iterative"
-  Linear System Iterative Method           = "BiCGStabl"
-  BiCGStabl Polynomial Degree              = 4
-  Linear System Max Iterations             = 1000
-  Linear System Convergence Tolerance      = 1.0E-08
-  Linear System Abort Not Converged        = Logical False
-  Linear System Preconditioning            = "ILU0"
-  
-  Nonlinear System Convergence Tolerance   = 1.0E-07
-  Nonlinear System Max Iterations          = 25
-  Nonlinear System Newton After Iterations = 25
-  Nonlinear System Newton After Tolerance  = 1.0E-04
+  Stabilization Method                     = String "Stabilized"
+  Flow model                               = String "Stokes"
+  Block Preconditioner                     = logical True
+
+  ! Linear system settings:
+  !------------------------
+  Linear System Solver                     = Direct
+  Linear System Direct Method              = "UMFPACK"
+  Mumps percentage increase working space  = Integer 400
+
+  ! Non-linear iteration settings:
+  !-------------------------------
+  Nonlinear System Max Iterations          = 50
+  Nonlinear System Convergence Tolerance   = 1.0E-03
+  Nonlinear System Newton After Iterations = 5
+  Nonlinear System Newton After Tolerance  = 1.0E-03
   Nonlinear System Reset Newton            = Logical True
-  ! Nonlinear System Convergence Measure     = String "solution"
-
+  
+  ! Convergence on timelevel:
+  !--------------------------
   Steady State Convergence Tolerance       = 1.0E-03
-  ! Steady State Convergence Measure         = String "solution"
+
+  Relative Integration Order               = -1
+  !Number of Integration Points = Integer 44 ! 21, 28, 44, 64, ...
+
+  ! 1st iteration viscosity is constant
+  Constant-Viscosity Start                 = Logical False
 
   Exported Variable 1                      = -dofs 2 "Mesh Velocity"
   Exported Variable 2                      = -dofs 1 "Densi"
