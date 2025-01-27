@@ -15,6 +15,7 @@ pint
 seaborn
 scikit-learn
 scipy
+sshuttle
 tqdm
 xarray
 zarr
