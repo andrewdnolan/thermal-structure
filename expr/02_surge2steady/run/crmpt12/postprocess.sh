@@ -9,10 +9,8 @@
 #SBATCH --output=dask_%A_%a.out              # standard output
 #SBATCH --error=dask_%A_%a.err               # standard error
 
-# numbers of cores each job in the array will have
-export NUM_WORKERS=16
 # use a single thread per cpu core
-export THREADS_PER_WORKER=1
+export THREADS_PER_WORKER=8
 
 source ../../config/modulefile.cc.cedar
 
@@ -28,9 +26,6 @@ mkdir "${SLURM_TMPDIR}/thinned"
 if [ ! -d "result/${KEY}/thinned/" ]; then
   mkdir  "result/${KEY}/thinned/"
 fi
-
-# set up the dask cluter for the instance of the job array
-create_dask_cluster
 
 # post process the surge files
 for file in $(find ./result/${KEY}/nc/ -name "*.nc" -ctime -1); do 
