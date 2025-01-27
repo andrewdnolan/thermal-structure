@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt

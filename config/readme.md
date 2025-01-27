@@ -4,10 +4,21 @@ In this folder there are a some useful configuration files, for managing the var
 
 ---
 
-### `thermal.yml`
-This is the configuration file needed for creating the `conda` environment with all the necessary `python3` packages for post processing model results. To install, assuming you have `conda` or `miniconda` installed, run:
+### `dev-environment.txt`
+This is the list of python packages needed for running all workflows.
+The txt file can be used to create a `conda` environment with all the necessary
+`python3` packages for post processing model results.
+To install, assuming you have `miniforge` installed, run:
 ```bash
-conda env create -f thermal.yml
+conda config --add channels conda-forge
+conda config --set channel_priority strict
+conda create -y -n thermal python=3.11.5
+conda install -y -n thermal --file dev-environment.txt
+
+conda activate thermal
+
+cd ../src/thermal/
+pip install --editable .
 ```
 
 ### `modulefile.cc.cedar`
@@ -19,13 +30,18 @@ All the automatically generated submission scripts, in the `expr/` folder, will 
 
 
 ### `build_py4elmer.sh`
-Will build the `python` virtual env needed for post processing on `cedar`. Unfortunately, `conda` env aren't available so we need a seperate package management approach for `cedar`. This isn't a vert elegant solution, and whenever the `thermal.yml` file is update the appropriate packages need to be added to this script. To run,
+Will build the `python` virtual env needed for post processing on `cedar`. 
+Unfortunately, `conda` env aren't available on `cedar` but this build script
+uses the same `dev-environment.txt` file so we can guarantee consistent packages
+(but not necessarily versions) between `cedar` and our `conda` env. To install, run:
 ```bash
 bash ./build_py4elmer.sh
 ```
 
 ### `link2scratch
-Will create the symbolic links and build out the repo structure on the `scratch` filesystem. This is a workaround to have the same repo structure on `scratch` and `project` or any other location, without needing to maintain the `.git` repo on `scratch`. 
+Will create the symbolic links and build out the repo structure on the `scratch` filesystem.
+This is a workaround to have the same repo structure on `scratch` and `project`
+or any other location, without needing to maintain the `.git` repo on `scratch`. 
 ```
 make -f config/link2scratch
 ```

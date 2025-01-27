@@ -1,0 +1,30 @@
+[project]
+name = "thermal"
+version = "0.1.0"
+authors = [
+    { name = "Andrew Nolan", email = "anolan@sfu.ca" }
+]
+
+description = "Pre and post processing Elmer/Ice results"
+
+dependencies = [
+    "click",
+    "dask",
+    "distributed",
+    "matplotlib",
+    "numpy",
+    "pandas",
+    "xarray",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+exclude = ["test*"]
+
+[project.scripts]
+"downsample.py" = "thermal.scripts.downsample:downsample"
+"grid_data.py"  = "thermal.scripts.grid_data:grid_data"
+"make_mesh.py"  = "thermal.scripts.make_mesh:make_mesh"

@@ -36,7 +36,7 @@ def calc_volume(ds):
         This function work on both xarray and dask objects. Input ds would be a
         dask object, if it was chunked when it was read in
     """
-    return xr.apply_ufunc(integrate.trapz,
+    return xr.apply_ufunc(integrate.trapezoid,
                           ds.isel(coord_2=-1).height,
                           ds.isel(coord_2=-1).X,
                           input_core_dims=[["coord_1"], ["coord_1"]],
