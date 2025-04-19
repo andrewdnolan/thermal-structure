@@ -1,9 +1,11 @@
 import click
 import numpy as np
 import xarray as xr
+
 from os import path
 from glob import glob
 from tqdm.contrib.itertools import product
+
 from thermal.derived_fields import (calc_length, 
                                     calc_volume,
                                     Variable_at_ELA, 
@@ -117,12 +119,6 @@ def main(gridded_dir):
         ##############################################################
         # Calculate diagnostic variables for analysis 
         ##############################################################
-        # recompute the volume based on the concatenated timeseires
-        volume = calc_volume(src)
-        # write the initial volume in m^2
-        src['initial_volume']  = volume.isel(t=0)
-        # write the time dependent "relative volume"
-        src['relative_volume'] = volume / volume.isel(t=0)    
 
         # calculate the area weighted average enthalpy (kJ kg-3)
         src['mean_enthalpy'] = calc_mean_enthalpy(src) / 1e3
