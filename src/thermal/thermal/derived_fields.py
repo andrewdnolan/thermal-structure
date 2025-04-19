@@ -131,6 +131,8 @@ def calc_length(src, H_min=10.):
         passive = xr.where(H <= (H_min+1.0), src.coord_1, np.nan)
         # Get indexes of the ice free nodes
         ice_free = passive.diff('coord_1')*passive.coord_1.isel(coord_1=slice(0,-1))
+        # presist into memory so masking with dask arrays works
+        ice_free = ice_free.compute()
         # Get terminus index
         term_idx = (NHN - find_Term(ice_free)).astype(int)
         # Get the glacier length as a function of time [km]
@@ -171,8 +173,8 @@ def Variable_at_ELA(src, variable:str):
         (xr.DataArray)   --> 
     """
      
-    # get the ELA mask
-    ELA_mask = _get_ELA_indexes(src)
+    # get the ELA mask; presist into memory so masking with dask arrays works
+    ELA_mask = _get_ELA_indexes(src).compute()
     # get the desired variable at the non-nan horizontal coordinates (i.e. ELA)
     # in the case where there are multiple horizontal nodes that correspond to 
     # the ELA, take the average. Otherwise will return the value associated with

@@ -5,8 +5,8 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=32
 #SBATCH --mem-per-cpu=4096M
-#SBATCH --output=dask_%A.out
-#SBATCH --error=dask_%A.err
+#SBATCH --output=logs/dask_%A_%a.out
+#SBATCH --error=logs/dask_%A_%a.err
 
 export KEY='crmpt12'
 
@@ -29,7 +29,7 @@ post_proccess()
 
   # get the run name based on parsed parameters for the i-th run
   # NOTE: default value which aren't varied are hard coded
-  run_name="${KEY}_dx_50_TT_${NT}.0_MB_-0.36_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
+  run_name="${KEY}_dx_50_TT_${NT}.0_MB_-0.35_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
 
   # based on the start time (T_0) and time intergration length (NT)
   # caluculate the final time in kiloyears
@@ -38,7 +38,7 @@ post_proccess()
   T_0=$(awk -v T_0=$T_0 'BEGIN {print T_0/1e3}')
 
   # rename the file based on the restart point and integration length
-  new_name="${KEY}_dx_50_TT_${T_0}--${T_f}ka_MB_-0.36_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
+  new_name="${KEY}_dx_50_TT_${T_0}--${T_f}ka_MB_-0.35_OFF_Tma_-8.5_B_${beta}_SP_2_QP_${QP}"
 
   # rename restart files
   mv "result/${KEY}/mesh_dx50/${run_name}.result"\

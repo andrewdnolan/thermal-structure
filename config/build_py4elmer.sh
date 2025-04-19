@@ -18,7 +18,7 @@ source $HOME/python_envs/py4elmer/bin/activate
 pip install --no-index --upgrade pip
 
 # install the various packages needed ontop of scipy stack
-pip install --no-index dask distributed xarray jupyterlab bokeh seaborn
+pip install --no-index dask distributed xarray jupyterlab bokeh seaborn tqdm
 # needs it's own line, to deal with numcodecs conflicts
 pip install zarr
 

@@ -5,8 +5,8 @@ from .derived_fields import calc_percent_temperate, calc_volume, calc_magnitude
 
 # dictionary of 1D variables and vertical index they are define along
 vars_1D = { "mass balance" : -1,
-            "surface_enthalpy" : -1, 
-            "surf_melt":  -1, 
+            "surface_enthalpy" : -1,
+            "surf_melt":  -1,
             "runoff_frac": -1,
             "friction heating": 0}
 
@@ -92,18 +92,31 @@ def __preprocess(ds, h_min=10.0):
     # calculate velocity magnitude from velocity components
     ds['vel_m']  = calc_magnitude(ds['vel_x'], ds['vel_z'])
 
-    # only compute the percent temperate for coupled runs, 
+    # only compute the percent temperate for coupled runs,
     # i.e. skip for isothermal results
-    if 'enthalpy_h' in ds: 
+    if 'enthalpy_h' in ds:
         # calcute the percent temperate
         ds['percent_temperate'] = calc_percent_temperate(ds)
 
     # calcute the glacier volume as a function of time
     volume = calc_volume(ds)
+
+    # Sometimes when using a restart, the first timestep might not write
+    # dynamic data. This will cause inf volumes, so if initial volume is zero
+    # get data from second (dynamic) timestep.
+    initial_volume = float(volume.isel(t=0))
+    if initial_volume == 0.0:
+        first_nonzero_idx = int((volume != 0).argmax('t'))
+        # set the inital volume to be the first non-zero value
+        initial_volume = float(volume.isel(t=first_nonzero_idx))
+        # back fill the zero volumes based on first non-zero value
+        volume.loc[dict(t=slice(0, first_nonzero_idx))] = initial_volume
+
     # write the initial volume in m^2
-    ds['initial_volume']  = volume.isel(t=0)
-    # write the time dependent "relative volume"
-    ds['relative_volume'] = volume / volume.isel(t=0)
+    ds['initial_volume']  = initial_volume
+    # write the time dependent "relative volume". If first timeslice is zero,
+    # set to nan to prevent plotting from being messed up.
+    ds['relative_volume'] = volume / initial_volume
 
     return ds
 

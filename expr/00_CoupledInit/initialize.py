@@ -88,7 +88,7 @@ def main(argv):
     parser.add_argument('-it_prog','--prognostic_SS_iterations', type=int,
                         help = "Number of (S)teady (S)tate itterations for the \n"\
                                "prognostic simulation",
-                        default = 10)
+                        default = 1)
 
 
     args, _ = parser.parse_known_args(argv)
